@@ -1,64 +1,39 @@
-const { spawn } = require('child_process');
+const { tunnelmole } = require('tunnelmole');
 const fs = require('fs');
 
 const PORT = process.env.PORT || 7171;
 
-function runTunnel() {
-  console.log(`Starting Direct Zero-Password Tunnel for Port ${PORT} via localhost.run...`);
-
-  const ssh = spawn('ssh', [
-    '-o', 'StrictHostKeyChecking=no',
-    '-o', 'ServerAliveInterval=30',
-    '-o', 'ServerAliveCountMax=3',
-    '-o', 'ExitOnForwardFailure=yes',
-    '-R', `80:localhost:${PORT}`,
-    'nokey@localhost.run'
-  ]);
-
-  let activeUrl = null;
-
-  ssh.stdout.on('data', (data) => {
-    const text = data.toString();
-    const match = text.match(/https:\/\/[a-z0-9]+\.lhr\.life/i);
-    if (match && !activeUrl) {
-      activeUrl = match[0];
-      fs.writeFileSync('public-url.txt', activeUrl);
+async function startTunnel() {
+  while (true) {
+    try {
+      console.log(`[TUNNELMOLE] Initiating zero-password tunnel for Port ${PORT}...`);
+      const url = await tunnelmole({ port: PORT });
       console.log('=============================================================');
       console.log('🌐 100% DIRECT ZERO-PASSWORD PUBLIC ACCESS LINK READY!');
-      console.log('👉 URL: ' + activeUrl);
+      console.log('👉 URL: ' + url);
       console.log('⚡ Direct Instant Access: NO passwords, NO IP prompts, NO reminder pages!');
       console.log('=============================================================');
+      fs.writeFileSync('public-url.txt', url);
+
+      // Health-check keep-alive loop
+      while (true) {
+        await new Promise(r => setTimeout(r, 25000));
+        try {
+          const res = await fetch(url + '/api/live-data?index=nifty&expiryType=current');
+          if (!res.ok && res.status !== 304) {
+            console.log('[TUNNELMOLE] Keep-alive check returned status', res.status, '- Reconnecting...');
+            break;
+          }
+        } catch (e) {
+          console.log('[TUNNELMOLE] Keep-alive error:', e.message, '- Reconnecting...');
+          break;
+        }
+      }
+    } catch (err) {
+      console.error('[TUNNELMOLE] Tunnel connection failed:', err.message);
+      await new Promise(r => setTimeout(r, 4000));
     }
-  });
-
-  ssh.stderr.on('data', (data) => {
-    const text = data.toString();
-    // Ignore routine SSH warnings
-    if (!text.includes('Pseudo-terminal') && !text.includes('Permanently added')) {
-      console.log('[TUNNEL LOG]:', text.trim());
-    }
-  });
-
-  // Keep-alive ping
-  const pingInterval = setInterval(async () => {
-    if (activeUrl) {
-      try {
-        await fetch(activeUrl);
-      } catch (e) {}
-    }
-  }, 25000);
-
-  ssh.on('close', (code) => {
-    clearInterval(pingInterval);
-    console.log(`Tunnel closed (code ${code}). Reconnecting in 3 seconds...`);
-    setTimeout(runTunnel, 3000);
-  });
-
-  ssh.on('error', (err) => {
-    clearInterval(pingInterval);
-    console.error('Tunnel error:', err.message, '. Reconnecting in 5 seconds...');
-    setTimeout(runTunnel, 5000);
-  });
+  }
 }
 
-runTunnel();
+startTunnel();

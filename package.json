@@ -23,5 +23,8 @@
   },
   "devDependencies": {
     "localtunnel": "^2.0.2"
+  },
+  "dependencies": {
+    "tunnelmole": "^2.4.0"
   }
 }
