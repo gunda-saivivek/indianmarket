@@ -136,13 +136,6 @@
           <span class="flex-1">🎓 Learning Hub (Academy)</span>
           <span class="text-[9px] bg-accentGold/20 text-accentGold px-1.5 py-0.5 rounded-full font-mono font-bold">8 MODS</span>
         </button>
-
-        <!-- Admin Navigation Item (Visible only to Admin) -->
-        <button id="sideBtnAdminNav" onclick="openAdminModal()" class="hidden w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2.5 text-accentGold hover:bg-accentGold/20 border border-accentGold/40 bg-accentGold/10">
-          <span class="text-base">👑</span>
-          <span class="flex-1">User Approvals Hub</span>
-          <span id="sideNavPendingBadge" class="hidden bg-bearRed text-white text-[9px] px-1.5 py-0.5 rounded-full font-mono font-bold animate-pulse">0 Pending</span>
-        </button>
       </div>
 
       <!-- SECTION 3: SNIPER DESK TOOLS -->
@@ -283,9 +276,9 @@
           </button>
 
           <!-- Admin Panel Button (Visible to Admin only) -->
-          <button id="btnAdminPanel" onclick="openAdminModal()" class="hidden px-3.5 py-1.5 rounded-lg bg-accentGold hover:bg-accentGold/90 text-black font-extrabold text-xs flex items-center gap-1.5 transition shadow-lg shadow-accentGold/20">
-            <span>👑 User Approvals</span>
-            <span id="pendingBadge" class="hidden bg-bearRed text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">0 Pending</span>
+          <button id="btnAdminPanel" onclick="openAdminModal()" class="hidden px-3 py-1.5 rounded-lg bg-accentGold/20 hover:bg-accentGold/30 text-accentGold border border-accentGold/40 font-bold text-xs flex items-center gap-1.5 transition shadow">
+            <span>👑 Admin Panel</span>
+            <span id="pendingBadge" class="hidden bg-bearRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">0</span>
           </button>
 
           <!-- User Pill & Logout -->
@@ -297,28 +290,6 @@
 
     </div>
   </header>
-
-  <!-- ADMIN ALERT BANNER (Visible only to Admin when users are pending) -->
-  <div id="adminPendingBanner" class="hidden max-w-7xl mx-auto px-4 pt-4 md:pl-64">
-    <div class="bg-accentGold/15 border-2 border-accentGold/50 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-accentGold/20 text-accentGold border border-accentGold/40 flex items-center justify-center font-bold text-xl shrink-0">
-          👑
-        </div>
-        <div>
-          <div class="text-sm font-bold text-white flex items-center gap-2">
-            <span>Admin Approvals Required</span>
-            <span id="bannerPendingCount" class="bg-bearRed text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">0 Pending</span>
-          </div>
-          <p class="text-xs text-gray-300 mt-0.5">Customer accounts are waiting for your approval before live market signals unlock.</p>
-        </div>
-      </div>
-      <button onclick="openAdminModal()" class="px-4 py-2 bg-accentGold hover:bg-accentGold/90 text-black font-extrabold text-xs rounded-lg transition shadow-lg shadow-accentGold/20 flex items-center justify-center gap-2 shrink-0">
-        <span>Review & Approve Customers</span>
-        <span>&rarr;</span>
-      </button>
-    </div>
-  </div>
 
   <!-- MAIN CONTAINER (WITH DESKTOP LEFT PADDING) -->
   <main class="max-w-7xl mx-auto px-4 py-6 space-y-6 md:pl-64">
@@ -1320,8 +1291,8 @@
     </div>
   </div>
 
-  <script src="executive-charts.js?v=9.0"></script>
-  <script src="academy-data.js?v=9.0"></script>
-  <script src="app.js?v=9.0"></script>
+  <script src="executive-charts.js?v=10.0"></script>
+  <script src="academy-data.js?v=10.0"></script>
+  <script src="app.js?v=10.0"></script>
 </body>
 </html>
