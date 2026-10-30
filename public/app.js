@@ -1257,24 +1257,43 @@ function saveSettings() {
 // ==========================================
 
 let academyState = {
-  currentLessonId: 'candle-anatomy',
+  currentTopicId: 'topic-candle-anatomy',
   activeCategory: 'all',
   searchQuery: '',
-  completedLessons: JSON.parse(localStorage.getItem('sniper_completed_lessons') || '[]')
+  completedTopics: JSON.parse(localStorage.getItem('sniper_completed_topics') || '[]')
 };
 
 function initAcademy() {
-  if (!window.ACADEMY_LESSONS || window.ACADEMY_LESSONS.length === 0) return;
-  if (!window.ACADEMY_LESSONS.find(l => l.id === academyState.currentLessonId)) {
-    academyState.currentLessonId = window.ACADEMY_LESSONS[0].id;
+  // If reader is open, refresh reader, otherwise show hub
+  const readerView = document.getElementById('academyReaderView');
+  if (readerView && !readerView.classList.contains('hidden') && academyState.currentTopicId) {
+    renderTopicReaderContent(academyState.currentTopicId);
+  } else {
+    renderAcademyHub();
   }
-  renderAcademyList();
-  renderActiveLesson();
-  updateAcademyProgress();
+}
+
+function openAcademyDashboard() {
+  switchTab('academy');
+  const hubView = document.getElementById('academyHubView');
+  const readerView = document.getElementById('academyReaderView');
+  if (hubView) hubView.classList.remove('hidden');
+  if (readerView) readerView.classList.add('hidden');
+  renderAcademyHub();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function backToAcademyDashboard() {
+  const hubView = document.getElementById('academyHubView');
+  const readerView = document.getElementById('academyReaderView');
+  if (hubView) hubView.classList.remove('hidden');
+  if (readerView) readerView.classList.add('hidden');
+  renderAcademyHub();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function openAcademyWithCategory(cat) {
-  switchTab('academy');
+  openAcademyDashboard();
   filterAcademyCategory(cat);
 }
 
@@ -1292,268 +1311,378 @@ function filterAcademyCategory(cat) {
     }
   });
 
-  renderAcademyList();
+  renderAcademyHub();
 }
 
 function searchAcademyLessons() {
   const input = document.getElementById('academySearchInput');
   academyState.searchQuery = (input ? input.value : '').toLowerCase().trim();
-  renderAcademyList();
+  renderAcademyHub();
 }
 
-function renderAcademyList() {
-  const container = document.getElementById('academyLessonsList');
-  if (!container || !window.ACADEMY_LESSONS) return;
+function getAllTopicsList() {
+  const all = [];
+  (window.ACADEMY_MODULES || []).forEach(mod => {
+    (mod.topics || []).forEach(top => {
+      all.push({ ...top, moduleId: mod.id, moduleTitle: mod.title, category: mod.category });
+    });
+  });
+  return all;
+}
 
-  let filtered = window.ACADEMY_LESSONS.filter(lesson => {
-    const matchCat = academyState.activeCategory === 'all' || lesson.category === academyState.activeCategory;
+function renderAcademyHub() {
+  const container = document.getElementById('academyModulesGrid');
+  if (!container || !window.ACADEMY_MODULES) return;
+
+  const modules = window.ACADEMY_MODULES.filter(mod => {
+    const matchCat = academyState.activeCategory === 'all' || mod.category === academyState.activeCategory;
     const matchSearch = !academyState.searchQuery || 
-      lesson.title.toLowerCase().includes(academyState.searchQuery) ||
-      lesson.subtitle.toLowerCase().includes(academyState.searchQuery) ||
-      lesson.category.toLowerCase().includes(academyState.searchQuery);
+      mod.title.toLowerCase().includes(academyState.searchQuery) ||
+      mod.summary.toLowerCase().includes(academyState.searchQuery) ||
+      (mod.topics || []).some(t => t.title.toLowerCase().includes(academyState.searchQuery) || t.subtitle.toLowerCase().includes(academyState.searchQuery));
     return matchCat && matchSearch;
   });
 
-  const countEl = document.getElementById('lessonListCount');
-  if (countEl) countEl.textContent = `${filtered.length} of ${window.ACADEMY_LESSONS.length} Lessons`;
-
-  if (filtered.length === 0) {
+  if (modules.length === 0) {
     container.innerHTML = `
-      <div class="py-12 text-center text-gray-500 text-xs">
-        <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-        No lessons match your search criteria.
+      <div class="col-span-full py-16 text-center text-gray-500">
+        <i data-lucide="search-x" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
+        <h3 class="text-sm font-bold text-white mb-1">No Modules Match Your Search</h3>
+        <p class="text-xs text-gray-400">Try searching for "Candlestick", "Hammer", "Fibonacci", "Order Block", or "Gamma".</p>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
+    updateAcademyProgress();
     return;
   }
 
-  container.innerHTML = filtered.map((lesson) => {
-    const isActive = lesson.id === academyState.currentLessonId;
-    const isCompleted = academyState.completedLessons.includes(lesson.id);
-
+  container.innerHTML = modules.map(mod => {
     const badgeColor = 
-      lesson.category === 'candlesticks' ? 'text-bullGreen bg-bullGreen/15 border-bullGreen/30' :
-      lesson.category === 'patterns' ? 'text-accentGold bg-accentGold/15 border-accentGold/30' :
-      lesson.category === 'fibonacci' ? 'text-cyan-400 bg-cyan-400/15 border-cyan-400/30' :
-      lesson.category === 'smc' ? 'text-bearRed bg-bearRed/15 border-bearRed/30' :
-      lesson.category === 'indicators' ? 'text-indigo-400 bg-indigo-400/15 border-indigo-400/30' :
+      mod.color === 'bullGreen' ? 'text-bullGreen bg-bullGreen/15 border-bullGreen/30' :
+      mod.color === 'accentGold' ? 'text-accentGold bg-accentGold/15 border-accentGold/30' :
+      mod.color === 'cyan-400' ? 'text-cyan-400 bg-cyan-400/15 border-cyan-400/30' :
+      mod.color === 'bearRed' ? 'text-bearRed bg-bearRed/15 border-bearRed/30' :
+      mod.color === 'indigo-400' ? 'text-indigo-400 bg-indigo-400/15 border-indigo-400/30' :
       'text-bullGreen bg-bullGreen/15 border-bullGreen/30';
 
     return `
-      <div onclick="selectLesson('${lesson.id}')" class="p-3 rounded-xl border transition cursor-pointer ${
-        isActive 
-          ? 'bg-tradeDark border-accentGold shadow-md' 
-          : 'bg-tradeDark/50 border-tradeBorder hover:border-gray-600 hover:bg-tradeDark'
-      }">
-        <div class="flex items-start justify-between gap-2">
-          <div class="flex items-center gap-1.5">
-            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded border uppercase font-bold ${badgeColor}">
-              ${lesson.category}
-            </span>
-            <span class="text-[10px] text-gray-400 font-mono">${lesson.readTime}</span>
+      <div class="bg-tradeCard border border-tradeBorder hover:border-gray-600 rounded-2xl p-6 space-y-5 shadow-xl transition flex flex-col justify-between group">
+        
+        <!-- Module Header -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-tradeDark border border-tradeBorder flex items-center justify-center font-mono font-black text-sm text-accentGold">
+                ${mod.number}
+              </span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded border uppercase font-bold ${badgeColor}">
+                ${mod.badge}
+              </span>
+            </div>
+            <span class="text-xs font-mono text-gray-400">⏱️ ${mod.readTime}</span>
           </div>
-          ${isCompleted ? `
-            <span class="text-bullGreen text-xs flex items-center gap-1 font-bold">
-              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
-            </span>
-          ` : `
-            <span class="text-gray-600 text-xs">
-              <i data-lucide="circle" class="w-3.5 h-3.5"></i>
-            </span>
-          `}
+
+          <div>
+            <h3 class="text-base font-bold text-white group-hover:text-accentGold transition leading-snug">
+              ${mod.title}
+            </h3>
+            <p class="text-xs text-gray-400 mt-1.5 leading-relaxed">
+              ${mod.summary}
+            </p>
+          </div>
         </div>
 
-        <h4 class="text-xs font-bold text-white mt-1.5 leading-snug ${isActive ? 'text-accentGold' : ''}">
-          ${lesson.title}
-        </h4>
-        <p class="text-[11px] text-gray-400 mt-1 line-clamp-2 leading-relaxed">
-          ${lesson.subtitle}
-        </p>
+        <!-- Topics Inside Module -->
+        <div class="pt-3 border-t border-tradeBorder/60 space-y-2">
+          <div class="text-[10px] font-mono uppercase tracking-wider text-gray-500 font-bold mb-1">
+            Curriculum Topics (${(mod.topics || []).length}):
+          </div>
+          <div class="space-y-1.5">
+            ${(mod.topics || []).map(topic => {
+              const isDone = academyState.completedTopics.includes(topic.id);
+              return `
+                <div onclick="openTopicReader('${topic.id}')" class="p-2.5 rounded-xl bg-tradeDark/60 hover:bg-tradeDark border border-tradeBorder/80 hover:border-accentGold/60 transition cursor-pointer flex items-center justify-between gap-3 group/item">
+                  <div class="flex items-center gap-2.5 overflow-hidden">
+                    <span class="text-xs ${isDone ? 'text-bullGreen' : 'text-gray-500'} shrink-0">
+                      <i data-lucide="${isDone ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
+                    </span>
+                    <div class="truncate">
+                      <h4 class="text-xs font-semibold text-gray-200 group-hover/item:text-white truncate">
+                        ${topic.title}
+                      </h4>
+                      <p class="text-[10px] text-gray-500 truncate font-mono">
+                        ${topic.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-[10px] text-gray-400 font-mono">${topic.readTime}</span>
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-accentGold group-hover/item:translate-x-0.5 transition"></i>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Start Module Button -->
+        <div class="pt-2">
+          <button onclick="openTopicReader('${(mod.topics && mod.topics[0]) ? mod.topics[0].id : ''}')" class="w-full py-2.5 rounded-xl bg-tradeDark hover:bg-bullGreen hover:text-black border border-tradeBorder hover:border-bullGreen text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
+            <span>Study Module Deep Learning</span>
+            <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
       </div>
     `;
   }).join('');
 
   if (window.lucide) lucide.createIcons();
+  updateAcademyProgress();
 }
 
-function selectLesson(id) {
-  academyState.currentLessonId = id;
-  renderAcademyList();
-  renderActiveLesson();
+function openTopicReader(topicId) {
+  switchTab('academy');
+  const hubView = document.getElementById('academyHubView');
+  const readerView = document.getElementById('academyReaderView');
+  if (hubView) hubView.classList.add('hidden');
+  if (readerView) readerView.classList.remove('hidden');
+
+  academyState.currentTopicId = topicId;
+  renderTopicReaderContent(topicId);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function renderActiveLesson() {
-  const stage = document.getElementById('academyActiveStage');
-  if (!stage || !window.ACADEMY_LESSONS) return;
+function renderTopicReaderContent(topicId) {
+  const allTopics = getAllTopicsList();
+  const currentIdx = allTopics.findIndex(t => t.id === topicId);
+  const topicMeta = currentIdx >= 0 ? allTopics[currentIdx] : allTopics[0];
+  const deepData = (window.ACADEMY_DEEP_TOPICS && window.ACADEMY_DEEP_TOPICS[topicId]) || null;
 
-  const lesson = window.ACADEMY_LESSONS.find(l => l.id === academyState.currentLessonId);
-  if (!lesson) return;
+  // Breadcrumbs
+  const bModule = document.getElementById('readerBreadcrumbModule');
+  const bTitle = document.getElementById('readerBreadcrumbTitle');
+  if (bModule) bModule.textContent = topicMeta ? topicMeta.moduleTitle : 'Module';
+  if (bTitle) bTitle.textContent = topicMeta ? topicMeta.title : 'Topic';
 
-  const currentIndex = window.ACADEMY_LESSONS.findIndex(l => l.id === academyState.currentLessonId);
-  const prevLesson = currentIndex > 0 ? window.ACADEMY_LESSONS[currentIndex - 1] : null;
-  const nextLesson = currentIndex < window.ACADEMY_LESSONS.length - 1 ? window.ACADEMY_LESSONS[currentIndex + 1] : null;
-  const isCompleted = academyState.completedLessons.includes(lesson.id);
+  // Navigation Buttons
+  const btnPrev = document.getElementById('readerBtnPrev');
+  const btnNext = document.getElementById('readerBtnNext');
+  if (btnPrev) {
+    btnPrev.disabled = currentIdx <= 0;
+    btnPrev.classList.toggle('opacity-50', currentIdx <= 0);
+    btnPrev.classList.toggle('cursor-not-allowed', currentIdx <= 0);
+  }
+  if (btnNext) {
+    btnNext.disabled = currentIdx >= allTopics.length - 1;
+    btnNext.classList.toggle('opacity-50', currentIdx >= allTopics.length - 1);
+    btnNext.classList.toggle('cursor-not-allowed', currentIdx >= allTopics.length - 1);
+  }
 
-  const t = lesson.tradeDetails || {};
+  // Completion Button
+  const isCompleted = academyState.completedTopics.includes(topicId);
+  const compBtn = document.getElementById('readerBtnComplete');
+  if (compBtn) {
+    if (isCompleted) {
+      compBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow bg-bullGreen text-black';
+      compBtn.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i><span>Mastered ✓</span>`;
+    } else {
+      compBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-gray-300';
+      compBtn.innerHTML = `<i data-lucide="circle" class="w-3.5 h-3.5"></i><span>Mark as Mastered</span>`;
+    }
+  }
 
-  stage.innerHTML = `
-    <!-- Lesson Header -->
-    <div class="border-b border-tradeBorder pb-5 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-mono px-2.5 py-0.5 rounded-md uppercase font-bold bg-accentGold/20 text-accentGold border border-accentGold/30">
-            ${lesson.category}
-          </span>
-          <span class="text-xs font-mono text-gray-400 bg-tradeDark px-2 py-0.5 rounded border border-tradeBorder">
-            Level: ${lesson.level}
-          </span>
-          <span class="text-xs font-mono text-gray-400">
-            ⏱️ ${lesson.readTime}
-          </span>
-        </div>
+  // Render Table of Contents
+  const tocContainer = document.getElementById('readerTocList');
+  const tocCountEl = document.getElementById('readerTocCount');
+  const tocItems = deepData ? deepData.tableOfContents || [] : [];
+  if (tocCountEl) tocCountEl.textContent = `${tocItems.length} Sections`;
+  if (tocContainer) {
+    if (tocItems.length > 0) {
+      tocContainer.innerHTML = tocItems.map(item => `
+        <a href="#${item.id}" class="block py-1.5 px-2 rounded-lg text-gray-400 hover:text-accentGold hover:bg-tradeDark transition font-medium">
+          ${item.title}
+        </a>
+      `).join('');
+    } else {
+      tocContainer.innerHTML = `<div class="py-2 text-gray-500 text-[11px]">Overview, Blueprint & Execution</div>`;
+    }
+  }
 
-        <!-- Mark as Complete Button -->
-        <button onclick="toggleLessonCompleted('${lesson.id}')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow ${
-          isCompleted 
-            ? 'bg-bullGreen text-black hover:bg-bullGreen/90' 
-            : 'bg-tradeDark hover:bg-tradeBorder text-gray-300 border border-tradeBorder'
-        }">
-          <i data-lucide="${isCompleted ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
-          <span>${isCompleted ? 'Completed ✓' : 'Mark as Studied'}</span>
-        </button>
+  // Render Main Canvas
+  const canvas = document.getElementById('readerCanvas');
+  if (!canvas) return;
+
+  const title = deepData ? deepData.title : (topicMeta ? topicMeta.title : 'Topic Masterclass');
+  const subtitle = deepData ? deepData.subtitle : (topicMeta ? topicMeta.subtitle : '');
+  const level = deepData ? deepData.level : (topicMeta ? topicMeta.level : 'Intermediate');
+  const readTime = deepData ? deepData.readTime : (topicMeta ? topicMeta.readTime : '10 min');
+  const analystNote = deepData ? deepData.analystNote : 'Focus strictly on institutional volume expansion and liquidity sweep confirmations before committing risk.';
+  const trade = deepData ? deepData.tradeDetails : null;
+  const svg = deepData ? deepData.svgBlueprint : '';
+
+  const prevTopic = currentIdx > 0 ? allTopics[currentIdx - 1] : null;
+  const nextTopic = currentIdx < allTopics.length - 1 ? allTopics[currentIdx + 1] : null;
+
+  canvas.innerHTML = `
+    <!-- Top Header of Lesson -->
+    <div class="border-b border-tradeBorder pb-6 space-y-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-mono px-2.5 py-0.5 rounded uppercase font-bold bg-accentGold/20 text-accentGold border border-accentGold/30">
+          ${topicMeta ? topicMeta.category : 'MASTERCLASS'}
+        </span>
+        <span class="text-xs font-mono text-gray-400 bg-tradeDark px-2 py-0.5 rounded border border-tradeBorder">
+          Level: ${level}
+        </span>
+        <span class="text-xs font-mono text-gray-400">
+          ⏱️ ${readTime} Read
+        </span>
       </div>
 
-      <h1 class="text-xl md:text-2xl font-black text-white tracking-tight leading-snug">
-        ${lesson.title}
+      <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight leading-snug">
+        ${title}
       </h1>
-      <p class="text-xs md:text-sm text-gray-300 font-medium">
-        ${lesson.subtitle}
+      <p class="text-xs md:text-sm text-gray-300 font-medium leading-relaxed">
+        ${subtitle}
       </p>
     </div>
 
-    <!-- Master Analyst Note Box -->
-    <div class="bg-gradient-to-r from-accentGold/10 via-tradeDark to-tradeCard border border-accentGold/40 rounded-xl p-4 flex items-start gap-3 text-xs leading-relaxed">
-      <div class="w-8 h-8 rounded-lg bg-accentGold text-black font-bold flex items-center justify-center shrink-0 text-base shadow">
+    <!-- Proprietary Analyst Note -->
+    <div class="bg-gradient-to-r from-accentGold/10 via-tradeDark to-tradeCard border border-accentGold/40 rounded-2xl p-5 flex items-start gap-3.5 text-xs leading-relaxed shadow-lg">
+      <div class="w-9 h-9 rounded-xl bg-accentGold text-black font-bold flex items-center justify-center shrink-0 text-lg shadow">
         💡
       </div>
       <div>
-        <strong class="text-accentGold uppercase tracking-wide block font-bold mb-1">Senior Proprietary Analyst Insight:</strong>
-        <p class="text-gray-200">${lesson.analystNote}</p>
+        <strong class="text-accentGold uppercase tracking-wider block font-bold mb-1">Institutional Prop-Desk Analyst Insight:</strong>
+        <p class="text-gray-200 leading-relaxed">${analystNote}</p>
       </div>
     </div>
 
-    <!-- VISUAL TRADE BLUEPRINT (SVG IMAGE IN PICTURE FORM) -->
-    <div class="space-y-2">
-      <div class="flex items-center justify-between text-xs">
-        <span class="font-bold text-bullGreen uppercase tracking-wider flex items-center gap-1.5">
-          <i data-lucide="image" class="w-4 h-4"></i>
-          Institutional Trade Blueprint (Entry, Stop Loss & Targets in Picture Form)
-        </span>
-        <span class="text-[10px] text-gray-400 font-mono">Candlestick & Order Flow Geometry</span>
-      </div>
-      <div class="w-full rounded-xl overflow-hidden shadow-2xl border border-tradeBorder">
-        ${lesson.svgBlueprint}
-      </div>
-    </div>
-
-    <!-- Theoretical Breakdown & Mechanics -->
-    <div class="bg-tradeDark/70 border border-tradeBorder rounded-xl p-5 space-y-3 text-xs leading-relaxed text-gray-300">
-      <h3 class="text-sm font-bold text-white flex items-center gap-2">
-        <i data-lucide="book-marked" class="w-4 h-4 text-bullGreen"></i>
-        Auction Mechanics & Market Psychology
-      </h3>
-      <div>
-        ${lesson.theory}
-      </div>
-    </div>
-
-    <!-- Institutional Execution Card -->
-    <div class="bg-tradeDark border-2 border-bullGreen/40 rounded-xl p-5 space-y-4 shadow-xl">
-      <div class="flex items-center justify-between border-b border-tradeBorder pb-2">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-bullGreen flex items-center gap-1.5">
-          <i data-lucide="crosshair" class="w-4 h-4"></i>
-          Sniper Trade Execution Parameters
-        </h3>
-        <span class="text-xs font-mono font-bold text-accentGold bg-accentGold/10 px-2 py-0.5 rounded border border-accentGold/20">
-          Risk-Reward: ${t.riskReward || '1:3.0'}
-        </span>
-      </div>
-
-      <!-- Execution Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-        <div class="bg-tradeCard p-3 rounded-lg border border-tradeBorder">
-          <span class="text-[10px] text-gray-500 uppercase font-mono block">Setup Type</span>
-          <strong class="text-white text-xs">${t.setupType || '--'}</strong>
-        </div>
-        <div class="bg-tradeCard p-3 rounded-lg border border-tradeBorder">
-          <span class="text-[10px] text-gray-500 uppercase font-mono block">Instrument Target</span>
-          <strong class="text-white text-xs">${t.instrument || '--'}</strong>
-        </div>
-        <div class="bg-tradeCard p-3 rounded-lg border border-bullGreen/30">
-          <span class="text-[10px] text-bullGreen uppercase font-mono block font-bold">🟢 Entry Trigger</span>
-          <span class="text-gray-200 text-xs">${t.entryTrigger || '--'}</span>
-        </div>
-        <div class="bg-tradeCard p-3 rounded-lg border border-bearRed/30">
-          <span class="text-[10px] text-bearRed uppercase font-mono block font-bold">🛑 Stop Loss Rule</span>
-          <span class="text-gray-200 text-xs">${t.stopLoss || '--'}</span>
-        </div>
-        <div class="bg-tradeCard p-3 rounded-lg border border-tradeBorder">
-          <span class="text-[10px] text-gray-400 uppercase font-mono block">🎯 Target 1</span>
-          <strong class="text-bullGreen text-xs">${t.target1 || '--'}</strong>
-        </div>
-        <div class="bg-tradeCard p-3 rounded-lg border border-tradeBorder">
-          <span class="text-[10px] text-gray-400 uppercase font-mono block">🚀 Target 2</span>
-          <strong class="text-cyan-400 text-xs">${t.target2 || '--'}</strong>
-        </div>
-      </div>
-
-      <!-- Execution Checklist -->
-      ${t.executionChecklist && t.executionChecklist.length > 0 ? `
-        <div class="pt-2 border-t border-tradeBorder/60 space-y-2">
-          <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider block">Pre-Trade Confirmation Checklist:</span>
-          <div class="space-y-1.5">
-            ${t.executionChecklist.map((item) => `
-              <div class="flex items-center gap-2 text-xs text-gray-300">
-                <i data-lucide="check-square" class="w-3.5 h-3.5 text-bullGreen shrink-0"></i>
-                <span>${item}</span>
-              </div>
-            `).join('')}
+    <!-- SUB-TOPICS & DEEP LEARNING THEORETICAL BREAKDOWN -->
+    ${deepData && deepData.subTopics && deepData.subTopics.length > 0 ? `
+      <div class="space-y-6">
+        ${deepData.subTopics.map(sub => `
+          <div id="${sub.id}" class="bg-tradeDark/60 border border-tradeBorder rounded-2xl p-6 space-y-3 scroll-mt-28">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="book-open" class="w-4 h-4 text-bullGreen"></i>
+              <span>${sub.title}</span>
+            </h3>
+            <div class="text-xs text-gray-300 leading-relaxed">
+              ${sub.content}
+            </div>
           </div>
-        </div>
-      ` : ''}
-    </div>
-
-    <!-- Golden Rules -->
-    ${lesson.rules && lesson.rules.length > 0 ? `
-      <div class="bg-tradeDark/50 border border-tradeBorder rounded-xl p-4 space-y-2 text-xs">
-        <h4 class="font-bold text-accentGold uppercase text-[10px] tracking-wider flex items-center gap-1.5">
-          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-          Three Golden Analyst Rules:
-        </h4>
-        <ul class="list-disc pl-5 space-y-1 text-gray-300">
-          ${lesson.rules.map(r => `<li>${r}</li>`).join('')}
-        </ul>
+        `).join('')}
       </div>
     ` : ''}
 
-    <!-- Bottom Navigation (Previous / Next Lesson) -->
-    <div class="pt-4 border-t border-tradeBorder flex items-center justify-between gap-4">
-      ${prevLesson ? `
-        <button onclick="selectLesson('${prevLesson.id}')" class="px-4 py-2 rounded-xl bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 hover:text-white transition flex items-center gap-2">
+    <!-- VISUAL TECHNICAL TRADE BLUEPRINT (PICTURE FORM SVG) -->
+    <div id="sub-4" class="space-y-3 scroll-mt-28">
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-bold text-bullGreen uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="image" class="w-4 h-4"></i>
+          Technical Blueprint: Entry, Stop Loss & Targets in Picture Form
+        </span>
+        <span class="text-[10px] text-gray-400 font-mono">Candlestick & Order Flow Geometry</span>
+      </div>
+      <div class="w-full rounded-2xl overflow-hidden shadow-2xl border border-tradeBorder bg-[#0e131d]">
+        ${svg}
+      </div>
+    </div>
+
+    <!-- SNIPER TRADE EXECUTION PARAMETERS -->
+    ${trade ? `
+      <div id="sub-5" class="bg-tradeDark border-2 border-bullGreen/40 rounded-2xl p-6 space-y-5 shadow-2xl scroll-mt-28">
+        <div class="flex items-center justify-between border-b border-tradeBorder pb-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-bullGreen flex items-center gap-1.5">
+            <i data-lucide="crosshair" class="w-4 h-4"></i>
+            Sniper Trade Execution Parameters Matrix
+          </h3>
+          <span class="text-xs font-mono font-bold text-accentGold bg-accentGold/10 px-2.5 py-0.5 rounded border border-accentGold/20">
+            Risk-to-Reward: ${trade.riskReward || '1:3.0'}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div class="bg-tradeCard p-3.5 rounded-xl border border-tradeBorder">
+            <span class="text-[10px] text-gray-500 uppercase font-mono block">Setup Pattern Type</span>
+            <strong class="text-white text-xs">${trade.setupType || '--'}</strong>
+          </div>
+          <div class="bg-tradeCard p-3.5 rounded-xl border border-tradeBorder">
+            <span class="text-[10px] text-gray-500 uppercase font-mono block">Recommended Target Instrument</span>
+            <strong class="text-white text-xs">${trade.instrument || '--'}</strong>
+          </div>
+          <div class="bg-tradeCard p-3.5 rounded-xl border border-bullGreen/40">
+            <span class="text-[10px] text-bullGreen uppercase font-mono block font-bold">🟢 Entry Trigger Condition</span>
+            <span class="text-gray-200 text-xs">${trade.entryTrigger || '--'}</span>
+          </div>
+          <div class="bg-tradeCard p-3.5 rounded-xl border border-bearRed/40">
+            <span class="text-[10px] text-bearRed uppercase font-mono block font-bold">🛑 Stop Loss Rule</span>
+            <span class="text-gray-200 text-xs">${trade.stopLoss || '--'}</span>
+          </div>
+          <div class="bg-tradeCard p-3.5 rounded-xl border border-tradeBorder">
+            <span class="text-[10px] text-gray-400 uppercase font-mono block">🎯 Target 1 (Lock 50% Profit)</span>
+            <strong class="text-bullGreen text-xs">${trade.target1 || '--'}</strong>
+          </div>
+          <div class="bg-tradeCard p-3.5 rounded-xl border border-tradeBorder">
+            <span class="text-[10px] text-gray-400 uppercase font-mono block">🚀 Target 2 (Runner Target)</span>
+            <strong class="text-cyan-400 text-xs">${trade.target2 || '--'}</strong>
+          </div>
+        </div>
+
+        <!-- Pre-Trade Confirmation Checklist -->
+        ${trade.executionChecklist && trade.executionChecklist.length > 0 ? `
+          <div class="pt-3 border-t border-tradeBorder/60 space-y-2.5">
+            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider block">Pre-Trade Institutional Confirmation Checklist:</span>
+            <div class="space-y-2">
+              ${trade.executionChecklist.map(item => `
+                <div class="flex items-center gap-2.5 text-xs text-gray-300">
+                  <i data-lucide="check-square" class="w-4 h-4 text-bullGreen shrink-0"></i>
+                  <span>${item}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Pitfalls & Traps to Avoid -->
+        ${trade.pitfalls && trade.pitfalls.length > 0 ? `
+          <div id="sub-6" class="pt-3 border-t border-tradeBorder/60 space-y-2 scroll-mt-28">
+            <span class="text-[10px] text-bearRed uppercase font-bold tracking-wider block flex items-center gap-1.5">
+              <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+              Retail Traps & Common Execution Pitfalls:
+            </span>
+            <ul class="list-disc pl-5 space-y-1 text-xs text-gray-300">
+              ${trade.pitfalls.map(p => `<li>${p}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
+      </div>
+    ` : ''}
+
+    <!-- Bottom Navigation Footer with Previous / Next Topic Links -->
+    <div class="pt-6 border-t border-tradeBorder flex flex-wrap items-center justify-between gap-4">
+      ${prevTopic ? `
+        <button onclick="openTopicReader('${prevTopic.id}')" class="px-5 py-3 rounded-2xl bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 hover:text-white transition flex items-center gap-3">
           <i data-lucide="arrow-left" class="w-4 h-4"></i>
           <div class="text-left">
-            <span class="text-[10px] text-gray-500 block uppercase">Previous Lesson</span>
-            <span class="font-bold truncate max-w-[140px] md:max-w-xs block">${prevLesson.title}</span>
+            <span class="text-[10px] text-gray-500 block uppercase font-mono">Previous Masterclass</span>
+            <span class="font-bold truncate max-w-xs block text-white">${prevTopic.title}</span>
           </div>
         </button>
       ` : `<div></div>`}
 
-      ${nextLesson ? `
-        <button onclick="selectLesson('${nextLesson.id}')" class="px-4 py-2 rounded-xl bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs transition flex items-center gap-2 shadow-lg shadow-bullGreen/20">
+      <!-- Quick Back to Dashboard Button at Bottom -->
+      <button onclick="backToAcademyDashboard()" class="px-4 py-2.5 rounded-xl bg-accentGold/10 hover:bg-accentGold/20 border border-accentGold/40 text-accentGold text-xs font-bold transition flex items-center gap-1.5">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+        <span>Return to Academy Dashboard</span>
+      </button>
+
+      ${nextTopic ? `
+        <button onclick="openTopicReader('${nextTopic.id}')" class="px-5 py-3 rounded-2xl bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs transition flex items-center gap-3 shadow-lg shadow-bullGreen/20">
           <div class="text-right">
-            <span class="text-[10px] text-black/70 block uppercase font-mono">Next Lesson</span>
-            <span class="truncate max-w-[140px] md:max-w-xs block">${nextLesson.title}</span>
+            <span class="text-[10px] text-black/70 block uppercase font-mono">Next Masterclass</span>
+            <span class="font-bold truncate max-w-xs block">${nextTopic.title}</span>
           </div>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
@@ -1564,30 +1693,41 @@ function renderActiveLesson() {
   if (window.lucide) lucide.createIcons();
 }
 
-function toggleLessonCompleted(id) {
-  const idx = academyState.completedLessons.indexOf(id);
-  if (idx >= 0) {
-    academyState.completedLessons.splice(idx, 1);
-  } else {
-    academyState.completedLessons.push(id);
+function navigateReader(direction) {
+  const allTopics = getAllTopicsList();
+  const currentIdx = allTopics.findIndex(t => t.id === academyState.currentTopicId);
+  const newIdx = currentIdx + direction;
+  if (newIdx >= 0 && newIdx < allTopics.length) {
+    openTopicReader(allTopics[newIdx].id);
   }
-  localStorage.setItem('sniper_completed_lessons', JSON.stringify(academyState.completedLessons));
-  renderAcademyList();
-  renderActiveLesson();
+}
+
+function toggleCurrentTopicComplete() {
+  const topicId = academyState.currentTopicId;
+  if (!topicId) return;
+
+  const idx = academyState.completedTopics.indexOf(topicId);
+  if (idx >= 0) {
+    academyState.completedTopics.splice(idx, 1);
+  } else {
+    academyState.completedTopics.push(topicId);
+  }
+  localStorage.setItem('sniper_completed_topics', JSON.stringify(academyState.completedTopics));
+  renderTopicReaderContent(topicId);
   updateAcademyProgress();
 }
 
 function updateAcademyProgress() {
-  const total = (window.ACADEMY_LESSONS || []).length;
-  if (total === 0) return;
-  const completed = academyState.completedLessons.length;
-  const percent = Math.round((completed / total) * 100);
+  const allTopics = getAllTopicsList();
+  const total = allTopics.length || 20;
+  const completed = academyState.completedTopics.length;
+  const percent = Math.min(100, Math.round((completed / total) * 100));
 
   const label = document.getElementById('academyProgressLabel');
   const percentEl = document.getElementById('academyProgressPercent');
   const circle = document.getElementById('academyProgressCircle');
 
-  if (label) label.textContent = `${completed} / ${total} Lessons`;
+  if (label) label.textContent = `${completed} / ${total} Topics Mastered`;
   if (percentEl) percentEl.textContent = `${percent}%`;
   if (circle) {
     const circumference = 2 * Math.PI * 18; // ~113.1

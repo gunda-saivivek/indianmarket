@@ -144,7 +144,7 @@
           <span class="text-[9px] bg-accentGold/20 text-accentGold font-mono px-1.5 py-0.2 rounded font-bold">TOP ANALYST</span>
         </div>
 
-        <button id="sideTabAcademy" onclick="switchTab('academy')" class="w-full text-left p-3 rounded-xl transition flex items-center justify-between border border-accentGold/40 bg-accentGold/10 hover:bg-accentGold/20 text-white shadow-sm group">
+        <button id="sideTabAcademy" onclick="openAcademyDashboard()" class="w-full text-left p-3 rounded-xl transition flex items-center justify-between border border-accentGold/40 bg-accentGold/10 hover:bg-accentGold/20 text-white shadow-sm group">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg bg-accentGold text-black flex items-center justify-center font-bold text-sm shadow">
               🎓
@@ -153,7 +153,7 @@
               <div class="text-xs font-extrabold text-white group-hover:text-accentGold transition flex items-center gap-1.5">
                 Master Academy
               </div>
-              <div class="text-[10px] text-gray-400 font-mono">16 Visual Blueprints</div>
+              <div class="text-[10px] text-gray-400 font-mono">Deep Learning Hub</div>
             </div>
           </div>
           <i data-lucide="chevron-right" class="w-4 h-4 text-accentGold group-hover:translate-x-0.5 transition"></i>
@@ -161,19 +161,19 @@
 
         <!-- Quick syllabus jumps -->
         <div class="pl-2 pr-1 py-1 space-y-0.5 text-[11px] text-gray-400">
-          <button onclick="openAcademyWithCategory('candlesticks')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center gap-1.5">
-            <span class="text-bullGreen font-mono font-bold text-[10px]">01.</span> Candlestick Anatomy
+          <button onclick="openTopicReader('topic-candle-anatomy')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center gap-1.5">
+            <span class="text-bullGreen font-mono font-bold text-[10px]">01.</span> Candlestick Mechanics
           </button>
-          <button onclick="openAcademyWithCategory('patterns')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-accentGold transition flex items-center gap-1.5">
-            <span class="text-accentGold font-mono font-bold text-[10px]">02.</span> Chart Geometries
+          <button onclick="openTopicReader('topic-double-bottom-top')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-accentGold transition flex items-center gap-1.5">
+            <span class="text-accentGold font-mono font-bold text-[10px]">02.</span> W & M Patterns
           </button>
-          <button onclick="openAcademyWithCategory('fibonacci')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-cyan-400 transition flex items-center gap-1.5">
+          <button onclick="openTopicReader('topic-fib-golden-pocket')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-cyan-400 transition flex items-center gap-1.5">
             <span class="text-cyan-400 font-mono font-bold text-[10px]">03.</span> Fibonacci 0.618 Pocket
           </button>
-          <button onclick="openAcademyWithCategory('smc')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bearRed transition flex items-center gap-1.5">
+          <button onclick="openTopicReader('topic-smc-order-blocks')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bearRed transition flex items-center gap-1.5">
             <span class="text-bearRed font-mono font-bold text-[10px]">04.</span> Smart Money (SMC / OB)
           </button>
-          <button onclick="openAcademyWithCategory('options')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center gap-1.5">
+          <button onclick="openTopicReader('topic-options-greeks-gamma')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center gap-1.5">
             <span class="text-bullGreen font-mono font-bold text-[10px]">05.</span> Gamma Explosion Rules
           </button>
         </div>
@@ -525,7 +525,7 @@
           <span>📊 Full Option Ladder</span>
         </button>
 
-        <button id="tabAcademy" onclick="switchTab('academy')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition text-accentGold bg-accentGold/10 hover:bg-accentGold/20 border border-accentGold/40 shadow-sm">
+        <button id="tabAcademy" onclick="openAcademyDashboard()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition text-accentGold bg-accentGold/10 hover:bg-accentGold/20 border border-accentGold/40 shadow-sm">
           <i data-lucide="graduation-cap" class="w-4 h-4 text-accentGold"></i>
           <span>🎓 Master Trading Academy</span>
           <span class="text-[10px] bg-accentGold/30 text-accentGold px-1.5 py-0.5 rounded-full font-mono font-bold">16 Blueprints</span>
@@ -623,88 +623,149 @@
 
     <!-- VIEW 5: MASTER TRADING ACADEMY (LEARNING OBJECTS) -->
     <section id="viewAcademy" class="space-y-6 hidden">
-      <!-- Academy Header Banner -->
-      <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-accentGold/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-        <div class="absolute -right-16 -top-16 w-60 h-60 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div class="flex items-center gap-4">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-2xl text-black shadow-lg shadow-accentGold/20">
-              🎓
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="text-xl font-extrabold text-white tracking-tight">MASTER TRADING ACADEMY</h2>
-                <span class="text-xs bg-bullGreen/20 text-bullGreen font-mono px-2 py-0.5 rounded border border-bullGreen/30 font-bold uppercase">INSTITUTIONAL CURRICULUM</span>
-              </div>
-              <p class="text-xs text-gray-300 mt-1 max-w-2xl leading-relaxed">
-                Dalal Street & Wall Street Institutional Mastery. From atomic Japanese candlestick psychology to Smart Money Concepts (SMC), Fibonacci Golden Pockets, and proprietary Option Greeks. Every lesson includes a picture-form institutional trade blueprint.
-              </p>
-            </div>
-          </div>
-
-          <!-- Progress Widget -->
-          <div class="bg-tradeDark/90 border border-tradeBorder px-4 py-3 rounded-xl flex items-center gap-4">
-            <div>
-              <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Your Progress</span>
-              <div class="text-lg font-mono font-bold text-accentGold" id="academyProgressLabel">0 / 16 Lessons</div>
-            </div>
-            <div class="w-12 h-12 relative flex items-center justify-center">
-              <svg class="w-12 h-12 transform -rotate-90">
-                <circle cx="24" cy="24" r="18" stroke="#1d2432" stroke-width="4" fill="none" />
-                <circle id="academyProgressCircle" cx="24" cy="24" r="18" stroke="#00c076" stroke-width="4" fill="none" stroke-dasharray="113" stroke-dashoffset="113" stroke-linecap="round" class="transition-all duration-500" />
-              </svg>
-              <span id="academyProgressPercent" class="absolute text-[11px] font-mono font-bold text-white">0%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Filter & Search Controls -->
-        <div class="mt-6 pt-4 border-t border-tradeBorder/70 flex flex-wrap items-center justify-between gap-3">
-          <!-- Category Pills -->
-          <div class="flex flex-wrap gap-1.5" id="academyCategoryPills">
-            <button onclick="filterAcademyCategory('all')" id="cat-all" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-bullGreen text-black shadow">All Lessons (16)</button>
-            <button onclick="filterAcademyCategory('candlesticks')" id="cat-candlesticks" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Candlesticks</button>
-            <button onclick="filterAcademyCategory('patterns')" id="cat-patterns" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Chart Patterns</button>
-            <button onclick="filterAcademyCategory('fibonacci')" id="cat-fibonacci" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Fibonacci Precision</button>
-            <button onclick="filterAcademyCategory('supply-demand')" id="cat-supply-demand" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Support & Supply/Demand</button>
-            <button onclick="filterAcademyCategory('smc')" id="cat-smc" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Smart Money (SMC)</button>
-            <button onclick="filterAcademyCategory('indicators')" id="cat-indicators" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">VWAP & RSI</button>
-            <button onclick="filterAcademyCategory('options')" id="cat-options" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Options & Risk</button>
-          </div>
-
-          <!-- Lesson Search Bar -->
-          <div class="relative w-64">
-            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-500"></i>
-            <input type="text" id="academySearchInput" oninput="searchAcademyLessons()" placeholder="Search pattern, setup, fib..." class="w-full bg-tradeDark border border-tradeBorder rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-bullGreen">
-          </div>
-        </div>
-      </div>
-
-      <!-- Two-Column Interactive Course Desk -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- SUB-VIEW 1: ACADEMY DASHBOARD (COURSE HUB) -->
+      <div id="academyHubView" class="space-y-6">
         
-        <!-- Left Syllabus Selector (35% or 4 cols) -->
-        <div class="lg:col-span-4 bg-tradeCard border border-tradeBorder rounded-2xl p-4 space-y-3 h-[780px] flex flex-col shadow">
-          <div class="flex items-center justify-between border-b border-tradeBorder pb-2 text-xs">
-            <span class="font-bold text-gray-300 flex items-center gap-1.5">
-              <i data-lucide="book-open" class="w-4 h-4 text-accentGold"></i>
-              CURRICULUM SYLLABUS
-            </span>
-            <span id="lessonListCount" class="text-[10px] text-gray-500 font-mono">16 Lessons</span>
+        <!-- Academy Hero Header -->
+        <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-accentGold/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+          <div class="absolute -right-16 -top-16 w-60 h-60 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-2xl text-black shadow-lg shadow-accentGold/20">
+                🎓
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-xl font-extrabold text-white tracking-tight">MASTER TRADING ACADEMY</h2>
+                  <span class="text-xs bg-bullGreen/20 text-bullGreen font-mono px-2 py-0.5 rounded border border-bullGreen/30 font-bold uppercase">PRO ANALYST EDITION</span>
+                </div>
+                <p class="text-xs text-gray-300 mt-1 max-w-2xl leading-relaxed">
+                  Deep-learning institutional curriculum covering every concept from atomic Candlesticks to Geometric Chart Patterns, Fibonacci Golden Pockets, Smart Money Concepts (SMC), VWAP Benchmarks, and Option Greeks. Click any topic to study its full deep masterclass and visual trade blueprint.
+                </p>
+              </div>
+            </div>
+
+            <!-- Progress Widget -->
+            <div class="bg-tradeDark/90 border border-tradeBorder px-4 py-3 rounded-xl flex items-center gap-4 shadow-sm">
+              <div>
+                <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Your Curriculum Progress</span>
+                <div class="text-lg font-mono font-bold text-accentGold" id="academyProgressLabel">0 / 20 Topics Mastered</div>
+              </div>
+              <div class="w-12 h-12 relative flex items-center justify-center">
+                <svg class="w-12 h-12 transform -rotate-90">
+                  <circle cx="24" cy="24" r="18" stroke="#1d2432" stroke-width="4" fill="none" />
+                  <circle id="academyProgressCircle" cx="24" cy="24" r="18" stroke="#00c076" stroke-width="4" fill="none" stroke-dasharray="113" stroke-dashoffset="113" stroke-linecap="round" class="transition-all duration-500" />
+                </svg>
+                <span id="academyProgressPercent" class="absolute text-[11px] font-mono font-bold text-white">0%</span>
+              </div>
+            </div>
           </div>
 
-          <!-- Lessons Scroll Container -->
-          <div class="overflow-y-auto flex-1 space-y-2 pr-1" id="academyLessonsList">
-            <!-- Dynamic Rendered Lesson Items -->
+          <!-- Filter & Search Controls -->
+          <div class="mt-6 pt-4 border-t border-tradeBorder/70 flex flex-wrap items-center justify-between gap-3">
+            <!-- Category Pills -->
+            <div class="flex flex-wrap gap-1.5" id="academyCategoryPills">
+              <button onclick="filterAcademyCategory('all')" id="cat-all" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-bullGreen text-black shadow">All Modules (7)</button>
+              <button onclick="filterAcademyCategory('candlesticks')" id="cat-candlesticks" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Candlesticks</button>
+              <button onclick="filterAcademyCategory('patterns')" id="cat-patterns" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Chart Patterns</button>
+              <button onclick="filterAcademyCategory('fibonacci')" id="cat-fibonacci" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Fibonacci Precision</button>
+              <button onclick="filterAcademyCategory('supply-demand')" id="cat-supply-demand" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Supply & Demand</button>
+              <button onclick="filterAcademyCategory('smc')" id="cat-smc" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Smart Money (SMC)</button>
+              <button onclick="filterAcademyCategory('indicators')" id="cat-indicators" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">VWAP & RSI</button>
+              <button onclick="filterAcademyCategory('options')" id="cat-options" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Options & Risk</button>
+            </div>
+
+            <!-- Lesson Search Bar -->
+            <div class="relative w-64">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-500"></i>
+              <input type="text" id="academySearchInput" oninput="searchAcademyLessons()" placeholder="Search pattern, setup, fib..." class="w-full bg-tradeDark border border-tradeBorder rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-bullGreen">
+            </div>
           </div>
         </div>
 
-        <!-- Right Active Lecture Stage (65% or 8 cols) -->
-        <div class="lg:col-span-8 bg-tradeCard border border-tradeBorder rounded-2xl p-6 space-y-6 min-h-[780px] flex flex-col shadow" id="academyActiveStage">
+        <!-- MODULES & TOPICS CATALOG GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="academyModulesGrid">
           <!-- Rendered dynamically -->
         </div>
 
       </div>
+
+      <!-- SUB-VIEW 2: DEDICATED TOPIC READER (DEEP LEARNING WITH TOP BACK BUTTON) -->
+      <div id="academyReaderView" class="space-y-6 hidden">
+        
+        <!-- Sticky Top Navigation Bar with Back Button -->
+        <div class="bg-tradeCard border-2 border-accentGold/60 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4 sticky top-16 z-20 backdrop-blur bg-tradeCard/95">
+          <div class="flex items-center gap-3">
+            <!-- THE BACK BUTTON REQUESTED BY USER -->
+            <button onclick="backToAcademyDashboard()" class="px-4 py-2 bg-accentGold hover:bg-accentGold/90 text-black font-extrabold text-xs rounded-xl transition flex items-center gap-2 shadow-lg shadow-accentGold/20">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Back to Academy Dashboard</span>
+            </button>
+
+            <!-- Breadcrumbs -->
+            <div class="hidden sm:flex items-center gap-2 text-xs text-gray-400 font-mono">
+              <span class="cursor-pointer hover:text-accentGold" onclick="backToAcademyDashboard()">Academy Hub</span>
+              <span>/</span>
+              <span id="readerBreadcrumbModule" class="text-gray-300">Module</span>
+              <span>/</span>
+              <span id="readerBreadcrumbTitle" class="text-white font-bold truncate max-w-xs">Topic Title</span>
+            </div>
+          </div>
+
+          <!-- Quick Navigation & Completion -->
+          <div class="flex items-center gap-2">
+            <button id="readerBtnPrev" onclick="navigateReader(-1)" class="px-3 py-1.5 rounded-lg bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 font-medium transition flex items-center gap-1">
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+              <span class="hidden md:inline">Previous Topic</span>
+            </button>
+            <button id="readerBtnNext" onclick="navigateReader(1)" class="px-3 py-1.5 rounded-lg bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 font-medium transition flex items-center gap-1">
+              <span class="hidden md:inline">Next Topic</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+            <button id="readerBtnComplete" onclick="toggleCurrentTopicComplete()" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow bg-bullGreen text-black">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              <span>Mark Mastered</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Two-Column Deep Learning Reader -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Left Table of Contents & Sub-topics navigation (4 cols) -->
+          <div class="lg:col-span-4 space-y-4">
+            <div class="bg-tradeCard border border-tradeBorder rounded-2xl p-5 space-y-3 sticky top-36">
+              <div class="flex items-center justify-between border-b border-tradeBorder pb-2 text-xs font-bold text-gray-300">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="list-checks" class="w-4 h-4 text-accentGold"></i>
+                  TABLE OF CONTENTS
+                </span>
+                <span id="readerTocCount" class="text-[10px] text-gray-500 font-mono">Sub-topics</span>
+              </div>
+              <div class="space-y-1 text-xs" id="readerTocList">
+                <!-- Rendered dynamically -->
+              </div>
+              
+              <!-- Back to Dashboard Shortcut -->
+              <div class="pt-3 border-t border-tradeBorder">
+                <button onclick="backToAcademyDashboard()" class="w-full py-2 px-3 rounded-lg bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 font-medium transition flex items-center justify-center gap-2">
+                  <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-accentGold"></i>
+                  <span>Browse All 7 Modules</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Comprehensive Deep Topic Canvas (8 cols) -->
+          <div class="lg:col-span-8 bg-tradeCard border border-tradeBorder rounded-2xl p-6 md:p-8 space-y-8 shadow-2xl" id="readerCanvas">
+            <!-- Rendered dynamically -->
+          </div>
+
+        </div>
+
+      </div>
+
     </section>
 
   </main>
