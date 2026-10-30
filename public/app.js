@@ -458,47 +458,72 @@ function renderChartStudio() {
   const container = document.getElementById('tradingview_chart_container');
   if (!container) return;
 
-  const symbolMap = {
+  const defaultMap = {
     'nifty': 'NSE:NIFTY',
     'sensex': 'BSE:SENSEX',
     'banknifty': 'NSE:BANKNIFTY'
   };
 
-  const symbol = symbolMap[state.currentIndex] || 'NSE:NIFTY';
+  const symbol = state.chartSymbol || defaultMap[state.currentIndex] || 'NSE:NIFTY';
   const labelMap = {
-    'nifty': 'NIFTY 50',
-    'sensex': 'SENSEX',
-    'banknifty': 'BANK NIFTY'
+    'NSE:NIFTY': 'NIFTY 50 (SPOT)',
+    'NSE:NIFTYBEES': 'NIFTY BeES (ETF - UNRESTRICTED)',
+    'BSE:SENSEX': 'SENSEX',
+    'NSE:BANKNIFTY': 'BANK NIFTY'
   };
 
   const titleEl = document.getElementById('chartSymbolLabel');
   const exchEl = document.getElementById('chartExchangeLabel');
-  if (titleEl) titleEl.textContent = labelMap[state.currentIndex] || 'NIFTY 50';
+  if (titleEl) titleEl.textContent = labelMap[symbol] || symbol;
   if (exchEl) exchEl.textContent = symbol;
 
   container.innerHTML = '';
 
-  if (window.TradingView) {
-    tvWidget = new TradingView.widget({
-      "autosize": true,
-      "symbol": symbol,
-      "interval": state.currentTf || "5",
-      "timezone": "Asia/Kolkata",
-      "theme": "dark",
-      "style": "1",
-      "locale": "in",
-      "toolbar_bg": "#151922",
-      "enable_publishing": false,
-      "hide_top_toolbar": false,
-      "hide_legend": false,
-      "save_image": false,
-      "container_id": "tradingview_chart_container",
-      "studies": [
-        "RSI@tv-basicstudies",
-        "MASimple@tv-basicstudies"
-      ]
-    });
-  }
+  const widgetContainer = document.createElement('div');
+  widgetContainer.className = 'tradingview-widget-container';
+  widgetContainer.style.height = '100%';
+  widgetContainer.style.width = '100%';
+
+  const widgetDiv = document.createElement('div');
+  widgetDiv.className = 'tradingview-widget-container__widget';
+  widgetDiv.style.height = '100%';
+  widgetDiv.style.width = '100%';
+  widgetContainer.appendChild(widgetDiv);
+
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.async = true;
+  script.innerHTML = JSON.stringify({
+    "autosize": true,
+    "symbol": symbol,
+    "interval": state.currentTf || "5",
+    "timezone": "Asia/Kolkata",
+    "theme": "dark",
+    "style": "1",
+    "locale": "en",
+    "allow_symbol_change": true,
+    "calendar": false,
+    "support_host": "https://www.tradingview.com"
+  });
+
+  widgetContainer.appendChild(script);
+  container.appendChild(widgetContainer);
+}
+
+function setChartSpecificSymbol(sym) {
+  state.chartSymbol = sym;
+  renderChartStudio();
+}
+
+function openFullTradingView() {
+  const defaultMap = {
+    'nifty': 'NSE:NIFTY',
+    'sensex': 'BSE:SENSEX',
+    'banknifty': 'NSE:BANKNIFTY'
+  };
+  const symbol = state.chartSymbol || defaultMap[state.currentIndex] || 'NSE:NIFTY';
+  window.open(`https://in.tradingview.com/chart/?symbol=${encodeURIComponent(symbol)}`, '_blank');
 }
 
 function switchTimeframe(tf) {

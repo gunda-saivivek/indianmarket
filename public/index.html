@@ -401,14 +401,28 @@
           <button id="tf-D" onclick="switchTimeframe('D')" class="px-2.5 py-1 rounded-lg transition text-gray-400 hover:text-white">1D</button>
         </div>
 
-        <!-- Technical Aids -->
+        <!-- Technical Aids & Direct Link -->
         <div class="flex items-center gap-2 text-xs">
-          <span class="text-bullGreen flex items-center gap-1 bg-bullGreen/10 px-2.5 py-1 rounded-lg border border-bullGreen/20">
-            <span class="w-2 h-2 rounded-full bg-bullGreen animate-pulse"></span>
-            <span class="text-[11px] font-semibold">Live Feed Connected</span>
-          </span>
+          <button onclick="openFullTradingView()" class="px-3 py-1.5 bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-gray-200 hover:text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow">
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-bullGreen"></i>
+            <span>Open in TradingView ↗</span>
+          </button>
         </div>
 
+      </div>
+
+      <!-- Quick Ticker Helpers & Notice -->
+      <div class="flex flex-wrap items-center justify-between text-xs text-gray-400 px-1 gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-gray-500">Fast Tickers:</span>
+          <button onclick="setChartSpecificSymbol('NSE:NIFTY')" class="px-2 py-0.5 rounded bg-tradeCard hover:bg-tradeBorder text-gray-300 font-mono text-[11px] border border-tradeBorder">NSE:NIFTY</button>
+          <button onclick="setChartSpecificSymbol('NSE:NIFTYBEES')" class="px-2 py-0.5 rounded bg-tradeCard hover:bg-tradeBorder text-bullGreen font-mono text-[11px] border border-tradeBorder" title="Tracks Nifty 50 tick-for-tick with 100% free streaming">NIFTY BEES (Unrestricted)</button>
+          <button onclick="setChartSpecificSymbol('BSE:SENSEX')" class="px-2 py-0.5 rounded bg-tradeCard hover:bg-tradeBorder text-gray-300 font-mono text-[11px] border border-tradeBorder">BSE:SENSEX</button>
+          <button onclick="setChartSpecificSymbol('NSE:BANKNIFTY')" class="px-2 py-0.5 rounded bg-tradeCard hover:bg-tradeBorder text-gray-300 font-mono text-[11px] border border-tradeBorder">NSE:BANKNIFTY</button>
+        </div>
+        <div class="text-[11px] text-gray-500">
+          💡 If TradingView shows symbol restriction, switch to <strong class="text-bullGreen cursor-pointer hover:underline" onclick="setChartSpecificSymbol('NSE:NIFTYBEES')">NIFTY BEES</strong> or click <strong class="text-white cursor-pointer hover:underline" onclick="openFullTradingView()">Open in TradingView ↗</strong>
+        </div>
       </div>
 
       <!-- TradingView Embed Container -->
