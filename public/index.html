@@ -614,9 +614,9 @@
       <!-- Desk Header with Back Button -->
       <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-bullGreen/40 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-          <button onclick="switchTab('executive')" class="px-3 py-1.5 rounded-xl bg-tradeDark border border-tradeBorder hover:border-gray-500 text-gray-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 shadow">
-            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-            <span>Back to Executive Hub</span>
+          <button onclick="switchTab('executive')" class="px-3.5 py-2 rounded-xl bg-tradeDark border border-bullGreen/50 hover:border-bullGreen text-bullGreen hover:bg-bullGreen hover:text-black text-xs font-extrabold transition flex items-center gap-2 shadow">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>⬅️ Back to Main Workstations (Bull, Bear, Learning Hub)</span>
           </button>
           <div>
             <h2 class="text-lg font-black text-white flex items-center gap-2">
@@ -670,9 +670,9 @@
       <!-- Desk Header with Back Button -->
       <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-bearRed/40 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-          <button onclick="switchTab('executive')" class="px-3 py-1.5 rounded-xl bg-tradeDark border border-tradeBorder hover:border-gray-500 text-gray-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 shadow">
-            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-            <span>Back to Executive Hub</span>
+          <button onclick="switchTab('executive')" class="px-3.5 py-2 rounded-xl bg-tradeDark border border-bearRed/50 hover:border-bearRed text-bearRed hover:bg-bearRed hover:text-white text-xs font-extrabold transition flex items-center gap-2 shadow">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>⬅️ Back to Main Workstations (Bull, Bear, Learning Hub)</span>
           </button>
           <div>
             <h2 class="text-lg font-black text-white flex items-center gap-2">
@@ -808,6 +808,18 @@
       <!-- SUB-VIEW 1: ACADEMY DASHBOARD (COURSE HUB) -->
       <div id="academyHubView" class="space-y-6">
         
+        <!-- Sticky Hub Navigation Bar with Back Button to Workstations -->
+        <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-accentGold/60 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4">
+          <button onclick="switchTab('executive')" class="px-3.5 py-2 rounded-xl bg-tradeDark border border-accentGold/50 hover:border-accentGold text-accentGold hover:bg-accentGold hover:text-black text-xs font-extrabold transition flex items-center gap-2 shadow">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>⬅️ Back to Main Workstations (Bull, Bear, Learning Hub)</span>
+          </button>
+          <div class="text-xs font-mono text-gray-300 flex items-center gap-2">
+            <span>Workstation 03:</span>
+            <span class="text-accentGold font-bold px-2 py-0.5 rounded bg-accentGold/10 border border-accentGold/30">MASTER LEARNING HUB</span>
+          </div>
+        </div>
+
         <!-- Academy Hero Header -->
         <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-accentGold/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
           <div class="absolute -right-16 -top-16 w-60 h-60 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -882,7 +894,10 @@
             <!-- THE BACK BUTTON REQUESTED BY USER -->
             <button onclick="backToAcademyDashboard()" class="px-4 py-2 bg-accentGold hover:bg-accentGold/90 text-black font-extrabold text-xs rounded-xl transition flex items-center gap-2 shadow-lg shadow-accentGold/20">
               <i data-lucide="arrow-left" class="w-4 h-4"></i>
-              <span>Back to Academy Dashboard</span>
+              <span>Back to Academy Hub</span>
+            </button>
+            <button onclick="switchTab('executive')" class="px-3 py-2 bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-gray-300 hover:text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+              <span>🏠 Main Workstations</span>
             </button>
 
             <!-- Breadcrumbs -->
@@ -1275,8 +1290,8 @@
     </div>
   </div>
 
-  <script src="executive-charts.js?v=5.0"></script>
-  <script src="academy-data.js?v=5.0"></script>
-  <script src="app.js?v=5.0"></script>
+  <script src="executive-charts.js?v=6.0"></script>
+  <script src="academy-data.js?v=6.0"></script>
+  <script src="app.js?v=6.0"></script>
 </body>
 </html>

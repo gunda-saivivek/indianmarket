@@ -84,11 +84,12 @@ deepTopicsV4['topic-malaysian-snr'] = {
       { chg: -40, v: 6500 }, { chg: -30, v: 4200 },
       // Corrective return to Malaysian Body Line
       { chg: 25, v: 2400 }, { chg: 20, v: 2100 }, { chg: 18, v: 1900 },
-      // Re-test Tap with Rejection Wick
+      // Candle 9: EXACT ENTRY CANDLE - Retest Tap with Rejection Wick (Touches 23,245)
       { chg: -15, upWick: 22, dnWick: 4, v: 7500 },
-      // Downward Expansion Wave
-      { chg: -48, v: 8900 }, { chg: -42, v: 8400 }, { chg: -35, v: 7800 }
+      // Downward Expansion Wave hitting Target 1 (23,145)
+      { chg: -48, v: 8900 }, { chg: -50, upWick: 5, dnWick: 15, v: 9400 }, { chg: -35, v: 7800 }
     ]),
+    entryCandleIdx: 9,
     entryPrice: 23245,
     stopLossPrice: 23290,
     target1Price: 23145,
@@ -98,9 +99,7 @@ deepTopicsV4['topic-malaysian-snr'] = {
       { yTop: 23285, yBottom: 23275, color: '#ff3b57', label: 'MALAYSIAN MAJOR V-PEAK RESISTANCE', isAnimated: true }
     ],
     annotations: [
-      { candleIdx: 2, text: "SHARP V-PEAK", position: "above", color: "#ff3b57" },
-      { candleIdx: 9, text: "MALAYSIAN RETEST TAP", position: "above", color: "#f7a600", isAnimated: true },
-      { candleIdx: 10, text: "PE PUT ENTRY", position: "below", color: "#089981" }
+      { candleIdx: 2, text: "SHARP V-PEAK", position: "above", color: "#ff3b57" }
     ]
   })
 };
@@ -179,36 +178,38 @@ deepTopicsV4['topic-malaysian-qmr'] = {
   },
   svgBlueprint: makeAnimatedTradingViewChart({
     symbol: "BANKNIFTY • 5m • MALAYSIAN QMR",
-    candles: walk(51200, [
-      // High (Left Shoulder): 51340
-      { chg: 45, v: 4100 }, { chg: 50, v: 4800 }, { chg: 45, v: 5200 },
-      // Low (Trough): 51220
-      { chg: -40, v: 3600 }, { chg: -45, v: 3900 }, { chg: -35, v: 3400 },
-      // Higher High Liquidity Sweep (Umar 40% Wick): 51420
-      { chg: 65, v: 6100 }, { chg: 75, v: 7200 },
-      { chg: -20, upWick: 55, dnWick: 5, v: 11200 }, // Umar 40%+ Rejection Wick!
-      // Displacement down to Lower Low: 51160 (Breaks 51220 Low)
-      { chg: -85, v: 9800 }, { chg: -75, v: 9100 }, { chg: -60, v: 8400 },
-      // Corrective Pullback to Left Shoulder Key Level (51340)
-      { chg: 40, v: 3100 }, { chg: 45, v: 2800 }, { chg: 35, v: 2600 },
-      // QMR Retest Reversal
-      { chg: -50, upWick: 15, dnWick: 6, v: 8800 },
-      { chg: -70, v: 9900 }, { chg: -65, v: 9200 }
+    candles: walk(51270, [
+      { chg: 35, upWick: 5, dnWick: 3 }, // 0
+      { chg: 25, upWick: 6, dnWick: 2 }, // 1: High 51336 (Left Shoulder)
+      { chg: -45, upWick: 4, dnWick: 6 }, // 2
+      { chg: -55, upWick: 3, dnWick: 5 }, // 3: Low 51225 (Trough)
+      { chg: 75, upWick: 8, dnWick: 4 }, // 4
+      { chg: 15, upWick: 105, dnWick: 4 }, // 5: High 51425 (PDH Liquidity Sweep with Umar Wick)
+      { chg: -65, upWick: 4, dnWick: 8 }, // 6: Displacement Down
+      { chg: -75, upWick: 5, dnWick: 6 }, // 7: Lower Low (LL 51174, breaks 51225)
+      { chg: 65, upWick: 6, dnWick: 4 }, // 8: Pullback wave 1
+      { chg: 70, upWick: 5, dnWick: 3 }, // 9: Pullback wave 2 (51315)
+      { chg: -15, upWick: 20, dnWick: 4 }, // 10: EXACT ENTRY CANDLE (Retest Tap 51330 with rejection wick)
+      { chg: -85, upWick: 5, dnWick: 8 }, // 11: Bearish Impulse Down
+      { chg: -75, upWick: 4, dnWick: 10 }, // 12: Acceleration
+      { chg: -80, upWick: 6, dnWick: 20 }, // 13: Hits Target 1: 51080 (low 51040)
+      { chg: -65, upWick: 4, dnWick: 12 }  // 14: Target 2 runner
     ]),
-    entryPrice: 51335,
-    stopLossPrice: 51430,
-    target1Price: 51150,
-    target2Price: 50980,
-    riskReward: "1:3.7",
+    entryCandleIdx: 10,
+    entryPrice: 51330,
+    stopLossPrice: 51435,
+    target1Price: 51080,
+    target2Price: 50950,
+    riskReward: "1:3.8",
     zones: [
-      { yTop: 51345, yBottom: 51330, color: '#f7a600', label: 'MALAYSIAN QMR LEFT SHOULDER ENTRY LEVEL', isAnimated: true }
+      { yTop: 51430, yBottom: 51410, color: '#ff3b57', label: 'PREVIOUS DAY HIGH (PDH LIQUIDITY POOL)', isAnimated: true },
+      { yTop: 51340, yBottom: 51325, color: '#f7a600', label: 'MALAYSIAN QMR LEFT SHOULDER RESISTANCE', isAnimated: false }
     ],
     annotations: [
-      { candleIdx: 2, text: "HIGH (H)", position: "above", color: "#f7a600" },
-      { candleIdx: 5, text: "LOW (L)", position: "below", color: "#64748b" },
-      { candleIdx: 8, text: "HH: UMAR 40% WICK", position: "above", color: "#ff3b57", isAnimated: true },
-      { candleIdx: 11, text: "LL (BOS BREAK)", position: "below", color: "#ff3b57" },
-      { candleIdx: 15, text: "QMR RETEST ENTRY", position: "above", color: "#089981" }
+      { candleIdx: 1, text: "HIGH (H)", position: "above", color: "#f7a600" },
+      { candleIdx: 3, text: "LOW (L)", position: "below", color: "#64748b" },
+      { candleIdx: 5, text: "HH: UMAR 40% WICK", position: "above", color: "#ff3b57", isAnimated: true },
+      { candleIdx: 7, text: "LL (BOS BREAK)", position: "below", color: "#ff3b57" }
     ]
   })
 };
@@ -282,33 +283,30 @@ deepTopicsV4['topic-fvg-imbalance'] = {
   svgBlueprint: makeAnimatedTradingViewChart({
     symbol: "NIFTY 50 • 5m • FVG IMBALANCE",
     candles: walk(23180, [
-      { chg: 15, v: 2800 },
-      // Candle 1
-      { chg: 22, upWick: 8, dnWick: 3, v: 3900 },
-      // Candle 2: Giant Green Displacement Bar (Creates FVG)
-      { chg: 68, upWick: 5, dnWick: 2, v: 12500 },
-      // Candle 3: Continuation (Leaves gap with Candle 1)
-      { chg: 25, upWick: 15, dnWick: 4, v: 6800 },
-      { chg: 18, v: 5100 },
-      // Corrective Pullback to fill FVG at 50% C.E.
-      { chg: -25, v: 2800 }, { chg: -30, v: 2400 },
-      // Tap at 50% C.E. Reversal Bar
-      { chg: 12, upWick: 4, dnWick: 20, v: 8400 },
-      // Explosive Takeoff
-      { chg: 48, v: 9200 }, { chg: 42, v: 8800 }, { chg: 38, v: 8100 }
+      { chg: 15, v: 2800 }, // 0: 23195
+      { chg: 22, upWick: 8, dnWick: 3, v: 3900 }, // 1: High 23225 (FVG Bottom)
+      { chg: 68, upWick: 5, dnWick: 2, v: 12500 }, // 2: Giant Displacement Bar
+      { chg: 25, upWick: 10, dnWick: 4, v: 6800 }, // 3: High 23320, Low 23281 (FVG Top)
+      { chg: -15, v: 5100 }, // 4: 23295
+      { chg: -25, v: 2800 }, // 5: 23270
+      { chg: -18, v: 2400 }, // 6: 23252
+      { chg: -6, upWick: 4, dnWick: 12, v: 8400 }, // 7: EXACT ENTRY CANDLE! 50% C.E. Tap at 23,245
+      { chg: 45, upWick: 5, dnWick: 2, v: 9200 }, // 8: Departure
+      { chg: 48, upWick: 6, dnWick: 2, v: 8800 }, // 9: Thrust
+      { chg: 35, upWick: 15, dnWick: 2, v: 8100 }  // 10: Hits Target 1 (23,340)
     ]),
-    entryPrice: 23240,
+    entryCandleIdx: 7,
+    entryPrice: 23245,
     stopLossPrice: 23205,
-    target1Price: 23325,
-    target2Price: 23390,
+    target1Price: 23340,
+    target2Price: 23410,
     riskReward: "1:4.2",
     zones: [
-      { yTop: 23265, yBottom: 23215, color: '#38bdf8', label: 'FAIR VALUE GAP (50% CONSEQUENT ENCROACHMENT)', isAnimated: true }
+      { yTop: 23281, yBottom: 23225, color: '#38bdf8', label: 'FAIR VALUE GAP (50% CONSEQUENT ENCROACHMENT: 23,245)', isAnimated: true }
     ],
     annotations: [
       { candleIdx: 1, text: "CANDLE 1 HIGH", position: "above", color: "#f7a600" },
-      { candleIdx: 3, text: "CANDLE 3 LOW", position: "above", color: "#f7a600" },
-      { candleIdx: 7, text: "50% C.E. TAP FILL", position: "below", color: "#089981", isAnimated: true }
+      { candleIdx: 3, text: "CANDLE 3 LOW", position: "above", color: "#f7a600" }
     ]
   })
 };
@@ -377,33 +375,34 @@ deepTopicsV4['topic-ifvg-inversion'] = {
   },
   svgBlueprint: makeAnimatedTradingViewChart({
     symbol: "NIFTY 50 • 5m • DODGYSDD iFVG",
-    candles: walk(23320, [
-      // Prior Bullish Attempt
-      { chg: 25, v: 4200 }, { chg: 30, v: 4800 },
-      // Bullish FVG Box Created (23340 - 23370)
-      { chg: 45, v: 5500 }, { chg: 15, v: 4100 },
-      // Violent Inversion Candle (Giant Red Bar destroys the FVG!)
-      { chg: -75, upWick: 5, dnWick: 10, v: 13500 }, // INVERSION!
-      { chg: -40, v: 8900 }, { chg: -30, v: 7200 },
-      // Retest into the Inverted Grey Box (iFVG)
-      { chg: 25, v: 3100 }, { chg: 30, v: 2800 },
-      // Rejection at iFVG Line
-      { chg: -20, upWick: 28, dnWick: 5, v: 9200 },
-      // Downward Continuation Expansion
-      { chg: -50, v: 10200 }, { chg: -45, v: 9500 }, { chg: -40, v: 8800 }
+    candles: walk(23310, [
+      { chg: 20, v: 4200 }, // 0: 23330
+      { chg: 25, upWick: 5, dnWick: 3, v: 4800 }, // 1: High 23360
+      { chg: 40, upWick: 6, dnWick: 2, v: 5500 }, // 2: 23395 (FVG created)
+      { chg: 15, upWick: 8, dnWick: 4, v: 4100 }, // 3: 23410
+      // Violent Inversion Candle (breaks below 23,360)
+      { chg: -75, upWick: 4, dnWick: 6, v: 13500 }, // 4: 23335 (Inversion confirmed)
+      { chg: -35, v: 8900 }, // 5: 23300
+      { chg: -20, v: 7200 }, // 6: 23280 (Structure low 23274)
+      // Pullback into inverted FVG (23,340)
+      { chg: 35, v: 3100 }, // 7: 23315
+      { chg: 15, upWick: 15, dnWick: 3, v: 9200 }, // 8: EXACT ENTRY CANDLE! (Retest taps 23,340)
+      // Downward continuation hitting Target 1 (23,220)
+      { chg: -45, v: 10200 }, // 9: 23285
+      { chg: -50, v: 9500 }, // 10: 23235
+      { chg: -35, upWick: 4, dnWick: 12, v: 8800 } // 11: Hits Target 1 (23,220)
     ]),
+    entryCandleIdx: 8,
     entryPrice: 23340,
     stopLossPrice: 23385,
-    target1Price: 23245,
-    target2Price: 23160,
+    target1Price: 23220,
+    target2Price: 23150,
     riskReward: "1:4.0",
     zones: [
-      { yTop: 23370, yBottom: 23335, color: '#94a3b8', label: 'DODGYSDD INVERSION FVG (GREY DASHED iFVG BOX)', isAnimated: true }
+      { yTop: 23365, yBottom: 23335, color: '#94a3b8', label: 'DODGYSDD INVERSION FVG (GREY DASHED iFVG RETEST)', isAnimated: true }
     ],
     annotations: [
-      { candleIdx: 4, text: "VIOLENT INVERSION BREAK", position: "above", color: "#ff3b57" },
-      { candleIdx: 8, text: "iFVG RETEST REJECTION", position: "above", color: "#f7a600", isAnimated: true },
-      { candleIdx: 9, text: "PE PUT ENTRY", position: "below", color: "#089981" }
+      { candleIdx: 4, text: "VIOLENT INVERSION BREAK", position: "above", color: "#ff3b57" }
     ]
   })
 };
@@ -481,29 +480,31 @@ deepTopicsV4['topic-amt-pdh-pdl'] = {
   svgBlueprint: makeAnimatedTradingViewChart({
     symbol: "NIFTY 50 • 5m • PDH LIQUIDITY SWEEP",
     candles: walk(23260, [
-      { chg: 30, v: 4100 }, { chg: 35, v: 4800 }, { chg: 40, v: 5200 },
-      // Approach to PDH (23380)
-      { chg: 25, v: 5800 },
-      // Sweep Wick above PDH (Wicks to 23410, closes at 23370!)
-      { chg: -15, upWick: 35, dnWick: 4, v: 12800 }, // SWEEP!
-      // Red Reclaim Bar (Closes back below PDH)
-      { chg: -45, upWick: 3, dnWick: 8, v: 10500 },
-      // Markdown toward PDM and PDL
-      { chg: -40, v: 8900 }, { chg: -35, v: 7900 }, { chg: -42, v: 8400 },
-      { chg: 15, v: 3200 }, { chg: -38, v: 7600 }, { chg: -45, v: 8200 }
+      { chg: 30, v: 4100 }, // 0: 23290
+      { chg: 35, v: 4800 }, // 1: 23325
+      { chg: 30, v: 5200 }, // 2: 23355
+      { chg: 20, v: 5800 }, // 3: 23375
+      // Candle 4: PDH Sweep Wick (sweeps to 23,415, closes 23,370)
+      { chg: -5, upWick: 45, dnWick: 3, v: 12800 }, // 4: High 23415
+      // Candle 5: EXACT ENTRY CANDLE - Reclaim Confirmation (closes below PDH at 23,345)
+      { chg: -25, upWick: 4, dnWick: 8, v: 10500 }, // 5: O: 23370, C: 23345, touches 23355
+      // Markdown
+      { chg: -45, v: 8900 }, // 6: 23300
+      { chg: -40, v: 7900 }, // 7: 23260
+      { chg: -50, upWick: 5, dnWick: 15, v: 9200 }, // 8: Low 23195 (Hits Target 1: 23220)
+      { chg: -35, v: 7600 } // 9
     ]),
-    entryPrice: 23365,
-    stopLossPrice: 23415,
-    target1Price: 23270,
-    target2Price: 23180,
+    entryCandleIdx: 5,
+    entryPrice: 23355,
+    stopLossPrice: 23420,
+    target1Price: 23220,
+    target2Price: 23150,
     riskReward: "1:4.0",
     zones: [
       { yTop: 23385, yBottom: 23375, color: '#ff3b57', label: 'PREVIOUS DAY HIGH (PDH EXTERNAL LIQUIDITY)', isAnimated: true }
     ],
     annotations: [
-      { candleIdx: 4, text: "PDH STOP HUNT WICK", position: "above", color: "#ff3b57", isAnimated: true },
-      { candleIdx: 5, text: "5M RECLAIM CLOSE (ENTRY)", position: "below", color: "#089981" },
-      { candleIdx: 8, text: "PDM MIDPOINT TARGET 1", position: "below", color: "#38bdf8" }
+      { candleIdx: 4, text: "PDH STOP HUNT WICK", position: "above", color: "#ff3b57", isAnimated: true }
     ]
   })
 };
@@ -577,21 +578,22 @@ deepTopicsV4['topic-amt-value-areas'] = {
   svgBlueprint: makeAnimatedTradingViewChart({
     symbol: "NIFTY 50 • 5m • ATLAS AMT PLAYBOOK",
     candles: walk(23220, [
-      { chg: 30, v: 4200 }, { chg: 35, v: 4900 },
-      // Spike to pVAH (23310)
-      { chg: 35, upWick: 25, dnWick: 3, v: 9800 },
-      // Rejection down back into Value Area
-      { chg: -45, v: 8500 }, { chg: -30, v: 6200 },
-      // Reaching pPOC (23250)
-      { chg: -25, v: 7100 },
-      // Continuing down to pVAL (23190)
-      { chg: -30, v: 6800 }, { chg: -25, v: 6400 },
-      { chg: 10, v: 3100 }, { chg: 15, v: 3500 }
+      { chg: 30, v: 4200 }, // 0: 23250
+      { chg: 35, v: 4900 }, // 1: 23285
+      // Candle 2: Spike to pVAH (23,310) with rejection wick to 23,335
+      { chg: 10, upWick: 40, dnWick: 4, v: 9800 }, // 2: High 23335, C: 23295
+      // Candle 3: EXACT ENTRY CANDLE - Rejection down into Value Area
+      { chg: -20, upWick: 10, dnWick: 5, v: 8500 }, // 3: H: 23305, touches 23285
+      { chg: -30, v: 6200 }, // 4: 23245
+      { chg: -30, v: 7100 }, // 5: 23215
+      { chg: -25, upWick: 4, dnWick: 18, v: 8400 }, // 6: Hits Target 1 (23,210)
+      { chg: -20, v: 6400 } // 7
     ]),
-    entryPrice: 23295,
-    stopLossPrice: 23340,
-    target1Price: 23245,
-    target2Price: 23185,
+    entryCandleIdx: 3,
+    entryPrice: 23285,
+    stopLossPrice: 23345,
+    target1Price: 23210,
+    target2Price: 23150,
     riskReward: "1:3.5",
     zones: [
       { yTop: 23315, yBottom: 23305, color: '#ef4444', label: 'pVAH (VALUE AREA HIGH PREMIUM CEILING)', isAnimated: true },
@@ -599,9 +601,7 @@ deepTopicsV4['topic-amt-value-areas'] = {
       { yTop: 23195, yBottom: 23185, color: '#3b82f6', label: 'pVAL (VALUE AREA LOW DISCOUNT FLOOR)' }
     ],
     annotations: [
-      { candleIdx: 2, text: "pVAH REJECTION WICK", position: "above", color: "#ef4444", isAnimated: true },
-      { candleIdx: 5, text: "TARGET 1: pPOC TAPPED", position: "below", color: "#eab308" },
-      { candleIdx: 7, text: "TARGET 2: pVAL REACHED", position: "below", color: "#3b82f6" }
+      { candleIdx: 2, text: "pVAH REJECTION WICK", position: "above", color: "#ef4444", isAnimated: true }
     ]
   })
 };
@@ -670,29 +670,31 @@ deepTopicsV4['topic-judas-swing'] = {
   },
   svgBlueprint: makeAnimatedTradingViewChart({
     symbol: "NIFTY 50 • 5m • 9:15 AM JUDAS SWING",
-    candles: walk(23200, [
-      // 9:15 AM - 9:30 AM Judas Fakeout Drive Up
-      { chg: 35, v: 8500 }, { chg: 45, v: 9800 },
-      // Sweep of Pre-Market High (23310)
-      { chg: -10, upWick: 35, dnWick: 5, v: 14200 }, // JUDAS TRAP WICK!
-      // 9:35 AM Collapse
-      { chg: -55, v: 12100 }, { chg: -45, v: 10500 },
-      // True Day Trend Markdown (9:45 AM - 11:00 AM)
-      { chg: -40, v: 9200 }, { chg: -35, v: 8400 }, { chg: -45, v: 9100 },
-      { chg: 10, v: 3100 }, { chg: -50, v: 9800 }
+    candles: walk(23210, [
+      { chg: 35, v: 8500 }, // 0: 23245
+      { chg: 45, v: 9800 }, // 1: 23290
+      // Candle 2: Sweep of Pre-Market High (High 23,325, Close 23,285)
+      { chg: -5, upWick: 40, dnWick: 4, v: 14200 }, // 2: Judas Trap Wick!
+      // Candle 3: Trap Confirmed (Displacement red candle)
+      { chg: -45, upWick: 4, dnWick: 6, v: 12100 }, // 3: 23240
+      // Candle 4: EXACT ENTRY CANDLE (Retest bounce fails at 23,250)
+      { chg: -15, upWick: 18, dnWick: 4, v: 9500 }, // 4: O: 23240, H: 23258, touches 23250
+      // Markdown hitting Target 1 (23,140)
+      { chg: -45, v: 9200 }, // 5: 23180
+      { chg: -45, upWick: 5, dnWick: 12, v: 9100 }, // 6: Hits Target 1 (23,140)
+      { chg: -30, v: 8100 } // 7
     ]),
-    entryPrice: 23265,
-    stopLossPrice: 23320,
-    target1Price: 23175,
-    target2Price: 23085,
+    entryCandleIdx: 4,
+    entryPrice: 23250,
+    stopLossPrice: 23325,
+    target1Price: 23140,
+    target2Price: 23060,
     riskReward: "1:4.0",
     zones: [
       { yTop: 23315, yBottom: 23305, color: '#ff3b57', label: 'PRE-MARKET HIGH (JUDAS SWING STOP HUNT)', isAnimated: true }
     ],
     annotations: [
-      { candleIdx: 2, text: "9:25 AM JUDAS FAKEOUT", position: "above", color: "#ff3b57", isAnimated: true },
-      { candleIdx: 3, text: "9:35 AM TRAP CONFIRMED", position: "below", color: "#f7a600" },
-      { candleIdx: 4, text: "TRUE TREND SHORT ENTRY", position: "below", color: "#089981" }
+      { candleIdx: 2, text: "9:25 AM JUDAS FAKEOUT", position: "above", color: "#ff3b57", isAnimated: true }
     ]
   })
 };

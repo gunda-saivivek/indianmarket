@@ -1,13 +1,20 @@
 /**
- * PHOTOREALISTIC ANIMATED TRADINGVIEW CANDLESTICK CHART ENGINE - V5 (ZERO OVERLAP EDITION)
- * Designed for Multimillionaire Quant Trading Terminal Standards.
- * Perfectly spaced SVG layout with zero collision, crisp labels, and animated candle replays.
+ * PHOTOREALISTIC TRADINGVIEW CANDLESTICK CHART ENGINE - V6
+ * "EXACT CANDLE ENTRY & CHRONOLOGICAL EXECUTION REALISM"
+ * 
+ * Rules:
+ * 1. Trade position tool (Green/Red box) begins STRICTLY at entryCandleIdx.
+ * 2. Pre-entry candles (left of entryCandleIdx) CANNOT touch or exceed target1Price.
+ * 3. Exact Entry Candle is visually tagged with a glowing directional pointer & exact execution price.
+ * 4. Post-entry candles expand to hit Target 1, tagged with a "TARGET 1 REACHED" milestone.
+ * 5. Animated replay replays the trade execution unfolding in real time.
  */
 
 function makeAnimatedTradingViewChart({
   id = "chart",
   symbol = "NIFTY 50 • 5m • NSE",
   candles = [],
+  entryCandleIdx,   // REQUIRED: Exact candle index where trade is entered
   entryPrice,
   stopLossPrice,
   target1Price,
@@ -23,7 +30,7 @@ function makeAnimatedTradingViewChart({
   const height = 500;
   const chartLeft = 55;
   const chartRight = 825;
-  const chartTop = 52;
+  const chartTop = 54;
   const chartBottom = 385;
   const volBottom = 445;
   const volHeight = 50;
@@ -38,8 +45,8 @@ function makeAnimatedTradingViewChart({
   let rawMin = Math.min(...allPrices);
   let rawMax = Math.max(...allPrices);
   const range = rawMax - rawMin || 100;
-  const minPrice = rawMin - range * 0.10;
-  const maxPrice = rawMax + range * 0.10;
+  const minPrice = rawMin - range * 0.12;
+  const maxPrice = rawMax + range * 0.12;
 
   function getY(price) {
     return chartTop + ((maxPrice - price) / (maxPrice - minPrice)) * (chartBottom - chartTop);
@@ -54,6 +61,25 @@ function makeAnimatedTradingViewChart({
   }
 
   const maxVol = Math.max(...candles.map(c => c.v || 1000));
+
+  // Determine exact entry candle index
+  const safeEntryIdx = (typeof entryCandleIdx === 'number' && entryCandleIdx >= 0 && entryCandleIdx < numCandles)
+    ? entryCandleIdx
+    : Math.max(0, Math.floor(numCandles * 0.60));
+
+  const isLong = (target1Price && entryPrice) ? (target1Price > entryPrice) : true;
+
+  // Strict Chronological Validation: Pre-entry candles must NOT touch target1Price!
+  if (target1Price && entryPrice) {
+    for (let i = 0; i < safeEntryIdx; i++) {
+      const c = candles[i];
+      if (isLong && c.h >= target1Price) {
+        console.error(`[CHRONOLOGY WARNING] ${symbol}: Candle ${i} high (${c.h}) reached Target 1 (${target1Price}) BEFORE entry candle ${safeEntryIdx}!`);
+      } else if (!isLong && c.l <= target1Price) {
+        console.error(`[CHRONOLOGY WARNING] ${symbol}: Candle ${i} low (${c.l}) reached Target 1 (${target1Price}) BEFORE entry candle ${safeEntryIdx}!`);
+      }
+    }
+  }
 
   // Step for price axis
   const step = Math.round(range / 6 / 10) * 10 || 20;
@@ -76,8 +102,8 @@ function makeAnimatedTradingViewChart({
   let cumPv = 0;
   let cumV = 0;
 
-  // The last 4 candles animate as the live replay
-  const replayThreshold = Math.max(0, candles.length - 4);
+  // Replay animation: animates post-entry candles moving into target
+  const replayStart = Math.min(safeEntryIdx, numCandles - 4);
 
   candles.forEach((c, i) => {
     const x = getX(i);
@@ -87,12 +113,15 @@ function makeAnimatedTradingViewChart({
     const yL = getY(c.l);
     const isBull = c.c >= c.o;
     const color = isBull ? '#089981' : '#f23645';
-    const isReplay = i >= replayThreshold;
-    const animClass = isReplay ? `anim-replay-${i - replayThreshold}` : '';
+    
+    // Only animate candles from entry forward
+    const isReplay = i >= replayStart;
+    const replayDelay = (i - replayStart) * 0.35;
+    const animStyle = isReplay ? `animation: replayLoop 5s infinite ease-out; animation-delay: ${replayDelay.toFixed(2)}s;` : '';
 
     // Candle Group
     candlesSvg += `
-      <g class="${animClass}">
+      <g style="${animStyle}">
         <!-- Wick -->
         <line x1="${x.toFixed(1)}" y1="${yH.toFixed(1)}" x2="${x.toFixed(1)}" y2="${yL.toFixed(1)}" stroke="${color}" stroke-width="1.3"/>
         <!-- Real Body -->
@@ -102,7 +131,7 @@ function makeAnimatedTradingViewChart({
 
     // Volume Bar
     const vH = ((c.v || 1000) / maxVol) * volHeight;
-    volSvg += `<rect class="${animClass}" x="${(x - candleWidth / 2).toFixed(1)}" y="${(volBottom - vH).toFixed(1)}" width="${candleWidth.toFixed(1)}" height="${vH.toFixed(1)}" fill="${color}" fill-opacity="0.45"/>\n`;
+    volSvg += `<rect style="${animStyle}" x="${(x - candleWidth / 2).toFixed(1)}" y="${(volBottom - vH).toFixed(1)}" width="${candleWidth.toFixed(1)}" height="${vH.toFixed(1)}" fill="${color}" fill-opacity="0.45"/>\n`;
 
     // VWAP
     const typical = (c.h + c.l + c.c) / 3;
@@ -112,23 +141,20 @@ function makeAnimatedTradingViewChart({
     vwapPoints.push(`${x.toFixed(1)},${getY(vwapVal).toFixed(1)}`);
   });
 
-  // Clean Zero-Collision Zones
+  // Zones
   let zonesSvg = '';
-  zones.forEach((z, zIdx) => {
+  zones.forEach((z) => {
     const yTop = getY(Math.max(z.yTop, z.yBottom));
     const yBot = getY(Math.min(z.yTop, z.yBottom));
     const h = Math.max(12, Math.abs(yBot - yTop));
     const isAnim = z.isAnimated ? 'anim-zone-pulse' : '';
-    const badgeW = Math.min(260, z.label.length * 6.6 + 18);
+    const badgeW = Math.min(270, z.label.length * 6.5 + 18);
     
     zonesSvg += `
-      <!-- Zone Background Shading -->
-      <rect class="${isAnim}" x="${chartLeft}" y="${yTop.toFixed(1)}" width="${chartRight - chartLeft}" height="${h.toFixed(1)}" fill="${z.color}" fill-opacity="0.13" stroke="${z.color}" stroke-width="1.2" stroke-dasharray="3"/>
-      
-      <!-- Protected Non-Overlapping Zone Badge -->
+      <rect class="${isAnim}" x="${chartLeft}" y="${yTop.toFixed(1)}" width="${chartRight - chartLeft}" height="${h.toFixed(1)}" fill="${z.color}" fill-opacity="0.12" stroke="${z.color}" stroke-width="1.2" stroke-dasharray="3"/>
       <g class="${isAnim}">
         <rect x="${chartLeft + 8}" y="${(yTop + 2).toFixed(1)}" width="${badgeW}" height="17" rx="3.5" fill="#131722" stroke="${z.color}" stroke-width="0.9"/>
-        <text x="${chartLeft + 16}" y="${(yTop + 14).toFixed(1)}" fill="${z.color}" font-size="9" font-family="monospace" font-weight="bold">${z.label}</text>
+        <text x="${chartLeft + 16}" y="${(yTop + 14).toFixed(1)}" fill="${z.color}" font-size="8.5" font-family="monospace" font-weight="bold">${z.label}</text>
       </g>
     `;
   });
@@ -138,7 +164,6 @@ function makeAnimatedTradingViewChart({
   if (showVwap && vwapPoints.length > 1) {
     vwapSvg = `
       <polyline points="${vwapPoints.join(' ')}" fill="none" stroke="#f7a600" stroke-width="1.8" stroke-dasharray="4"/>
-      <!-- Dedicated VWAP Badge in Top Right of Canvas -->
       <g>
         <rect x="${chartRight - 130}" y="56" width="120" height="18" rx="3" fill="#131722" stroke="#f7a600" stroke-width="0.8"/>
         <text x="${chartRight - 70}" y="69" fill="#f7a600" font-size="9" font-family="monospace" font-weight="bold" text-anchor="middle">VWAP BENCHMARK</text>
@@ -146,25 +171,28 @@ function makeAnimatedTradingViewChart({
     `;
   }
 
-  // TradingView Long / Short Position Box Tool (Protected Layout)
+  // TRADINGVIEW POSITION TOOL BOX (STRICTLY FROM ENTRY CANDLE FORWARD)
   let positionBoxSvg = '';
+  let exactEntryMarkerSvg = '';
+  let targetHitMarkerSvg = '';
+
   if (entryPrice && stopLossPrice && target1Price) {
-    const entryIdx = Math.floor(candles.length * 0.48);
-    const boxX = getX(entryIdx);
-    const boxW = Math.max(180, (chartRight - boxX) - 10);
+    // Exact starting point of the tool is the entry candle!
+    const boxX = getX(safeEntryIdx) - (candleWidth * 0.5);
+    const boxW = Math.max(160, (chartRight - boxX) - 5);
     const yEntry = getY(entryPrice);
     const ySL = getY(stopLossPrice);
     const yTgt = getY(target1Price);
-    const isLong = target1Price > entryPrice;
 
     if (isLong) {
-      positionBoxSvg += `
+      // Long Tool: Green Box on Top (Target), Red Box on Bottom (Stop)
+      positionBoxSvg = `
         <g class="anim-position-tool">
           <!-- Green Target Box -->
           <rect x="${boxX.toFixed(1)}" y="${yTgt.toFixed(1)}" width="${boxW.toFixed(1)}" height="${(yEntry - yTgt).toFixed(1)}" fill="#089981" fill-opacity="0.18" stroke="#089981" stroke-width="1.3"/>
           <g>
-            <rect x="${(boxX + 8).toFixed(1)}" y="${(yTgt + 6).toFixed(1)}" width="190" height="20" rx="3.5" fill="#131722" stroke="#089981" stroke-width="0.9"/>
-            <text x="${(boxX + 16).toFixed(1)}" y="${(yTgt + 20).toFixed(1)}" fill="#089981" font-size="9.5" font-family="monospace" font-weight="bold">TARGET 1: +${(target1Price - entryPrice).toFixed(1)} (${riskReward})</text>
+            <rect x="${(boxX + 8).toFixed(1)}" y="${(yTgt + 6).toFixed(1)}" width="195" height="20" rx="3.5" fill="#131722" stroke="#089981" stroke-width="0.9"/>
+            <text x="${(boxX + 16).toFixed(1)}" y="${(yTgt + 20).toFixed(1)}" fill="#089981" font-size="9.5" font-family="monospace" font-weight="bold">TARGET 1: +${(target1Price - entryPrice).toFixed(1)} pts (${riskReward})</text>
           </g>
 
           <!-- Red Stop Box -->
@@ -175,14 +203,47 @@ function makeAnimatedTradingViewChart({
           </g>
         </g>
       `;
+
+      // Directional pointer to Exact Entry Candle
+      const entryCandleX = getX(safeEntryIdx);
+      const entryCandle = candles[safeEntryIdx];
+      const yLow = entryCandle ? getY(entryCandle.l) : yEntry;
+      const entryTagY = Math.min(chartBottom - 26, yLow + 30);
+
+      exactEntryMarkerSvg = `
+        <g class="anim-badge-glow">
+          <!-- Reticle pointer line -->
+          <line x1="${entryCandleX.toFixed(1)}" y1="${(yLow + 4).toFixed(1)}" x2="${entryCandleX.toFixed(1)}" y2="${entryTagY.toFixed(1)}" stroke="#089981" stroke-width="2"/>
+          <polygon points="${entryCandleX.toFixed(1)},${(yLow + 3).toFixed(1)} ${(entryCandleX - 5).toFixed(1)},${(yLow + 12).toFixed(1)} ${(entryCandleX + 5).toFixed(1)},${(yLow + 12).toFixed(1)}" fill="#089981"/>
+          
+          <!-- Exact Entry Tag -->
+          <rect x="${(entryCandleX - 90).toFixed(1)}" y="${entryTagY.toFixed(1)}" width="180" height="22" rx="4" fill="#089981" stroke="#ffffff" stroke-width="1.2"/>
+          <text x="${entryCandleX.toFixed(1)}" y="${(entryTagY + 15).toFixed(1)}" fill="#000000" font-size="9.5" font-family="monospace" font-weight="900" text-anchor="middle">🎯 EXACT ENTRY CANDLE (${entryPrice.toFixed(1)})</text>
+        </g>
+      `;
+
+      // Find candle that hits Target 1 after entry
+      const tgtCandleIdx = candles.findIndex((c, idx) => idx > safeEntryIdx && c.h >= target1Price);
+      if (tgtCandleIdx > safeEntryIdx) {
+        const tgtX = getX(tgtCandleIdx);
+        const tgtTagY = Math.max(chartTop + 6, yTgt - 28);
+        targetHitMarkerSvg = `
+          <g>
+            <circle cx="${tgtX.toFixed(1)}" cy="${yTgt.toFixed(1)}" r="5" fill="#00f59b"/>
+            <rect x="${(tgtX - 70).toFixed(1)}" y="${tgtTagY.toFixed(1)}" width="140" height="20" rx="4" fill="#00f59b" stroke="#000000" stroke-width="1"/>
+            <text x="${tgtX.toFixed(1)}" y="${(tgtTagY + 14).toFixed(1)}" fill="#000000" font-size="9" font-family="monospace" font-weight="bold" text-anchor="middle">🏆 TARGET 1 HIT (+${(target1Price - entryPrice).toFixed(1)})</text>
+          </g>
+        `;
+      }
     } else {
-      positionBoxSvg += `
+      // Short Tool: Red Box on Top (Stop), Green Box on Bottom (Target)
+      positionBoxSvg = `
         <g class="anim-position-tool">
           <!-- Green Target Box Below -->
           <rect x="${boxX.toFixed(1)}" y="${yEntry.toFixed(1)}" width="${boxW.toFixed(1)}" height="${(yTgt - yEntry).toFixed(1)}" fill="#089981" fill-opacity="0.18" stroke="#089981" stroke-width="1.3"/>
           <g>
-            <rect x="${(boxX + 8).toFixed(1)}" y="${(yTgt - 25).toFixed(1)}" width="190" height="20" rx="3.5" fill="#131722" stroke="#089981" stroke-width="0.9"/>
-            <text x="${(boxX + 16).toFixed(1)}" y="${(yTgt - 11).toFixed(1)}" fill="#089981" font-size="9.5" font-family="monospace" font-weight="bold">TARGET 1: +${(entryPrice - target1Price).toFixed(1)} (${riskReward})</text>
+            <rect x="${(boxX + 8).toFixed(1)}" y="${(yTgt - 25).toFixed(1)}" width="195" height="20" rx="3.5" fill="#131722" stroke="#089981" stroke-width="0.9"/>
+            <text x="${(boxX + 16).toFixed(1)}" y="${(yTgt - 11).toFixed(1)}" fill="#089981" font-size="9.5" font-family="monospace" font-weight="bold">TARGET 1: +${(entryPrice - target1Price).toFixed(1)} pts (${riskReward})</text>
           </g>
 
           <!-- Red Stop Box Above -->
@@ -193,6 +254,38 @@ function makeAnimatedTradingViewChart({
           </g>
         </g>
       `;
+
+      // Directional pointer to Exact Entry Candle
+      const entryCandleX = getX(safeEntryIdx);
+      const entryCandle = candles[safeEntryIdx];
+      const yHigh = entryCandle ? getY(entryCandle.h) : yEntry;
+      const entryTagY = Math.max(chartTop + 4, yHigh - 50);
+
+      exactEntryMarkerSvg = `
+        <g class="anim-badge-glow">
+          <!-- Reticle pointer line -->
+          <line x1="${entryCandleX.toFixed(1)}" y1="${(yHigh - 4).toFixed(1)}" x2="${entryCandleX.toFixed(1)}" y2="${(entryTagY + 22).toFixed(1)}" stroke="#f23645" stroke-width="2"/>
+          <polygon points="${entryCandleX.toFixed(1)},${(yHigh - 3).toFixed(1)} ${(entryCandleX - 5).toFixed(1)},${(yHigh - 12).toFixed(1)} ${(entryCandleX + 5).toFixed(1)},${(yHigh - 12).toFixed(1)}" fill="#f23645"/>
+          
+          <!-- Exact Entry Tag -->
+          <rect x="${(entryCandleX - 90).toFixed(1)}" y="${entryTagY.toFixed(1)}" width="180" height="22" rx="4" fill="#f23645" stroke="#ffffff" stroke-width="1.2"/>
+          <text x="${entryCandleX.toFixed(1)}" y="${(entryTagY + 15).toFixed(1)}" fill="#ffffff" font-size="9.5" font-family="monospace" font-weight="900" text-anchor="middle">🎯 EXACT ENTRY CANDLE (${entryPrice.toFixed(1)})</text>
+        </g>
+      `;
+
+      // Find candle that hits Target 1 after entry
+      const tgtCandleIdx = candles.findIndex((c, idx) => idx > safeEntryIdx && c.l <= target1Price);
+      if (tgtCandleIdx > safeEntryIdx) {
+        const tgtX = getX(tgtCandleIdx);
+        const tgtTagY = Math.min(chartBottom - 26, yTgt + 12);
+        targetHitMarkerSvg = `
+          <g>
+            <circle cx="${tgtX.toFixed(1)}" cy="${yTgt.toFixed(1)}" r="5" fill="#00f59b"/>
+            <rect x="${(tgtX - 70).toFixed(1)}" y="${tgtTagY.toFixed(1)}" width="140" height="20" rx="4" fill="#00f59b" stroke="#000000" stroke-width="1"/>
+            <text x="${tgtX.toFixed(1)}" y="${(tgtTagY + 14).toFixed(1)}" fill="#000000" font-size="9" font-family="monospace" font-weight="bold" text-anchor="middle">🏆 TARGET 1 HIT (+${(entryPrice - target1Price).toFixed(1)})</text>
+          </g>
+        `;
+      }
     }
   }
 
@@ -231,9 +324,12 @@ function makeAnimatedTradingViewChart({
     `;
   }
 
-  // Non-Colliding Smart Annotations
+  // Non-Colliding Setup Annotations
   let annotationsSvg = '';
-  annotations.forEach((a, aIdx) => {
+  annotations.forEach((a) => {
+    // Skip if annotation is on entry candle (exactEntryMarkerSvg already tags it)
+    if (a.candleIdx === safeEntryIdx && (a.text.includes('ENTRY') || a.text.includes('RETEST'))) return;
+
     const c = candles[a.candleIdx];
     if (!c) return;
     const x = getX(a.candleIdx);
@@ -268,7 +364,7 @@ function makeAnimatedTradingViewChart({
         95%, 100% { opacity: 1; }
       }
       @keyframes pulseTool {
-        0%, 100% { filter: drop-shadow(0 0 2px #089981); opacity: 0.88; }
+        0%, 100% { filter: drop-shadow(0 0 2px #089981); opacity: 0.90; }
         50% { filter: drop-shadow(0 0 8px #089981); opacity: 1; }
       }
       @keyframes zonePulse {
@@ -281,12 +377,8 @@ function makeAnimatedTradingViewChart({
       }
       @keyframes badgeGlow {
         0%, 100% { filter: drop-shadow(0 0 2px #f7a600); }
-        50% { filter: drop-shadow(0 0 6px #f7a600); }
+        50% { filter: drop-shadow(0 0 8px #f7a600); }
       }
-      .anim-replay-0 { animation: replayLoop 5s infinite ease-out; animation-delay: 0.4s; }
-      .anim-replay-1 { animation: replayLoop 5s infinite ease-out; animation-delay: 0.8s; }
-      .anim-replay-2 { animation: replayLoop 5s infinite ease-out; animation-delay: 1.2s; }
-      .anim-replay-3 { animation: replayLoop 5s infinite ease-out; animation-delay: 1.6s; }
       .anim-position-tool { animation: pulseTool 3s infinite ease-in-out; }
       .anim-zone-pulse { animation: zonePulse 2.5s infinite ease-in-out; }
       .anim-live-blink { animation: blinkCursor 1.2s infinite; }
@@ -294,7 +386,7 @@ function makeAnimatedTradingViewChart({
     </style>
   </defs>
 
-  <!-- Top Header Navigation Bar (Multi-Millionaire Clean Spacing) -->
+  <!-- Top Header Navigation Bar -->
   <rect x="0" y="0" width="${width}" height="42" fill="#171b26"/>
   <line x1="0" y1="42" x2="${width}" y2="42" stroke="#2a2e39" stroke-width="1"/>
   
@@ -304,7 +396,7 @@ function makeAnimatedTradingViewChart({
     <text x="24" y="25" fill="#ffffff" font-size="11.5" font-weight="bold">${symbol}</text>
   </g>
 
-  <!-- Center: Dedicated Live Candlestick Replay Pill (Zero Collision) -->
+  <!-- Center: Dedicated Live Candlestick Replay Pill -->
   <g transform="translate(325, 8)">
     <rect x="0" y="0" width="220" height="26" rx="13" fill="#091814" stroke="#089981" stroke-width="1"/>
     <circle cx="16" cy="13" r="4.5" fill="#089981" class="anim-live-blink"/>
@@ -335,7 +427,7 @@ function makeAnimatedTradingViewChart({
   <text x="${chartLeft}" y="${chartBottom + 16}" fill="#787b86" font-size="9" font-family="monospace">VOLUME</text>
   ${volSvg}
 
-  <!-- TradingView Long/Short Position Tool Box -->
+  <!-- TradingView Long/Short Position Tool Box (Begins Strictly at Entry Candle) -->
   ${positionBoxSvg}
 
   <!-- VWAP Indicator -->
@@ -347,8 +439,14 @@ function makeAnimatedTradingViewChart({
   <!-- Target & Stop Loss Levels -->
   ${levelsSvg}
 
-  <!-- Annotations & Callout Badges -->
+  <!-- Setup Annotations & Callouts -->
   ${annotationsSvg}
+
+  <!-- Exact Entry Candle Directional Pointer Badge -->
+  ${exactEntryMarkerSvg}
+
+  <!-- Post-Entry Target Reached Milestone -->
+  ${targetHitMarkerSvg}
 
   <!-- Bottom Time Axis -->
   <line x1="0" y1="${height - 24}" x2="${width}" y2="${height - 24}" stroke="#2a2e39" stroke-width="1"/>
