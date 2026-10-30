@@ -21,8 +21,29 @@ let state = {
 // Initial startup
 document.addEventListener('DOMContentLoaded', () => {
   if (window.lucide) lucide.createIcons();
+  initWorkstationCharts();
+  switchTab('executive');
   checkAuthStatus();
 });
+
+function initWorkstationCharts() {
+  const execBull = document.getElementById('execBullChartContainer');
+  if (execBull && window.BULL_CHART_SVG) {
+    execBull.innerHTML = window.BULL_CHART_SVG;
+  }
+  const execBear = document.getElementById('execBearChartContainer');
+  if (execBear && window.BEAR_CHART_SVG) {
+    execBear.innerHTML = window.BEAR_CHART_SVG;
+  }
+  const bullDesk = document.getElementById('bullDeskChartWrapper');
+  if (bullDesk && window.BULL_CHART_SVG) {
+    bullDesk.innerHTML = window.BULL_CHART_SVG;
+  }
+  const bearDesk = document.getElementById('bearDeskChartWrapper');
+  if (bearDesk && window.BEAR_CHART_SVG) {
+    bearDesk.innerHTML = window.BEAR_CHART_SVG;
+  }
+}
 
 // ==========================================
 // AUTHENTICATION & ACCESS CONTROL

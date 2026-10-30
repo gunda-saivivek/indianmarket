@@ -315,206 +315,6 @@
       </div>
     </div>
 
-    <!-- METRICS & CONTROL BAR -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      
-      <!-- ATM Strike Info -->
-      <div class="bg-tradeCard p-4 rounded-xl border border-tradeBorder shadow-sm relative overflow-hidden">
-        <div class="text-xs text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-          <span>ATM Strike Level</span>
-          <i data-lucide="crosshair" class="w-4 h-4 text-accentGold"></i>
-        </div>
-        <div class="text-2xl font-mono font-bold text-accentGold" id="atmStrike">--</div>
-        <div class="text-xs text-gray-400 mt-1" id="atmStraddle">Straddle Premium: ₹--</div>
-      </div>
-
-      <!-- Expiry Date Selector -->
-      <div class="bg-tradeCard p-4 rounded-xl border border-tradeBorder shadow-sm">
-        <div class="text-xs text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-          <span>Active Expiry</span>
-          <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
-        </div>
-        <select id="expirySelect" onchange="onExpiryChange()" class="w-full bg-tradeDark border border-tradeBorder text-white text-sm font-mono rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-bullGreen">
-          <option value="current">Current Week (Hero-Zero)</option>
-          <option value="next">Next Week Expiry</option>
-        </select>
-        <div class="text-xs text-gray-500 mt-1.5" id="expiryDateLabel">Target Expiry: --</div>
-      </div>
-
-      <!-- Market Sentiment / PCR -->
-      <div class="bg-tradeCard p-4 rounded-xl border border-tradeBorder shadow-sm">
-        <div class="text-xs text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-          <span>Market Bias / PCR</span>
-          <i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-2xl font-mono font-bold" id="pcrValue">--</span>
-          <span class="text-xs px-2 py-0.5 rounded font-semibold uppercase" id="pcrBadge">NEUTRAL</span>
-        </div>
-        <div class="text-xs text-gray-400 mt-1" id="pcrSub">OI Ratio: Equal balance</div>
-      </div>
-
-      <!-- Strategy Info Quick Link -->
-      <div class="bg-tradeCard p-4 rounded-xl border border-tradeBorder shadow-sm">
-        <div class="text-xs text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-          <span>Lot Size & Execution</span>
-          <i data-lucide="shield-check" class="w-4 h-4 text-bullGreen"></i>
-        </div>
-        <div class="text-2xl font-mono font-bold text-white" id="lotSizeDisplay">65 Qty/Lot</div>
-        <div class="text-xs text-bullGreen mt-1 flex items-center gap-1">
-          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Click any strike for why-to-buy reason
-        </div>
-      </div>
-
-    </div>
-
-    <!-- 🎯 LIVE STRATEGY: WHAT TO BUY NOW SECTION -->
-    <div id="liveStrategySection" class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-accentGold/60 rounded-2xl p-5 shadow-2xl relative overflow-hidden space-y-4">
-      <div class="absolute -right-12 -top-12 w-48 h-48 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
-
-      <!-- Strategy Header -->
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-tradeBorder/80 pb-3">
-        <div class="flex items-center gap-2.5">
-          <span class="flex h-3 w-3 relative">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accentGold opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-accentGold"></span>
-          </span>
-          <h2 class="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
-            WHAT TO BUY NOW <span class="text-xs font-normal text-gray-400">| Live Trade Signal</span>
-          </h2>
-          <span id="strategyActionBadge" class="text-xs px-2.5 py-1 rounded-md font-bold uppercase tracking-wider bg-bullGreen/20 text-bullGreen border border-bullGreen/40">
-            BUY CALL (CE) ON BREAKOUT
-          </span>
-        </div>
-
-        <div class="text-xs font-mono font-medium text-accentGold bg-accentGold/10 px-3 py-1 rounded-lg border border-accentGold/20 flex items-center gap-1.5" id="strategyTimeNote">
-          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-          <span>⚡ PRIME TIME: Gamma Explosion Active (1:15 - 2:45 PM)</span>
-        </div>
-      </div>
-
-      <!-- What to Buy Cards Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="strategyCardsContainer">
-        
-        <!-- CALL (CE) STRATEGY PICK -->
-        <div class="bg-tradeDark/90 border border-bullGreen/40 hover:border-bullGreen rounded-xl p-4 space-y-3 relative group transition">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-bullGreen flex items-center gap-1.5">
-              <i data-lucide="trending-up" class="w-4 h-4"></i>
-              RECOMMENDED CALL (CE) PICK
-            </span>
-            <span class="text-[11px] font-mono text-gray-400 bg-tradeCard px-2 py-0.5 rounded border border-tradeBorder">High Gamma</span>
-          </div>
-
-          <div class="flex items-baseline justify-between">
-            <div>
-              <h3 id="stratCeName" class="text-lg font-bold font-mono text-white">NIFTY 23350 CE</h3>
-              <p class="text-xs text-bullGreen mt-0.5" id="stratCeTrigger">Wait for TradingView Spot > 23,080</p>
-            </div>
-            <div class="text-right">
-              <span class="text-2xl font-bold font-mono text-bullGreen" id="stratCePrice">₹20.6</span>
-              <span class="text-[10px] text-gray-400 block" id="stratCeRisk">Max Risk: ₹1,339/lot</span>
-            </div>
-          </div>
-
-          <!-- Target & SL Row -->
-          <div class="grid grid-cols-3 gap-2 py-2 border-y border-tradeBorder/60 text-xs font-mono text-center">
-            <div class="bg-tradeCard/80 p-1.5 rounded">
-              <span class="text-[10px] text-gray-400 block uppercase">Target 1 (2x)</span>
-              <strong class="text-bullGreen font-bold" id="stratCeT1">₹41.2</strong>
-            </div>
-            <div class="bg-tradeCard/80 p-1.5 rounded">
-              <span class="text-[10px] text-gray-400 block uppercase">Target 2 (3x)</span>
-              <strong class="text-cyan-400 font-bold" id="stratCeT2">₹61.8</strong>
-            </div>
-            <div class="bg-tradeCard/80 p-1.5 rounded">
-              <span class="text-[10px] text-gray-400 block uppercase">Stop Loss</span>
-              <strong class="text-bearRed font-bold" id="stratCeSL">₹10.3</strong>
-            </div>
-          </div>
-
-          <p class="text-xs text-gray-300 leading-relaxed" id="stratCeReason">
-            Delta expansion will rapidly double this premium once spot breaks above resistance.
-          </p>
-
-          <div class="flex items-center gap-2 pt-1">
-            <button onclick="copySpecificUpstox('stratCeName')" class="flex-1 py-2 bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-              <span>Copy for Upstox</span>
-            </button>
-            <button onclick="openStratModal('CE')" class="px-3 py-2 bg-tradeCard hover:bg-tradeBorder border border-tradeBorder text-gray-200 text-xs rounded-lg font-medium transition flex items-center gap-1">
-              <i data-lucide="info" class="w-3.5 h-3.5"></i>
-              <span>Why Buy?</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- PUT (PE) STRATEGY PICK -->
-        <div class="bg-tradeDark/90 border border-bearRed/40 hover:border-bearRed rounded-xl p-4 space-y-3 relative group transition">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-bearRed flex items-center gap-1.5">
-              <i data-lucide="trending-down" class="w-4 h-4"></i>
-              RECOMMENDED PUT (PE) PICK
-            </span>
-            <span class="text-[11px] font-mono text-gray-400 bg-tradeCard px-2 py-0.5 rounded border border-tradeBorder">Breakdown Hedge</span>
-          </div>
-
-          <div class="flex items-baseline justify-between">
-            <div>
-              <h3 id="stratPeName" class="text-lg font-bold font-mono text-white">NIFTY 22600 PE</h3>
-              <p class="text-xs text-bearRed mt-0.5" id="stratPeTrigger">Wait for TradingView Spot < 23,010</p>
-            </div>
-            <div class="text-right">
-              <span class="text-2xl font-bold font-mono text-bearRed" id="stratPePrice">₹18.9</span>
-              <span class="text-[10px] text-gray-400 block" id="stratPeRisk">Max Risk: ₹1,228/lot</span>
-            </div>
-          </div>
-
-          <!-- Target & SL Row -->
-          <div class="grid grid-cols-3 gap-2 py-2 border-y border-tradeBorder/60 text-xs font-mono text-center">
-            <div class="bg-tradeCard/80 p-1.5 rounded">
-              <span class="text-[10px] text-gray-400 block uppercase">Target 1 (2x)</span>
-              <strong class="text-bearRed font-bold" id="stratPeT1">₹37.8</strong>
-            </div>
-            <div class="bg-tradeCard/80 p-1.5 rounded">
-              <span class="text-[10px] text-gray-400 block uppercase">Target 2 (3x)</span>
-              <strong class="text-cyan-400 font-bold" id="stratPeT2">₹56.7</strong>
-            </div>
-            <div class="bg-tradeCard/80 p-1.5 rounded">
-              <span class="text-[10px] text-gray-400 block uppercase">Stop Loss</span>
-              <strong class="text-bearRed font-bold" id="stratPeSL">₹9.5</strong>
-            </div>
-          </div>
-
-          <p class="text-xs text-gray-300 leading-relaxed" id="stratPeReason">
-            Institutional unwinding triggers sharp IV spikes making this Put explode 2x–3x on breakdown.
-          </p>
-
-          <div class="flex items-center gap-2 pt-1">
-            <button onclick="copySpecificUpstox('stratPeName')" class="flex-1 py-2 bg-bearRed hover:bg-bearRed/90 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-              <span>Copy for Upstox</span>
-            </button>
-            <button onclick="openStratModal('PE')" class="px-3 py-2 bg-tradeCard hover:bg-tradeBorder border border-tradeBorder text-gray-200 text-xs rounded-lg font-medium transition flex items-center gap-1">
-              <i data-lucide="info" class="w-3.5 h-3.5"></i>
-              <span>Why Buy?</span>
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Strategy Golden Execution Rule Footer -->
-      <div class="bg-tradeCard/80 border border-tradeBorder rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-300">
-        <div class="flex items-center gap-2">
-          <i data-lucide="compass" class="w-4 h-4 text-accentGold shrink-0"></i>
-          <span><strong class="text-white">Our 3-Step Winning Strategy:</strong> 1. Watch TradingView trigger level $\rightarrow$ 2. Enter in Upstox at market $\rightarrow$ 3. Sell 50% quantity when price hits Target 1 (2x) to make the trade 100% risk-free!</span>
-        </div>
-        <span class="text-accentGold font-mono text-[11px] font-semibold">Strict 1:2 to 1:3 RR</span>
-      </div>
-
-    </div>
-
     <!-- TABS BAR -->
     <div class="flex flex-wrap items-center justify-between border-b border-tradeBorder pb-2 gap-2">
       <div class="flex flex-wrap gap-1.5">
@@ -608,6 +408,41 @@
       </div>
 
       <!-- THE THREE PRIMARY WORKSPACE PILLARS -->
+      <!-- Compact Institutional Metrics Ribbon -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
+        <div class="bg-tradeCard p-3 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">ATM Strike Level</span>
+          <div class="flex items-baseline justify-between mt-0.5">
+            <strong class="text-lg font-bold text-accentGold" id="atmStrike">--</strong>
+            <span class="text-[10px] text-gray-400" id="atmStraddle">Straddle: ₹--</span>
+          </div>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Market Bias / PCR</span>
+          <div class="flex items-center justify-between mt-0.5">
+            <strong class="text-lg font-bold text-white" id="pcrValue">--</strong>
+            <span class="text-[10px] px-2 py-0.5 rounded font-bold uppercase" id="pcrBadge">NEUTRAL</span>
+          </div>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Active Expiry</span>
+          <div class="flex items-center justify-between mt-0.5">
+            <select id="expirySelect" onchange="onExpiryChange()" class="bg-tradeDark border border-tradeBorder text-white text-xs rounded px-1.5 py-0.5 focus:outline-none">
+              <option value="current">Current Week</option>
+              <option value="next">Next Week</option>
+            </select>
+            <span class="text-[10px] text-gray-400" id="expiryDateLabel">--</span>
+          </div>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Lot Size / Risk</span>
+          <div class="flex items-baseline justify-between mt-0.5">
+            <strong class="text-base font-bold text-bullGreen" id="lotSizeDisplay">65 Qty/Lot</strong>
+            <span class="text-[10px] text-gray-400">Fixed Stop Protection</span>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <!-- PILLAR 1: BULL DIAGRAM & CALL (CE) WORKSPACE -->
@@ -886,7 +721,7 @@
 
 
     <!-- VIEW 1: EQUAL CE & PE PAIRS (MATCHED STRADDLES / STRANGLES) -->
-    <section id="viewEqual" class="space-y-4">
+    <section id="viewEqual" class="space-y-4 hidden">
       <div class="bg-tradeCard/50 border border-tradeBorder/60 rounded-xl p-3 flex items-start gap-3 text-xs text-gray-300">
         <i data-lucide="info" class="w-5 h-5 text-accentGold shrink-0 mt-0.5"></i>
         <div>
