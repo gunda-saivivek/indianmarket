@@ -63,7 +63,7 @@ async function checkAuthStatus(manual = false) {
       document.getElementById('pendingAlert').classList.remove('hidden');
       hideAuthModal();
       if (manual) {
-        alert("Your status is still pending approval by Sai Vivek (Admin). Please check back soon!");
+        alert("Your status is still pending approval by the Administrator. Please check back soon!");
       }
     }
   } catch (err) {
@@ -194,7 +194,7 @@ async function handleSignupSubmit(e) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Signup failed');
 
-    alertEl.textContent = "Registration successful! Your request was sent to Admin (Sai Vivek). Once approved, you can log in.";
+    alertEl.textContent = "Registration successful! Your request was sent to the Administrator. Once approved, you can log in.";
     alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bullGreen/20 text-bullGreen border border-bullGreen/30';
     alertEl.classList.remove('hidden');
 
@@ -235,6 +235,10 @@ async function handleLogout() {
 
 function openAdminModal() {
   document.getElementById('adminModal').classList.remove('hidden');
+  const footerEmail = document.getElementById('adminFooterEmail');
+  if (footerEmail && state.currentUser) {
+    footerEmail.textContent = state.currentUser.email;
+  }
   loadAdminUsers();
 }
 

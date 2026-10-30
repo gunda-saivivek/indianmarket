@@ -117,7 +117,7 @@
       <h2 class="text-lg font-bold text-white">Access Pending Administrator Approval</h2>
       <p class="text-xs text-gray-300 max-w-lg mx-auto leading-relaxed">
         Your account has been registered! Because The Market Sniper Shooters is an exclusive private trading engine, 
-        <strong>Sai Vivek (Admin)</strong> must approve your access before you can view live market signals.
+        <strong>the Administrator</strong> must approve your access before you can view live market signals.
       </p>
       <div class="flex items-center justify-center gap-3 pt-2">
         <button onclick="checkAuthStatus(true)" class="px-4 py-2 bg-accentGold hover:bg-accentGold/90 text-black font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow">
@@ -641,15 +641,16 @@
           <input type="password" id="signupPassword" required placeholder="Minimum 6 characters" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
         </div>
         <p class="text-[11px] text-gray-500">
-          Note: After registration, the Administrator (Sai Vivek) will approve your access before live data activates.
+          Note: After registration, the Administrator will approve your access before live data activates.
         </p>
         <button type="submit" id="btnSignupSubmit" class="w-full py-2.5 bg-accentGold hover:bg-accentGold/90 text-black font-extrabold text-sm rounded-lg transition shadow-lg shadow-accentGold/20">
           Request Access
         </button>
       </form>
 
-      <div class="text-center pt-2 border-t border-tradeBorder text-[11px] text-gray-500">
-        Admin Access: <span class="font-mono text-gray-300">gunda.saivivek@gmail.com</span>
+      <div class="text-center pt-2 border-t border-tradeBorder text-[11px] text-gray-500 flex items-center justify-center gap-1.5">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-bullGreen"></i>
+        <span>Private Trading Network &bull; Approval Required</span>
       </div>
 
     </div>
@@ -705,7 +706,7 @@
 
       <!-- Modal Footer -->
       <div class="p-4 bg-tradeDark border-t border-tradeBorder rounded-b-2xl flex items-center justify-between text-xs text-gray-500">
-        <span>Logged in as Super Admin: <strong class="text-accentGold">gunda.saivivek@gmail.com</strong></span>
+        <span>Logged in as: <strong id="adminFooterEmail" class="text-accentGold">Admin</strong></span>
         <button onclick="closeAdminModal()" class="px-4 py-1.5 rounded-lg bg-tradeBorder hover:bg-gray-700 text-gray-200 font-medium">
           Close
         </button>
