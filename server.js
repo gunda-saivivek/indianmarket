@@ -513,7 +513,98 @@ async function handleSensexData(expiryType) {
   };
 }
 
-// Helper to parse JSON body
+// Helper to analyze sentiment & chart impact of news
+function analyzeNewsImpact(title) {
+  const text = title.toLowerCase();
+  
+  const bullishKeywords = [
+    'surge', 'surges', 'gain', 'gains', 'rally', 'rallies', 'jump', 'jumps', 'rise', 'rises',
+    'high', 'highs', 'record', 'profit', 'up', 'bull', 'bullish', 'positive', 'beat', 'beats',
+    'growth', 'inflow', 'boost', 'green', 'buying', 'rebound', 'advances'
+  ];
+  
+  const bearishKeywords = [
+    'fall', 'falls', 'crash', 'drop', 'drops', 'plunge', 'plunges', 'slump', 'slumps',
+    'decline', 'declines', 'loss', 'losses', 'down', 'bear', 'bearish', 'negative',
+    'fear', 'selloff', 'weak', 'retreat', 'red', 'selling', 'deficit', 'tariff', 'war'
+  ];
+
+  let bullScore = 0;
+  let bearScore = 0;
+
+  bullishKeywords.forEach(k => {
+    if (text.includes(k)) bullScore++;
+  });
+  bearishKeywords.forEach(k => {
+    if (text.includes(k)) bearScore++;
+  });
+
+  if (bullScore > bearScore) {
+    return {
+      sentiment: 'BULLISH',
+      badgeClass: 'bg-bullGreen/20 text-bullGreen border border-bullGreen/40',
+      expectedImpact: '+35 to +75 pts on Index',
+      chartEffect: '🚀 Bullish Momentum: Favors Call (CE) breakouts & short covering.'
+    };
+  } else if (bearScore > bullScore) {
+    return {
+      sentiment: 'BEARISH',
+      badgeClass: 'bg-bearRed/20 text-bearRed border border-bearRed/40',
+      expectedImpact: '-40 to -85 pts on Index',
+      chartEffect: '🩸 Bearish Pressure: Favors Put (PE) momentum & long unwinding.'
+    };
+  } else {
+    return {
+      sentiment: 'NEUTRAL / MIXED',
+      badgeClass: 'bg-accentGold/20 text-accentGold border border-accentGold/40',
+      expectedImpact: 'Range-bound (±15 pts)',
+      chartEffect: '⚖️ Consolidation: Favors straddles and waiting for range breakout.'
+    };
+  }
+}
+
+// Fetch live market news via Google News RSS
+async function fetchLiveNews() {
+  const rssUrl = 'https://news.google.com/rss/search?q=Nifty+OR+Sensex+OR+Indian+Stock+Market&hl=en-IN&gl=IN&ceid=IN:en';
+  const res = await fetch(rssUrl, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+  });
+  if (!res.ok) throw new Error('News RSS failed');
+  const xml = await res.text();
+
+  const items = [];
+  const regex = /<item>[\s\S]*?<title>(.*?)<\/title>[\s\S]*?<link>(.*?)<\/link>[\s\S]*?<pubDate>(.*?)<\/pubDate>[\s\S]*?<source[^>]*>(.*?)<\/source>[\s\S]*?<\/item>/gi;
+  let match;
+
+  while ((match = regex.exec(xml)) !== null && items.length < 12) {
+    const rawTitle = match[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/&amp;/g, '&');
+    const impact = analyzeNewsImpact(rawTitle);
+
+    items.push({
+      title: rawTitle,
+      link: match[2],
+      pubDate: match[3],
+      source: match[4] || 'Financial News',
+      timeAgo: formatTimeAgo(match[3]),
+      impact
+    });
+  }
+
+  return items;
+}
+
+function formatTimeAgo(dateStr) {
+  try {
+    const d = new Date(dateStr);
+    const diffMin = Math.round((Date.now() - d.getTime()) / 60000);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHours = Math.round(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${Math.round(diffHours / 24)}d ago`;
+  } catch (e) {
+    return 'Recently';
+  }
+}
 function parseJsonBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -786,6 +877,30 @@ const server = http.createServer(async (req, res) => {
       console.error('API error:', err);
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // API endpoint: /api/live-news (Protected for approved users)
+  if (pathname === '/api/live-news') {
+    const user = getAuthUser(req, parsedUrl);
+    if (!user) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+
+    try {
+      const news = await fetchLiveNews();
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store'
+      });
+      res.end(JSON.stringify({ success: true, news }));
+    } catch (err) {
+      console.error('News fetch error:', err.message);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Failed to fetch live news' }));
     }
     return;
   }

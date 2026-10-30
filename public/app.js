@@ -4,10 +4,12 @@
 
 let state = {
   currentIndex: 'nifty',
-  activeTab: 'equal',
+  activeTab: 'chart',
+  currentTf: '5',
   activeExpiry: 'current',
   filterText: '',
   data: null,
+  newsData: null,
   refreshTimer: null,
   refreshInterval: 3000,
   activeModalStrike: null,
@@ -57,6 +59,9 @@ async function checkAuthStatus(manual = false) {
       hideAuthModal();
       document.getElementById('pendingAlert').classList.add('hidden');
       startPolling();
+      if (state.activeTab === 'chart') {
+        renderChartStudio();
+      }
     } else {
       // Pending or Rejected
       if (state.refreshTimer) clearInterval(state.refreshTimer);
@@ -95,11 +100,14 @@ function updateAuthUI() {
   }
 
   userSection.innerHTML = `
-    <div class="flex items-center gap-2 bg-tradeDark px-3 py-1 rounded-lg border border-tradeBorder text-xs">
-      <span class="w-2 h-2 rounded-full ${state.currentUser.status === 'approved' ? 'bg-bullGreen' : 'bg-accentGold'}"></span>
-      <span class="text-gray-300 font-medium">${state.currentUser.name}</span>
-      <button onclick="handleLogout()" title="Log Out" class="ml-1 text-gray-500 hover:text-bearRed transition">
+    <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 bg-tradeDark px-3 py-1.5 rounded-lg border border-tradeBorder text-xs">
+        <span class="w-2 h-2 rounded-full ${state.currentUser.status === 'approved' ? 'bg-bullGreen' : 'bg-accentGold'}"></span>
+        <span class="text-gray-200 font-semibold">${state.currentUser.name}</span>
+      </div>
+      <button onclick="openLogoutModal()" class="px-3 py-1.5 rounded-lg bg-bearRed/20 hover:bg-bearRed/30 text-bearRed border border-bearRed/40 font-bold text-xs flex items-center gap-1.5 transition shadow">
         <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+        <span>Log Out</span>
       </button>
     </div>
   `;
@@ -213,6 +221,14 @@ async function handleSignupSubmit(e) {
   }
 }
 
+function openLogoutModal() {
+  document.getElementById('logoutConfirmModal').classList.remove('hidden');
+}
+
+function closeLogoutModal() {
+  document.getElementById('logoutConfirmModal').classList.add('hidden');
+}
+
 async function handleLogout() {
   if (state.token) {
     try {
@@ -226,7 +242,17 @@ async function handleLogout() {
   state.token = null;
   state.currentUser = null;
   if (state.refreshTimer) clearInterval(state.refreshTimer);
-  location.reload();
+
+  closeLogoutModal();
+
+  // Show clean logout message
+  const alertEl = document.getElementById('authAlert');
+  alertEl.textContent = "You have safely logged out of The Market Sniper Shooters.";
+  alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bullGreen/20 text-bullGreen border border-bullGreen/30';
+  alertEl.classList.remove('hidden');
+
+  showAuthModal();
+  updateAuthUI();
 }
 
 // ==========================================
@@ -388,25 +414,179 @@ function switchIndex(indexName) {
 
   document.getElementById('spotLabel').textContent = `${indexName.toUpperCase()} SPOT`;
   fetchLiveData();
+
+  // If chart is currently active, update chart symbol
+  if (state.activeTab === 'chart') {
+    renderChartStudio();
+  }
 }
 
 function switchTab(tab) {
   state.activeTab = tab;
-  ['tabEqual', 'tabHero', 'tabLadder'].forEach(id => {
+  ['tabChart', 'tabEqual', 'tabHero', 'tabNews', 'tabLadder'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.className = 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition text-gray-400 hover:text-white';
+    el.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white';
   });
 
-  const activeBtnId = tab === 'equal' ? 'tabEqual' : tab === 'hero' ? 'tabHero' : 'tabLadder';
+  const activeBtnId = tab === 'chart' ? 'tabChart' : tab === 'equal' ? 'tabEqual' : tab === 'hero' ? 'tabHero' : tab === 'news' ? 'tabNews' : 'tabLadder';
   const activeBtn = document.getElementById(activeBtnId);
   if (activeBtn) {
-    activeBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition bg-tradeCard text-white border border-tradeBorder';
+    activeBtn.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-tradeCard text-white border border-tradeBorder shadow';
   }
 
+  document.getElementById('viewChart').classList.toggle('hidden', tab !== 'chart');
   document.getElementById('viewEqual').classList.toggle('hidden', tab !== 'equal');
   document.getElementById('viewHero').classList.toggle('hidden', tab !== 'hero');
+  document.getElementById('viewNews').classList.toggle('hidden', tab !== 'news');
   document.getElementById('viewLadder').classList.toggle('hidden', tab !== 'ladder');
+
+  if (tab === 'chart') {
+    renderChartStudio();
+  } else if (tab === 'news') {
+    loadLiveNews();
+  }
+}
+
+// ==========================================
+// TRADINGVIEW LIVE CHART STUDIO ENGINE
+// ==========================================
+
+let tvWidget = null;
+
+function renderChartStudio() {
+  const container = document.getElementById('tradingview_chart_container');
+  if (!container) return;
+
+  const symbolMap = {
+    'nifty': 'NSE:NIFTY',
+    'sensex': 'BSE:SENSEX',
+    'banknifty': 'NSE:BANKNIFTY'
+  };
+
+  const symbol = symbolMap[state.currentIndex] || 'NSE:NIFTY';
+  const labelMap = {
+    'nifty': 'NIFTY 50',
+    'sensex': 'SENSEX',
+    'banknifty': 'BANK NIFTY'
+  };
+
+  const titleEl = document.getElementById('chartSymbolLabel');
+  const exchEl = document.getElementById('chartExchangeLabel');
+  if (titleEl) titleEl.textContent = labelMap[state.currentIndex] || 'NIFTY 50';
+  if (exchEl) exchEl.textContent = symbol;
+
+  container.innerHTML = '';
+
+  if (window.TradingView) {
+    tvWidget = new TradingView.widget({
+      "autosize": true,
+      "symbol": symbol,
+      "interval": state.currentTf || "5",
+      "timezone": "Asia/Kolkata",
+      "theme": "dark",
+      "style": "1",
+      "locale": "in",
+      "toolbar_bg": "#151922",
+      "enable_publishing": false,
+      "hide_top_toolbar": false,
+      "hide_legend": false,
+      "save_image": false,
+      "container_id": "tradingview_chart_container",
+      "studies": [
+        "RSI@tv-basicstudies",
+        "MASimple@tv-basicstudies"
+      ]
+    });
+  }
+}
+
+function switchTimeframe(tf) {
+  state.currentTf = tf;
+  const tfList = ['1', '3', '5', '15', '30', '60', 'D'];
+  tfList.forEach(t => {
+    const el = document.getElementById(`tf-${t}`);
+    if (!el) return;
+    if (t === tf) {
+      el.className = 'px-2.5 py-1 rounded-lg transition bg-bullGreen text-black font-bold shadow';
+    } else {
+      el.className = 'px-2.5 py-1 rounded-lg transition text-gray-400 hover:text-white';
+    }
+  });
+
+  renderChartStudio();
+}
+
+// ==========================================
+// LIVE MARKET NEWS & IMPACT ENGINE
+// ==========================================
+
+async function loadLiveNews(force = false) {
+  const container = document.getElementById('newsCardsContainer');
+  if (!container) return;
+
+  if (force || !state.newsData) {
+    container.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400"><span class="animate-spin inline-block mr-2">⏳</span> Loading real-time market news headlines...</div>`;
+    try {
+      const res = await fetch('/api/live-news', {
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'bypass-tunnel-reminder': 'true'
+        }
+      });
+      if (!res.ok) throw new Error("Could not fetch news");
+      const data = await res.json();
+      state.newsData = data.news || [];
+    } catch (e) {
+      container.innerHTML = `<div class="col-span-full py-8 text-center text-bearRed">${e.message}</div>`;
+      return;
+    }
+  }
+
+  const news = state.newsData || [];
+  if (news.length === 0) {
+    container.innerHTML = `<div class="col-span-full py-8 text-center text-gray-500">No recent market news found.</div>`;
+    return;
+  }
+
+  container.innerHTML = news.map(item => {
+    const imp = item.impact || { sentiment: 'NEUTRAL', badgeClass: 'bg-accentGold/20 text-accentGold border-accentGold/30', expectedImpact: '±15 pts', chartEffect: 'Consolidation' };
+
+    return `
+      <div class="bg-tradeCard border border-tradeBorder rounded-xl p-4 space-y-3 hover:border-gray-600 transition shadow flex flex-col justify-between">
+        <div class="space-y-2">
+          <!-- Top Tag & Time -->
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${imp.badgeClass}">
+              ${imp.sentiment} (${imp.expectedImpact})
+            </span>
+            <span class="text-[11px] text-gray-500 font-mono">${item.source} • ${item.timeAgo}</span>
+          </div>
+
+          <!-- Headline -->
+          <h4 class="text-sm font-bold text-white hover:text-cyan-400 transition leading-snug">
+            <a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a>
+          </h4>
+
+          <!-- Chart Impact Effect -->
+          <div class="bg-tradeDark/90 rounded-lg p-2.5 border border-tradeBorder text-xs text-gray-300">
+            <span class="text-gray-400 text-[10px] block uppercase font-bold tracking-wider mb-0.5">Chart & Option Impact:</span>
+            <p class="text-[11px] font-medium leading-relaxed">${imp.chartEffect}</p>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-tradeBorder/50 flex items-center justify-between text-xs">
+          <span class="text-[10px] text-gray-500">Source: ${item.source}</span>
+          <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline flex items-center gap-1 font-semibold text-[11px]">
+            <span>Read Article</span>
+            <i data-lucide="external-link" class="w-3 h-3"></i>
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
 }
 
 function onExpiryChange() {
