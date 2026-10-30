@@ -85,9 +85,21 @@
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-bullGreen"></span>
           </span>
           <span class="text-xs font-mono text-gray-400" id="liveTimer">LIVE FEED</span>
-          <button onclick="toggleSettingsModal()" class="ml-2 p-2 rounded-lg bg-tradeDark border border-tradeBorder hover:border-gray-500 text-gray-400 hover:text-white transition">
+          
+          <button onclick="toggleSettingsModal()" title="Settings" class="p-2 rounded-lg bg-tradeDark border border-tradeBorder hover:border-gray-500 text-gray-400 hover:text-white transition">
             <i data-lucide="settings" class="w-4 h-4"></i>
           </button>
+
+          <!-- Admin Panel Button (Visible to Admin only) -->
+          <button id="btnAdminPanel" onclick="openAdminModal()" class="hidden px-3 py-1.5 rounded-lg bg-accentGold/20 hover:bg-accentGold/30 text-accentGold border border-accentGold/40 font-bold text-xs flex items-center gap-1.5 transition shadow">
+            <span>👑 Admin Panel</span>
+            <span id="pendingBadge" class="hidden bg-bearRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">0</span>
+          </button>
+
+          <!-- User Pill & Logout -->
+          <div id="userHeaderSection" class="flex items-center gap-2">
+            <!-- Rendered dynamically -->
+          </div>
         </div>
       </div>
 
@@ -96,6 +108,27 @@
 
   <!-- MAIN CONTAINER -->
   <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- ACCESS PENDING ALERT (Shown when user is pending approval) -->
+    <div id="pendingAlert" class="hidden bg-accentGold/10 border-2 border-accentGold/60 rounded-2xl p-6 text-center space-y-3 shadow-xl">
+      <div class="w-12 h-12 bg-accentGold/20 rounded-full flex items-center justify-center mx-auto text-2xl text-accentGold">
+        ⏳
+      </div>
+      <h2 class="text-lg font-bold text-white">Access Pending Administrator Approval</h2>
+      <p class="text-xs text-gray-300 max-w-lg mx-auto leading-relaxed">
+        Your account has been registered! Because The Market Sniper Shooters is an exclusive private trading engine, 
+        <strong>Sai Vivek (Admin)</strong> must approve your access before you can view live market signals.
+      </p>
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button onclick="checkAuthStatus(true)" class="px-4 py-2 bg-accentGold hover:bg-accentGold/90 text-black font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          <span>Check Approval Status</span>
+        </button>
+        <button onclick="handleLogout()" class="px-4 py-2 bg-tradeBorder hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-lg transition">
+          Log Out
+        </button>
+      </div>
+    </div>
 
     <!-- METRICS & CONTROL BAR -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -549,6 +582,135 @@
         <button onclick="toggleSettingsModal()" class="px-3 py-1.5 rounded-lg bg-tradeBorder text-gray-300 text-xs">Cancel</button>
         <button onclick="saveSettings()" class="px-4 py-1.5 rounded-lg bg-bullGreen text-black font-bold text-xs">Save Settings</button>
       </div>
+    </div>
+  </div>
+
+  <!-- AUTH MODAL (LOGIN & SIGN UP) -->
+  <div id="authModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-tradeCard border border-tradeBorder rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl relative">
+      
+      <!-- Brand in Modal -->
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-2xl text-black shadow-lg shadow-accentGold/20 mx-auto">
+          🎯
+        </div>
+        <h2 class="text-lg font-bold text-white tracking-wide">THE MARKET SNIPER SHOOTERS</h2>
+        <p class="text-xs text-gray-400">Exclusive Equal CE/PE & Hero-Zero Trade Signals</p>
+      </div>
+
+      <!-- Auth Tabs -->
+      <div class="flex bg-tradeDark p-1 rounded-xl border border-tradeBorder text-xs font-bold">
+        <button id="authTabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-lg bg-bullGreen text-black transition shadow">
+          Sign In
+        </button>
+        <button id="authTabSignup" onclick="switchAuthTab('signup')" class="flex-1 py-2 rounded-lg text-gray-400 hover:text-white transition">
+          Create Account
+        </button>
+      </div>
+
+      <!-- Error / Success Alert -->
+      <div id="authAlert" class="hidden p-3 rounded-lg text-xs leading-relaxed"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Email Address</label>
+          <input type="email" id="loginEmail" required placeholder="name@example.com" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
+        </div>
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
+        </div>
+        <button type="submit" id="btnLoginSubmit" class="w-full py-2.5 bg-bullGreen hover:bg-bullGreen/90 text-black font-extrabold text-sm rounded-lg transition shadow-lg shadow-bullGreen/20">
+          Sign In to Dashboard
+        </button>
+      </form>
+
+      <!-- SIGN UP FORM -->
+      <form id="signupForm" onsubmit="handleSignupSubmit(event)" class="space-y-3 text-xs hidden">
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Full Name</label>
+          <input type="text" id="signupName" required placeholder="Your Name" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
+        </div>
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Email Address</label>
+          <input type="email" id="signupEmail" required placeholder="name@example.com" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
+        </div>
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Choose Password</label>
+          <input type="password" id="signupPassword" required placeholder="Minimum 6 characters" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
+        </div>
+        <p class="text-[11px] text-gray-500">
+          Note: After registration, the Administrator (Sai Vivek) will approve your access before live data activates.
+        </p>
+        <button type="submit" id="btnSignupSubmit" class="w-full py-2.5 bg-accentGold hover:bg-accentGold/90 text-black font-extrabold text-sm rounded-lg transition shadow-lg shadow-accentGold/20">
+          Request Access
+        </button>
+      </form>
+
+      <div class="text-center pt-2 border-t border-tradeBorder text-[11px] text-gray-500">
+        Admin Access: <span class="font-mono text-gray-300">gunda.saivivek@gmail.com</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ADMIN MANAGEMENT MODAL -->
+  <div id="adminModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-tradeCard border border-accentGold/60 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl relative">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-tradeBorder flex items-center justify-between bg-tradeDark/70 rounded-t-2xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-accentGold/20 text-accentGold border border-accentGold/30 flex items-center justify-center font-bold text-xl">
+            👑
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-white">Admin Access & User Approvals</h2>
+            <p class="text-xs text-gray-400">Manage user signups, approve trading access, or revoke permissions</p>
+          </div>
+        </div>
+
+        <button onclick="closeAdminModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-tradeBorder">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Users Table -->
+      <div class="p-5 overflow-y-auto flex-1 space-y-4">
+        <div class="flex items-center justify-between text-xs text-gray-400">
+          <span>Registered Users List</span>
+          <button onclick="loadAdminUsers()" class="text-accentGold hover:underline flex items-center gap-1 font-semibold">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh List
+          </button>
+        </div>
+
+        <div class="border border-tradeBorder rounded-xl overflow-hidden bg-tradeDark">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-tradeCard border-b border-tradeBorder text-gray-400 font-mono uppercase text-[10px] tracking-wider">
+                <th class="py-3 px-4">User</th>
+                <th class="py-3 px-4">Role</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Registered</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersBody" class="divide-y divide-tradeBorder/60 font-mono">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 bg-tradeDark border-t border-tradeBorder rounded-b-2xl flex items-center justify-between text-xs text-gray-500">
+        <span>Logged in as Super Admin: <strong class="text-accentGold">gunda.saivivek@gmail.com</strong></span>
+        <button onclick="closeAdminModal()" class="px-4 py-1.5 rounded-lg bg-tradeBorder hover:bg-gray-700 text-gray-200 font-medium">
+          Close
+        </button>
+      </div>
+
     </div>
   </div>
 

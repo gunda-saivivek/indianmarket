@@ -7,11 +7,62 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT || 7171;
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const USERS_FILE = path.join(__dirname, 'users.json');
 
 let upstoxToken = null;
+
+// ==========================================
+// USER AUTH & ACCESS CONTROL ENGINE
+// ==========================================
+function hashPassword(pwd) {
+  return crypto.createHash('sha256').update(pwd).digest('hex');
+}
+
+function loadUsers() {
+  try {
+    if (fs.existsSync(USERS_FILE)) {
+      return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Error loading users.json:', e);
+  }
+
+  // Pre-seed admin credentials if file missing
+  const defaultAdmin = [{
+    id: 'admin-1',
+    name: 'Sai Vivek (Admin)',
+    email: 'gunda.saivivek@gmail.com',
+    passwordHash: hashPassword('Money@2027#'),
+    role: 'admin',
+    status: 'approved',
+    createdAt: new Date().toISOString()
+  }];
+  saveUsers(defaultAdmin);
+  return defaultAdmin;
+}
+
+function saveUsers(users) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+}
+
+// In-memory active session store: token -> user
+const activeSessions = new Map();
+
+function getAuthUser(req, parsedUrl) {
+  const authHeader = req.headers['authorization'];
+  let token = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7).trim();
+  } else if (parsedUrl && parsedUrl.query && parsedUrl.query.token) {
+    token = parsedUrl.query.token;
+  }
+  if (!token) return null;
+  return activeSessions.get(token) || null;
+}
 
 // Black-Scholes Pricing for Synthetic/Live Sensex calculations
 function normalCDF(x) {
@@ -462,13 +513,259 @@ async function handleSensexData(expiryType) {
   };
 }
 
+// Helper to parse JSON body
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+}
+
 // HTTP Server
 const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
 
+  // CORS and Headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, bypass-tunnel-reminder');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  // ==========================================
+  // AUTH API ENDPOINTS
+  // ==========================================
+
+  // POST /api/auth/login
+  if (pathname === '/api/auth/login' && req.method === 'POST') {
+    try {
+      const { email, password } = await parseJsonBody(req);
+      if (!email || !password) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Email and password are required' }));
+        return;
+      }
+
+      const users = loadUsers();
+      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
+
+      if (!user || user.passwordHash !== hashPassword(password)) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid email or password' }));
+        return;
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status };
+      activeSessions.set(token, sessionUser);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, token, user: sessionUser }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // POST /api/auth/signup
+  if (pathname === '/api/auth/signup' && req.method === 'POST') {
+    try {
+      const { name, email, password } = await parseJsonBody(req);
+      if (!name || !email || !password) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Name, email, and password are required' }));
+        return;
+      }
+
+      const cleanEmail = email.toLowerCase().trim();
+      const users = loadUsers();
+
+      if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
+        res.writeHead(409, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'An account with this email already exists' }));
+        return;
+      }
+
+      const newUser = {
+        id: 'user-' + Date.now(),
+        name: name.trim(),
+        email: cleanEmail,
+        passwordHash: hashPassword(password),
+        role: 'user',
+        status: 'pending', // Requires admin approval
+        createdAt: new Date().toISOString()
+      };
+
+      users.push(newUser);
+      saveUsers(users);
+
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        message: 'Account created successfully! Please wait for Admin (Vivek) to approve your access.'
+      }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // GET /api/auth/me
+  if (pathname === '/api/auth/me' && req.method === 'GET') {
+    const user = getAuthUser(req, parsedUrl);
+    if (!user) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Not authenticated' }));
+      return;
+    }
+
+    // Refresh live status from file in case admin just approved
+    const users = loadUsers();
+    const fresh = users.find(u => u.email.toLowerCase() === user.email.toLowerCase());
+    if (fresh) {
+      user.status = fresh.status;
+      user.role = fresh.role;
+      user.name = fresh.name;
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, user }));
+    return;
+  }
+
+  // POST /api/auth/logout
+  if (pathname === '/api/auth/logout' && req.method === 'POST') {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      activeSessions.delete(authHeader.substring(7).trim());
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true }));
+    return;
+  }
+
+  // ==========================================
+  // ADMIN DASHBOARD ENDPOINTS
+  // ==========================================
+
+  // GET /api/admin/users
+  if (pathname === '/api/admin/users' && req.method === 'GET') {
+    const user = getAuthUser(req, parsedUrl);
+    if (!user || user.role !== 'admin') {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Admin access required' }));
+      return;
+    }
+
+    const users = loadUsers().map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      status: u.status,
+      createdAt: u.createdAt
+    }));
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, users }));
+    return;
+  }
+
+  // POST /api/admin/action
+  if (pathname === '/api/admin/action' && req.method === 'POST') {
+    const user = getAuthUser(req, parsedUrl);
+    if (!user || user.role !== 'admin') {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Admin access required' }));
+      return;
+    }
+
+    try {
+      const { email, action } = await parseJsonBody(req);
+      const cleanEmail = (email || '').toLowerCase().trim();
+      let users = loadUsers();
+      const targetUser = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+      if (!targetUser) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'User not found' }));
+        return;
+      }
+
+      if (action === 'approve') {
+        targetUser.status = 'approved';
+      } else if (action === 'reject') {
+        targetUser.status = 'rejected';
+      } else if (action === 'delete') {
+        if (targetUser.role === 'admin') {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Cannot delete the admin account' }));
+          return;
+        }
+        users = users.filter(u => u.email.toLowerCase() !== cleanEmail);
+      }
+
+      saveUsers(users);
+
+      // Update active sessions in memory
+      for (const [t, s] of activeSessions.entries()) {
+        if (s.email.toLowerCase() === cleanEmail) {
+          if (action === 'delete') {
+            activeSessions.delete(t);
+          } else {
+            s.status = targetUser.status;
+          }
+        }
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, message: `User ${action}d successfully` }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // ==========================================
+  // PROTECTED LIVE MARKET DATA API
+  // ==========================================
+
   // API endpoint: /api/live-data
   if (pathname === '/api/live-data') {
+    const user = getAuthUser(req, parsedUrl);
+    if (!user) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized: Please login to view live market signals.' }));
+      return;
+    }
+
+    // Verify fresh approval status
+    const users = loadUsers();
+    const fresh = users.find(u => u.email.toLowerCase() === user.email.toLowerCase());
+    if (!fresh || (fresh.status !== 'approved' && fresh.role !== 'admin')) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        error: 'Access Pending: Your account is awaiting Admin approval.',
+        status: fresh?.status || 'pending'
+      }));
+      return;
+    }
+
     const index = (parsedUrl.query.index || 'nifty').toLowerCase();
     const expiryType = (parsedUrl.query.expiryType || 'current').toLowerCase();
 
@@ -482,8 +779,7 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Access-Control-Allow-Origin': '*'
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
       });
       res.end(JSON.stringify(data));
     } catch (err) {

@@ -12,14 +12,361 @@ let state = {
   refreshInterval: 3000,
   activeModalStrike: null,
   prevSpot: null,
-  prevLTP: {}
+  prevLTP: {},
+  token: localStorage.getItem('sniper_token') || null,
+  currentUser: null
 };
 
 // Initial startup
 document.addEventListener('DOMContentLoaded', () => {
   if (window.lucide) lucide.createIcons();
-  startPolling();
+  checkAuthStatus();
 });
+
+// ==========================================
+// AUTHENTICATION & ACCESS CONTROL
+// ==========================================
+
+async function checkAuthStatus(manual = false) {
+  if (!state.token) {
+    showAuthModal();
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'bypass-tunnel-reminder': 'true'
+      }
+    });
+
+    if (!res.ok) {
+      localStorage.removeItem('sniper_token');
+      state.token = null;
+      state.currentUser = null;
+      showAuthModal();
+      return;
+    }
+
+    const data = await res.json();
+    state.currentUser = data.user;
+    updateAuthUI();
+
+    if (data.user.status === 'approved') {
+      hideAuthModal();
+      document.getElementById('pendingAlert').classList.add('hidden');
+      startPolling();
+    } else {
+      // Pending or Rejected
+      if (state.refreshTimer) clearInterval(state.refreshTimer);
+      document.getElementById('pendingAlert').classList.remove('hidden');
+      hideAuthModal();
+      if (manual) {
+        alert("Your status is still pending approval by Sai Vivek (Admin). Please check back soon!");
+      }
+    }
+  } catch (err) {
+    console.error('Auth check error:', err);
+    if (!state.currentUser) showAuthModal();
+  }
+}
+
+function updateAuthUI() {
+  const userSection = document.getElementById('userHeaderSection');
+  const adminBtn = document.getElementById('btnAdminPanel');
+
+  if (!state.currentUser) {
+    userSection.innerHTML = `
+      <button onclick="showAuthModal()" class="px-3 py-1.5 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs shadow">
+        Sign In
+      </button>
+    `;
+    adminBtn.classList.add('hidden');
+    return;
+  }
+
+  const isAdmin = state.currentUser.role === 'admin';
+  if (isAdmin) {
+    adminBtn.classList.remove('hidden');
+    checkPendingAdminUsers();
+  } else {
+    adminBtn.classList.add('hidden');
+  }
+
+  userSection.innerHTML = `
+    <div class="flex items-center gap-2 bg-tradeDark px-3 py-1 rounded-lg border border-tradeBorder text-xs">
+      <span class="w-2 h-2 rounded-full ${state.currentUser.status === 'approved' ? 'bg-bullGreen' : 'bg-accentGold'}"></span>
+      <span class="text-gray-300 font-medium">${state.currentUser.name}</span>
+      <button onclick="handleLogout()" title="Log Out" class="ml-1 text-gray-500 hover:text-bearRed transition">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+  `;
+  if (window.lucide) lucide.createIcons();
+}
+
+function showAuthModal() {
+  document.getElementById('authModal').classList.remove('hidden');
+  switchAuthTab('login');
+}
+
+function hideAuthModal() {
+  document.getElementById('authModal').classList.add('hidden');
+}
+
+function switchAuthTab(tab) {
+  const tabLogin = document.getElementById('authTabLogin');
+  const tabSignup = document.getElementById('authTabSignup');
+  const formLogin = document.getElementById('loginForm');
+  const formSignup = document.getElementById('signupForm');
+  const alertEl = document.getElementById('authAlert');
+  alertEl.classList.add('hidden');
+
+  if (tab === 'login') {
+    tabLogin.className = 'flex-1 py-2 rounded-lg bg-bullGreen text-black transition shadow';
+    tabSignup.className = 'flex-1 py-2 rounded-lg text-gray-400 hover:text-white transition';
+    formLogin.classList.remove('hidden');
+    formSignup.classList.add('hidden');
+  } else {
+    tabSignup.className = 'flex-1 py-2 rounded-lg bg-accentGold text-black transition shadow';
+    tabLogin.className = 'flex-1 py-2 rounded-lg text-gray-400 hover:text-white transition';
+    formSignup.classList.remove('hidden');
+    formLogin.classList.add('hidden');
+  }
+}
+
+async function handleLoginSubmit(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('btnLoginSubmit');
+  const alertEl = document.getElementById('authAlert');
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  alertEl.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    state.token = data.token;
+    localStorage.setItem('sniper_token', data.token);
+    state.currentUser = data.user;
+
+    checkAuthStatus();
+  } catch (err) {
+    alertEl.textContent = err.message;
+    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bearRed/20 text-bearRed border border-bearRed/30';
+    alertEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In to Dashboard';
+  }
+}
+
+async function handleSignupSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const btn = document.getElementById('btnSignupSubmit');
+  const alertEl = document.getElementById('authAlert');
+
+  btn.disabled = true;
+  btn.textContent = 'Registering...';
+  alertEl.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
+      body: JSON.stringify({ name, email, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Signup failed');
+
+    alertEl.textContent = "Registration successful! Your request was sent to Admin (Sai Vivek). Once approved, you can log in.";
+    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bullGreen/20 text-bullGreen border border-bullGreen/30';
+    alertEl.classList.remove('hidden');
+
+    setTimeout(() => {
+      switchAuthTab('login');
+      document.getElementById('loginEmail').value = email;
+    }, 2500);
+
+  } catch (err) {
+    alertEl.textContent = err.message;
+    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bearRed/20 text-bearRed border border-bearRed/30';
+    alertEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Request Access';
+  }
+}
+
+async function handleLogout() {
+  if (state.token) {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${state.token}`, 'bypass-tunnel-reminder': 'true' }
+      });
+    } catch (e) {}
+  }
+  localStorage.removeItem('sniper_token');
+  state.token = null;
+  state.currentUser = null;
+  if (state.refreshTimer) clearInterval(state.refreshTimer);
+  location.reload();
+}
+
+// ==========================================
+// ADMIN DASHBOARD ENGINE
+// ==========================================
+
+function openAdminModal() {
+  document.getElementById('adminModal').classList.remove('hidden');
+  loadAdminUsers();
+}
+
+function closeAdminModal() {
+  document.getElementById('adminModal').classList.add('hidden');
+}
+
+async function checkPendingAdminUsers() {
+  if (!state.token || state.currentUser?.role !== 'admin') return;
+  try {
+    const res = await fetch('/api/admin/users', {
+      headers: { 'Authorization': `Bearer ${state.token}`, 'bypass-tunnel-reminder': 'true' }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const pendingCount = (data.users || []).filter(u => u.status === 'pending').length;
+    const badge = document.getElementById('pendingBadge');
+    if (pendingCount > 0) {
+      badge.textContent = `${pendingCount} Pending`;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  } catch (e) {}
+}
+
+async function loadAdminUsers() {
+  const tbody = document.getElementById('adminUsersBody');
+  tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Loading user registry...</td></tr>`;
+
+  try {
+    const res = await fetch('/api/admin/users', {
+      headers: { 'Authorization': `Bearer ${state.token}`, 'bypass-tunnel-reminder': 'true' }
+    });
+    if (!res.ok) throw new Error("Failed to load users");
+    const data = await res.json();
+    const users = data.users || [];
+
+    // Update pending badge
+    const pendingCount = users.filter(u => u.status === 'pending').length;
+    const badge = document.getElementById('pendingBadge');
+    if (pendingCount > 0) {
+      badge.textContent = `${pendingCount} Pending`;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+
+    if (users.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">No registered users yet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+      const isSelf = u.email.toLowerCase() === state.currentUser?.email.toLowerCase();
+      const dateStr = new Date(u.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+      let statusBadge = '';
+      if (u.status === 'approved') {
+        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-bullGreen/20 text-bullGreen border border-bullGreen/30">APPROVED</span>';
+      } else if (u.status === 'pending') {
+        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-accentGold/20 text-accentGold border border-accentGold/30 animate-pulse">PENDING</span>';
+      } else {
+        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-bearRed/20 text-bearRed border border-bearRed/30">REJECTED</span>';
+      }
+
+      return `
+        <tr class="hover:bg-tradeCard/50 transition">
+          <td class="py-3 px-4">
+            <strong class="text-white block font-medium">${u.name}</strong>
+            <span class="text-gray-400 text-[11px]">${u.email}</span>
+          </td>
+          <td class="py-3 px-4">
+            <span class="text-xs uppercase font-bold ${u.role === 'admin' ? 'text-accentGold' : 'text-gray-400'}">${u.role}</span>
+          </td>
+          <td class="py-3 px-4">
+            ${statusBadge}
+          </td>
+          <td class="py-3 px-4 text-gray-500 text-[11px]">
+            ${dateStr}
+          </td>
+          <td class="py-3 px-4 text-right space-x-1.5">
+            ${isSelf ? '<span class="text-[11px] text-gray-500 italic">Current User</span>' : `
+              ${u.status !== 'approved' ? `
+                <button onclick="handleAdminUserAction('${u.email}', 'approve')" class="px-2.5 py-1 bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-[11px] rounded transition shadow">
+                  ✅ Grant Access
+                </button>
+              ` : `
+                <button onclick="handleAdminUserAction('${u.email}', 'reject')" class="px-2.5 py-1 bg-tradeBorder hover:bg-bearRed/20 hover:text-bearRed text-gray-400 text-[11px] rounded transition">
+                  🚫 Revoke
+                </button>
+              `}
+              <button onclick="handleAdminUserAction('${u.email}', 'delete')" title="Delete User" class="p-1 text-gray-500 hover:text-bearRed transition">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            `}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-bearRed">${err.message}</td></tr>`;
+  }
+}
+
+async function handleAdminUserAction(email, action) {
+  if (action === 'delete' && !confirm(`Are you sure you want to delete user ${email}?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/admin/action', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`,
+        'bypass-tunnel-reminder': 'true'
+      },
+      body: JSON.stringify({ email, action })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Action failed");
+
+    loadAdminUsers();
+  } catch (err) {
+    alert(err.message);
+  }
+}
 
 function switchIndex(indexName) {
   state.currentIndex = indexName;
@@ -76,12 +423,25 @@ function startPolling() {
 }
 
 async function fetchLiveData() {
+  if (!state.token) return;
+
   try {
     const res = await fetch(`/api/live-data?index=${state.currentIndex}&expiryType=${state.activeExpiry}&_t=${Date.now()}`, {
       headers: {
+        'Authorization': `Bearer ${state.token}`,
         'bypass-tunnel-reminder': 'true'
       }
     });
+
+    if (res.status === 401) {
+      handleLogout();
+      return;
+    }
+    if (res.status === 403) {
+      if (state.refreshTimer) clearInterval(state.refreshTimer);
+      document.getElementById('pendingAlert').classList.remove('hidden');
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     state.data = data;
