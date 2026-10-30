@@ -30,40 +30,209 @@
 </head>
 <body class="bg-tradeDark text-gray-200 min-h-screen font-sans antialiased selection:bg-bullGreen selection:text-black">
 
-  <!-- TOP NAVIGATION -->
-  <header class="border-b border-tradeBorder bg-tradeCard/80 backdrop-blur sticky top-0 z-30 px-4 py-3">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-      
-      <!-- Brand & Index Switcher -->
-      <div class="flex items-center gap-6">
-        <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-lg text-black shadow-lg shadow-accentGold/20">
-            🎯
+  <!-- MOBILE SIDEBAR BACKDROP -->
+  <div id="mobileSidebarBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 hidden md:hidden"></div>
+
+  <!-- LEFT SIDEBAR MENU BAR -->
+  <aside id="mainSidebar" class="fixed top-0 bottom-0 left-0 w-64 bg-tradeCard border-r border-tradeBorder z-50 flex flex-col transition-transform duration-300 transform -translate-x-full md:translate-x-0 shadow-2xl">
+    
+    <!-- Sidebar Header (Brand) -->
+    <div class="p-4 border-b border-tradeBorder flex items-center justify-between bg-tradeDark/60">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-lg text-black shadow-lg shadow-accentGold/20">
+          🎯
+        </div>
+        <div>
+          <h1 class="text-xs font-black tracking-tight text-white flex items-center gap-1.5 leading-tight">
+            THE MARKET SNIPER <span class="text-[9px] bg-bullGreen/20 text-bullGreen font-mono px-1 py-0.2 rounded border border-bullGreen/30 font-bold">PRO</span>
+          </h1>
+          <p class="text-[10px] text-accentGold font-medium">Dalal Street Trading Desk</p>
+        </div>
+      </div>
+      <button onclick="toggleMobileSidebar()" class="md:hidden text-gray-400 hover:text-white p-1 rounded hover:bg-tradeBorder">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Sidebar Scrollable Body -->
+    <div class="flex-1 overflow-y-auto p-3 space-y-5">
+
+      <!-- SECTION 1: MARKET INDICES -->
+      <div class="space-y-1.5">
+        <div class="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 flex items-center justify-between">
+          <span>MARKET INDICES</span>
+          <span class="w-2 h-2 rounded-full bg-bullGreen animate-ping"></span>
+        </div>
+        
+        <!-- NIFTY 50 Button -->
+        <button id="sideBtnNifty" onclick="switchIndex('nifty')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border bg-bullGreen/15 border-bullGreen/40 text-white shadow-sm">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-bullGreen/20 text-bullGreen flex items-center justify-center font-bold text-xs">
+              N
+            </div>
+            <div>
+              <div class="text-xs font-bold leading-tight">NIFTY 50</div>
+              <div class="text-[10px] text-gray-400 font-mono">NSE Benchmark</div>
+            </div>
           </div>
-          <div>
-            <h1 class="text-base font-extrabold tracking-tight text-white flex items-center gap-2">
-              THE MARKET SNIPER SHOOTERS <span class="text-xs bg-bullGreen/20 text-bullGreen font-mono px-1.5 py-0.5 rounded border border-bullGreen/30">PRO</span>
-            </h1>
-            <p class="text-xs text-accentGold font-medium">Sniper Precision: Equal CE/PE & Hero-Zero Trade Engine</p>
+          <span id="sideSpotNifty" class="text-xs font-mono font-bold text-bullGreen">--</span>
+        </button>
+
+        <!-- SENSEX Button -->
+        <button id="sideBtnSensex" onclick="switchIndex('sensex')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border border-transparent hover:border-tradeBorder hover:bg-tradeDark text-gray-300">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-accentGold/20 text-accentGold flex items-center justify-center font-bold text-xs">
+              S
+            </div>
+            <div>
+              <div class="text-xs font-bold leading-tight">SENSEX</div>
+              <div class="text-[10px] text-gray-400 font-mono">BSE 30</div>
+            </div>
           </div>
+          <span id="sideSpotSensex" class="text-xs font-mono font-bold text-gray-300">--</span>
+        </button>
+
+        <!-- BANK NIFTY Button -->
+        <button id="sideBtnBankNifty" onclick="switchIndex('banknifty')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border border-transparent hover:border-tradeBorder hover:bg-tradeDark text-gray-300">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
+              B
+            </div>
+            <div>
+              <div class="text-xs font-bold leading-tight">BANK NIFTY</div>
+              <div class="text-[10px] text-gray-400 font-mono">Banking High-Beta</div>
+            </div>
+          </div>
+          <span id="sideSpotBankNifty" class="text-xs font-mono font-bold text-gray-300">--</span>
+        </button>
+      </div>
+
+      <!-- SECTION 2: LIVE TRADING TOOLS -->
+      <div class="space-y-1">
+        <div class="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+          SNIPER DESK TOOLS
         </div>
 
-        <!-- Index Buttons -->
-        <div class="flex bg-tradeDark p-1 rounded-lg border border-tradeBorder">
-          <button id="btnNifty" onclick="switchIndex('nifty')" class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all bg-bullGreen text-black shadow">
-            NIFTY 50
+        <button id="sideTabEqual" onclick="switchTab('equal')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 bg-tradeDark text-white border border-tradeBorder">
+          <i data-lucide="scale" class="w-4 h-4 text-accentGold"></i>
+          <span class="flex-1">Equal CE & PE Pairs</span>
+          <span class="text-[10px] bg-accentGold/20 text-accentGold px-1.5 py-0.2 rounded-full font-mono" id="sideEqualCount">--</span>
+        </button>
+
+        <button id="sideTabHero" onclick="switchTab('hero')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-white hover:bg-tradeDark">
+          <i data-lucide="zap" class="w-4 h-4 text-bullGreen"></i>
+          <span class="flex-1">Hero-Zero Hotlist</span>
+          <span class="text-[10px] bg-bullGreen/20 text-bullGreen px-1.5 py-0.2 rounded-full font-mono" id="sideHeroCount">--</span>
+        </button>
+
+        <button id="sideTabNews" onclick="switchTab('news')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-white hover:bg-tradeDark">
+          <i data-lucide="newspaper" class="w-4 h-4 text-cyan-400"></i>
+          <span class="flex-1">Live News & Impact</span>
+          <span class="text-[9px] bg-cyan-400/20 text-cyan-400 px-1 py-0.2 rounded font-mono animate-pulse">LIVE</span>
+        </button>
+
+        <button id="sideTabLadder" onclick="switchTab('ladder')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-white hover:bg-tradeDark">
+          <i data-lucide="list" class="w-4 h-4 text-indigo-400"></i>
+          <span class="flex-1">Full Option Ladder</span>
+        </button>
+      </div>
+
+      <!-- SECTION 3: MASTER TRADING ACADEMY (LEARNING OBJECTS) -->
+      <div class="space-y-1.5 pt-2 border-t border-tradeBorder/60">
+        <div class="px-2 text-[10px] font-bold uppercase tracking-wider text-accentGold flex items-center justify-between">
+          <span>LEARNING OBJECTS</span>
+          <span class="text-[9px] bg-accentGold/20 text-accentGold font-mono px-1.5 py-0.2 rounded font-bold">TOP ANALYST</span>
+        </div>
+
+        <button id="sideTabAcademy" onclick="switchTab('academy')" class="w-full text-left p-3 rounded-xl transition flex items-center justify-between border border-accentGold/40 bg-accentGold/10 hover:bg-accentGold/20 text-white shadow-sm group">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-accentGold text-black flex items-center justify-center font-bold text-sm shadow">
+              🎓
+            </div>
+            <div>
+              <div class="text-xs font-extrabold text-white group-hover:text-accentGold transition flex items-center gap-1.5">
+                Master Academy
+              </div>
+              <div class="text-[10px] text-gray-400 font-mono">16 Visual Blueprints</div>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-accentGold group-hover:translate-x-0.5 transition"></i>
+        </button>
+
+        <!-- Quick syllabus jumps -->
+        <div class="pl-2 pr-1 py-1 space-y-0.5 text-[11px] text-gray-400">
+          <button onclick="openAcademyWithCategory('candlesticks')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center gap-1.5">
+            <span class="text-bullGreen font-mono font-bold text-[10px]">01.</span> Candlestick Anatomy
           </button>
-          <button id="btnSensex" onclick="switchIndex('sensex')" class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all text-gray-400 hover:text-white">
-            SENSEX
+          <button onclick="openAcademyWithCategory('patterns')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-accentGold transition flex items-center gap-1.5">
+            <span class="text-accentGold font-mono font-bold text-[10px]">02.</span> Chart Geometries
           </button>
-          <button id="btnBankNifty" onclick="switchIndex('banknifty')" class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all text-gray-400 hover:text-white">
-            BANK NIFTY
+          <button onclick="openAcademyWithCategory('fibonacci')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-cyan-400 transition flex items-center gap-1.5">
+            <span class="text-cyan-400 font-mono font-bold text-[10px]">03.</span> Fibonacci 0.618 Pocket
+          </button>
+          <button onclick="openAcademyWithCategory('smc')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bearRed transition flex items-center gap-1.5">
+            <span class="text-bearRed font-mono font-bold text-[10px]">04.</span> Smart Money (SMC / OB)
+          </button>
+          <button onclick="openAcademyWithCategory('options')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center gap-1.5">
+            <span class="text-bullGreen font-mono font-bold text-[10px]">05.</span> Gamma Explosion Rules
           </button>
         </div>
       </div>
 
+    </div>
+
+    <!-- Sidebar Footer (User / Admin / Logout) -->
+    <div class="p-3 border-t border-tradeBorder bg-tradeDark/60 space-y-2">
+      <!-- Admin Panel Button (if admin) -->
+      <button id="sideBtnAdmin" onclick="openAdminModal()" class="hidden w-full py-2 px-3 rounded-lg bg-accentGold/20 hover:bg-accentGold/30 text-accentGold border border-accentGold/40 font-bold text-xs flex items-center justify-between transition">
+        <span class="flex items-center gap-1.5">
+          <i data-lucide="crown" class="w-4 h-4"></i>
+          <span>Admin Panel</span>
+        </span>
+        <span id="sidePendingBadge" class="hidden bg-bearRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+      </button>
+
+      <!-- User Info & Logout Strip -->
+      <div id="sideUserSection" class="flex items-center justify-between text-xs">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- TOP NAVIGATION (WITH DESKTOP LEFT PADDING) -->
+  <header class="border-b border-tradeBorder bg-tradeCard/80 backdrop-blur sticky top-0 z-30 px-4 py-3 md:pl-64">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Mobile Hamburger & Brand/Status -->
+      <div class="flex items-center gap-3">
+        <!-- Mobile Drawer Toggle Button -->
+        <button onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-lg bg-tradeDark border border-tradeBorder text-gray-300 hover:text-white transition">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex items-center gap-2.5 md:hidden">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-sm text-black">
+            🎯
+          </div>
+          <div>
+            <h1 class="text-xs font-extrabold text-white">MARKET SNIPER</h1>
+            <p class="text-[9px] text-accentGold">Trading Desk</p>
+          </div>
+        </div>
+
+        <!-- Desktop Quick Index Badges -->
+        <div class="hidden lg:flex items-center gap-2 bg-tradeDark px-3 py-1.5 rounded-lg border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase font-semibold">Desk:</span>
+          <span id="activeDeskLabel" class="text-xs font-bold text-white font-mono flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-bullGreen"></span>
+            NIFTY 50
+          </span>
+        </div>
+      </div>
+
       <!-- Live Spot & Status -->
-      <div class="flex items-center gap-6">
+      <div class="flex items-center gap-4">
         <div class="flex items-center gap-4 bg-tradeDark px-3 py-1.5 rounded-lg border border-tradeBorder">
           <div>
             <span class="text-xs text-gray-400 uppercase tracking-wider block" id="spotLabel">NIFTY SPOT</span>
@@ -84,7 +253,7 @@
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-bullGreen opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-bullGreen"></span>
           </span>
-          <span class="text-xs font-mono text-gray-400" id="liveTimer">LIVE FEED</span>
+          <span class="text-xs font-mono text-gray-400 hidden sm:inline" id="liveTimer">LIVE FEED</span>
           
           <button onclick="toggleSettingsModal()" title="Settings" class="p-2 rounded-lg bg-tradeDark border border-tradeBorder hover:border-gray-500 text-gray-400 hover:text-white transition">
             <i data-lucide="settings" class="w-4 h-4"></i>
@@ -106,8 +275,8 @@
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
-  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+  <!-- MAIN CONTAINER (WITH DESKTOP LEFT PADDING) -->
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6 md:pl-64">
 
     <!-- ACCESS PENDING ALERT (Shown when user is pending approval) -->
     <div id="pendingAlert" class="hidden bg-accentGold/10 border-2 border-accentGold/60 rounded-2xl p-6 text-center space-y-3 shadow-xl">
@@ -355,6 +524,12 @@
           <i data-lucide="list" class="w-4 h-4 text-indigo-400"></i>
           <span>📊 Full Option Ladder</span>
         </button>
+
+        <button id="tabAcademy" onclick="switchTab('academy')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition text-accentGold bg-accentGold/10 hover:bg-accentGold/20 border border-accentGold/40 shadow-sm">
+          <i data-lucide="graduation-cap" class="w-4 h-4 text-accentGold"></i>
+          <span>🎓 Master Trading Academy</span>
+          <span class="text-[10px] bg-accentGold/30 text-accentGold px-1.5 py-0.5 rounded-full font-mono font-bold">16 Blueprints</span>
+        </button>
       </div>
 
       <!-- Quick Search / Filter -->
@@ -443,6 +618,92 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newsCardsContainer">
         <!-- Rendered dynamically -->
         <div class="col-span-full py-12 text-center text-gray-500">Loading live market headlines...</div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: MASTER TRADING ACADEMY (LEARNING OBJECTS) -->
+    <section id="viewAcademy" class="space-y-6 hidden">
+      <!-- Academy Header Banner -->
+      <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-accentGold/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-60 h-60 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-2xl text-black shadow-lg shadow-accentGold/20">
+              🎓
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-extrabold text-white tracking-tight">MASTER TRADING ACADEMY</h2>
+                <span class="text-xs bg-bullGreen/20 text-bullGreen font-mono px-2 py-0.5 rounded border border-bullGreen/30 font-bold uppercase">INSTITUTIONAL CURRICULUM</span>
+              </div>
+              <p class="text-xs text-gray-300 mt-1 max-w-2xl leading-relaxed">
+                Dalal Street & Wall Street Institutional Mastery. From atomic Japanese candlestick psychology to Smart Money Concepts (SMC), Fibonacci Golden Pockets, and proprietary Option Greeks. Every lesson includes a picture-form institutional trade blueprint.
+              </p>
+            </div>
+          </div>
+
+          <!-- Progress Widget -->
+          <div class="bg-tradeDark/90 border border-tradeBorder px-4 py-3 rounded-xl flex items-center gap-4">
+            <div>
+              <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Your Progress</span>
+              <div class="text-lg font-mono font-bold text-accentGold" id="academyProgressLabel">0 / 16 Lessons</div>
+            </div>
+            <div class="w-12 h-12 relative flex items-center justify-center">
+              <svg class="w-12 h-12 transform -rotate-90">
+                <circle cx="24" cy="24" r="18" stroke="#1d2432" stroke-width="4" fill="none" />
+                <circle id="academyProgressCircle" cx="24" cy="24" r="18" stroke="#00c076" stroke-width="4" fill="none" stroke-dasharray="113" stroke-dashoffset="113" stroke-linecap="round" class="transition-all duration-500" />
+              </svg>
+              <span id="academyProgressPercent" class="absolute text-[11px] font-mono font-bold text-white">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="mt-6 pt-4 border-t border-tradeBorder/70 flex flex-wrap items-center justify-between gap-3">
+          <!-- Category Pills -->
+          <div class="flex flex-wrap gap-1.5" id="academyCategoryPills">
+            <button onclick="filterAcademyCategory('all')" id="cat-all" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-bullGreen text-black shadow">All Lessons (16)</button>
+            <button onclick="filterAcademyCategory('candlesticks')" id="cat-candlesticks" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Candlesticks</button>
+            <button onclick="filterAcademyCategory('patterns')" id="cat-patterns" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Chart Patterns</button>
+            <button onclick="filterAcademyCategory('fibonacci')" id="cat-fibonacci" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Fibonacci Precision</button>
+            <button onclick="filterAcademyCategory('supply-demand')" id="cat-supply-demand" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Support & Supply/Demand</button>
+            <button onclick="filterAcademyCategory('smc')" id="cat-smc" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Smart Money (SMC)</button>
+            <button onclick="filterAcademyCategory('indicators')" id="cat-indicators" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">VWAP & RSI</button>
+            <button onclick="filterAcademyCategory('options')" id="cat-options" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Options & Risk</button>
+          </div>
+
+          <!-- Lesson Search Bar -->
+          <div class="relative w-64">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-500"></i>
+            <input type="text" id="academySearchInput" oninput="searchAcademyLessons()" placeholder="Search pattern, setup, fib..." class="w-full bg-tradeDark border border-tradeBorder rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-bullGreen">
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-Column Interactive Course Desk -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Syllabus Selector (35% or 4 cols) -->
+        <div class="lg:col-span-4 bg-tradeCard border border-tradeBorder rounded-2xl p-4 space-y-3 h-[780px] flex flex-col shadow">
+          <div class="flex items-center justify-between border-b border-tradeBorder pb-2 text-xs">
+            <span class="font-bold text-gray-300 flex items-center gap-1.5">
+              <i data-lucide="book-open" class="w-4 h-4 text-accentGold"></i>
+              CURRICULUM SYLLABUS
+            </span>
+            <span id="lessonListCount" class="text-[10px] text-gray-500 font-mono">16 Lessons</span>
+          </div>
+
+          <!-- Lessons Scroll Container -->
+          <div class="overflow-y-auto flex-1 space-y-2 pr-1" id="academyLessonsList">
+            <!-- Dynamic Rendered Lesson Items -->
+          </div>
+        </div>
+
+        <!-- Right Active Lecture Stage (65% or 8 cols) -->
+        <div class="lg:col-span-8 bg-tradeCard border border-tradeBorder rounded-2xl p-6 space-y-6 min-h-[780px] flex flex-col shadow" id="academyActiveStage">
+          <!-- Rendered dynamically -->
+        </div>
+
       </div>
     </section>
 
@@ -771,6 +1032,7 @@
     </div>
   </div>
 
+  <script src="academy-data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

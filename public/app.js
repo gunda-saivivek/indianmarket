@@ -76,37 +76,73 @@ async function checkAuthStatus(manual = false) {
 function updateAuthUI() {
   const userSection = document.getElementById('userHeaderSection');
   const adminBtn = document.getElementById('btnAdminPanel');
+  const sideUserSection = document.getElementById('sideUserSection');
+  const sideAdminBtn = document.getElementById('sideBtnAdmin');
 
   if (!state.currentUser) {
-    userSection.innerHTML = `
-      <button onclick="showAuthModal()" class="px-3 py-1.5 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs shadow">
-        Sign In
-      </button>
-    `;
-    adminBtn.classList.add('hidden');
+    if (userSection) {
+      userSection.innerHTML = `
+        <button onclick="showAuthModal()" class="px-3 py-1.5 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs shadow">
+          Sign In
+        </button>
+      `;
+    }
+    if (sideUserSection) {
+      sideUserSection.innerHTML = `
+        <button onclick="showAuthModal()" class="w-full py-2 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs shadow flex items-center justify-center gap-1.5">
+          <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+          <span>Sign In / Register</span>
+        </button>
+      `;
+    }
+    if (adminBtn) adminBtn.classList.add('hidden');
+    if (sideAdminBtn) sideAdminBtn.classList.add('hidden');
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
   const isAdmin = state.currentUser.role === 'admin';
   if (isAdmin) {
-    adminBtn.classList.remove('hidden');
+    if (adminBtn) adminBtn.classList.remove('hidden');
+    if (sideAdminBtn) sideAdminBtn.classList.remove('hidden');
     checkPendingAdminUsers();
   } else {
-    adminBtn.classList.add('hidden');
+    if (adminBtn) adminBtn.classList.add('hidden');
+    if (sideAdminBtn) sideAdminBtn.classList.add('hidden');
   }
 
-  userSection.innerHTML = `
-    <div class="flex items-center gap-2">
-      <div class="flex items-center gap-2 bg-tradeDark px-3 py-1.5 rounded-lg border border-tradeBorder text-xs">
-        <span class="w-2 h-2 rounded-full ${state.currentUser.status === 'approved' ? 'bg-bullGreen' : 'bg-accentGold'}"></span>
-        <span class="text-gray-200 font-semibold">${state.currentUser.name}</span>
+  if (userSection) {
+    userSection.innerHTML = `
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 bg-tradeDark px-3 py-1.5 rounded-lg border border-tradeBorder text-xs">
+          <span class="w-2 h-2 rounded-full ${state.currentUser.status === 'approved' ? 'bg-bullGreen' : 'bg-accentGold'}"></span>
+          <span class="text-gray-200 font-semibold">${state.currentUser.name}</span>
+        </div>
+        <button onclick="openLogoutModal()" class="px-3 py-1.5 rounded-lg bg-bearRed/20 hover:bg-bearRed/30 text-bearRed border border-bearRed/40 font-bold text-xs flex items-center gap-1.5 transition shadow">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span>Log Out</span>
+        </button>
       </div>
-      <button onclick="openLogoutModal()" class="px-3 py-1.5 rounded-lg bg-bearRed/20 hover:bg-bearRed/30 text-bearRed border border-bearRed/40 font-bold text-xs flex items-center gap-1.5 transition shadow">
-        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-        <span>Log Out</span>
-      </button>
-    </div>
-  `;
+    `;
+  }
+
+  if (sideUserSection) {
+    sideUserSection.innerHTML = `
+      <div class="flex items-center justify-between w-full">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <span class="w-2 h-2 rounded-full shrink-0 ${state.currentUser.status === 'approved' ? 'bg-bullGreen' : 'bg-accentGold'}"></span>
+          <div class="truncate">
+            <div class="text-xs font-bold text-white truncate">${state.currentUser.name}</div>
+            <div class="text-[10px] text-gray-400 capitalize">${state.currentUser.role} &bull; ${state.currentUser.status}</div>
+          </div>
+        </div>
+        <button onclick="openLogoutModal()" title="Log Out" class="p-1.5 rounded-lg text-bearRed hover:bg-bearRed/20 transition">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+  }
+
   if (window.lucide) lucide.createIcons();
 }
 
@@ -278,11 +314,13 @@ async function checkPendingAdminUsers() {
     const data = await res.json();
     const pendingCount = (data.users || []).filter(u => u.status === 'pending').length;
     const badge = document.getElementById('pendingBadge');
+    const sideBadge = document.getElementById('sidePendingBadge');
     if (pendingCount > 0) {
-      badge.textContent = `${pendingCount} Pending`;
-      badge.classList.remove('hidden');
+      if (badge) { badge.textContent = `${pendingCount} Pending`; badge.classList.remove('hidden'); }
+      if (sideBadge) { sideBadge.textContent = `${pendingCount}`; sideBadge.classList.remove('hidden'); }
     } else {
-      badge.classList.add('hidden');
+      if (badge) badge.classList.add('hidden');
+      if (sideBadge) sideBadge.classList.add('hidden');
     }
   } catch (e) {}
 }
@@ -302,11 +340,13 @@ async function loadAdminUsers() {
     // Update pending badge
     const pendingCount = users.filter(u => u.status === 'pending').length;
     const badge = document.getElementById('pendingBadge');
+    const sideBadge = document.getElementById('sidePendingBadge');
     if (pendingCount > 0) {
-      badge.textContent = `${pendingCount} Pending`;
-      badge.classList.remove('hidden');
+      if (badge) { badge.textContent = `${pendingCount} Pending`; badge.classList.remove('hidden'); }
+      if (sideBadge) { sideBadge.textContent = `${pendingCount}`; sideBadge.classList.remove('hidden'); }
     } else {
-      badge.classList.add('hidden');
+      if (badge) badge.classList.add('hidden');
+      if (sideBadge) sideBadge.classList.add('hidden');
     }
 
     if (users.length === 0) {
@@ -394,8 +434,25 @@ async function handleAdminUserAction(email, action) {
   }
 }
 
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('mainSidebar');
+  const backdrop = document.getElementById('mobileSidebarBackdrop');
+  if (!sidebar) return;
+
+  const isClosed = sidebar.classList.contains('-translate-x-full');
+  if (isClosed) {
+    sidebar.classList.remove('-translate-x-full');
+    if (backdrop) backdrop.classList.remove('hidden');
+  } else {
+    sidebar.classList.add('-translate-x-full');
+    if (backdrop) backdrop.classList.add('hidden');
+  }
+}
+
 function switchIndex(indexName) {
   state.currentIndex = indexName;
+  
+  // Top index buttons (if present)
   ['btnNifty', 'btnSensex', 'btnBankNifty'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -408,37 +465,108 @@ function switchIndex(indexName) {
     activeEl.className = 'px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all bg-bullGreen text-black shadow';
   }
 
+  // Sidebar index buttons
+  ['sideBtnNifty', 'sideBtnSensex', 'sideBtnBankNifty'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border border-transparent hover:border-tradeBorder hover:bg-tradeDark text-gray-300';
+  });
+
+  const sideActiveId = indexName === 'nifty' ? 'sideBtnNifty' : indexName === 'sensex' ? 'sideBtnSensex' : 'sideBtnBankNifty';
+  const sideActiveEl = document.getElementById(sideActiveId);
+  if (sideActiveEl) {
+    const activeColor = indexName === 'nifty' 
+      ? 'border-bullGreen/40 bg-bullGreen/15 text-white' 
+      : indexName === 'sensex' 
+      ? 'border-accentGold/40 bg-accentGold/15 text-white' 
+      : 'border-indigo-500/40 bg-indigo-500/15 text-white';
+    sideActiveEl.className = `w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${activeColor} shadow-sm`;
+  }
+
+  const activeDesk = document.getElementById('activeDeskLabel');
+  if (activeDesk) {
+    const label = indexName === 'nifty' ? 'NIFTY 50' : indexName === 'sensex' ? 'SENSEX' : 'BANK NIFTY';
+    const dot = indexName === 'nifty' ? 'bg-bullGreen' : indexName === 'sensex' ? 'bg-accentGold' : 'bg-indigo-400';
+    activeDesk.innerHTML = `<span class="w-2 h-2 rounded-full ${dot}"></span> ${label}`;
+  }
+
   document.getElementById('spotLabel').textContent = `${indexName.toUpperCase()} SPOT`;
   fetchLiveData();
 
+  // Close mobile drawer on navigation
+  const sidebar = document.getElementById('mainSidebar');
+  const backdrop = document.getElementById('mobileSidebarBackdrop');
+  if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
+    sidebar.classList.add('-translate-x-full');
+    if (backdrop) backdrop.classList.add('hidden');
+  }
 }
 
 function switchTab(tab) {
   state.activeTab = tab;
-  ['tabEqual', 'tabHero', 'tabNews', 'tabLadder'].forEach(id => {
+  
+  // Top bar buttons
+  ['tabEqual', 'tabHero', 'tabNews', 'tabLadder', 'tabAcademy'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white';
   });
 
-  const activeBtnId = tab === 'equal' ? 'tabEqual' : tab === 'hero' ? 'tabHero' : tab === 'news' ? 'tabNews' : 'tabLadder';
+  const activeBtnId = tab === 'equal' ? 'tabEqual' : tab === 'hero' ? 'tabHero' : tab === 'news' ? 'tabNews' : tab === 'ladder' ? 'tabLadder' : 'tabAcademy';
   const activeBtn = document.getElementById(activeBtnId);
   if (activeBtn) {
-    activeBtn.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-tradeCard text-white border border-tradeBorder shadow';
+    if (tab === 'academy') {
+      activeBtn.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition text-accentGold bg-accentGold/20 border border-accentGold/60 shadow';
+    } else {
+      activeBtn.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-tradeCard text-white border border-tradeBorder shadow';
+    }
+  }
+
+  // Sidebar navigation buttons
+  ['sideTabEqual', 'sideTabHero', 'sideTabNews', 'sideTabLadder', 'sideTabAcademy'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'sideTabAcademy') {
+      el.className = 'w-full text-left p-3 rounded-xl transition flex items-center justify-between border border-accentGold/30 bg-accentGold/10 hover:bg-accentGold/20 text-white shadow-sm group';
+    } else {
+      el.className = 'w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-white hover:bg-tradeDark';
+    }
+  });
+
+  const sideActiveId = tab === 'equal' ? 'sideTabEqual' : tab === 'hero' ? 'sideTabHero' : tab === 'news' ? 'sideTabNews' : tab === 'ladder' ? 'sideTabLadder' : 'sideTabAcademy';
+  const sideActiveEl = document.getElementById(sideActiveId);
+  if (sideActiveEl) {
+    if (tab === 'academy') {
+      sideActiveEl.className = 'w-full text-left p-3 rounded-xl transition flex items-center justify-between border-2 border-accentGold bg-accentGold/20 text-white shadow-md group';
+    } else {
+      sideActiveEl.className = 'w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2.5 bg-tradeDark text-white border border-tradeBorder shadow-sm';
+    }
   }
 
   const elEqual = document.getElementById('viewEqual');
   const elHero = document.getElementById('viewHero');
   const elNews = document.getElementById('viewNews');
   const elLadder = document.getElementById('viewLadder');
+  const elAcademy = document.getElementById('viewAcademy');
 
   if (elEqual) elEqual.classList.toggle('hidden', tab !== 'equal');
   if (elHero) elHero.classList.toggle('hidden', tab !== 'hero');
   if (elNews) elNews.classList.toggle('hidden', tab !== 'news');
   if (elLadder) elLadder.classList.toggle('hidden', tab !== 'ladder');
+  if (elAcademy) elAcademy.classList.toggle('hidden', tab !== 'academy');
 
   if (tab === 'news') {
     loadLiveNews();
+  } else if (tab === 'academy') {
+    initAcademy();
+  }
+
+  // Close mobile drawer on navigation
+  const sidebar = document.getElementById('mainSidebar');
+  const backdrop = document.getElementById('mobileSidebarBackdrop');
+  if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
+    sidebar.classList.add('-translate-x-full');
+    if (backdrop) backdrop.classList.add('hidden');
   }
 }
 
@@ -599,6 +727,13 @@ function renderUI(data) {
 
   dayRangeEl.textContent = `L: ${data.low || '--'} | H: ${data.high || '--'}`;
 
+  // Update sidebar spot prices
+  const sideSpotId = state.currentIndex === 'nifty' ? 'sideSpotNifty' : state.currentIndex === 'sensex' ? 'sideSpotSensex' : 'sideSpotBankNifty';
+  const sideSpotEl = document.getElementById(sideSpotId);
+  if (sideSpotEl) {
+    sideSpotEl.textContent = `₹${currentSpot.toLocaleString('en-IN')}`;
+  }
+
   // ATM & Metrics
   document.getElementById('atmStrike').textContent = data.atmStrike;
   document.getElementById('atmStraddle').textContent = `Straddle: ₹${data.atmStraddlePrice ? data.atmStraddlePrice.toFixed(1) : '--'}`;
@@ -698,6 +833,8 @@ function openStratModal(type) {
 function renderEqualPairs(pairs) {
   const container = document.getElementById('equalPairsContainer');
   document.getElementById('equalPairsCount').textContent = pairs.length;
+  const sideEqual = document.getElementById('sideEqualCount');
+  if (sideEqual) sideEqual.textContent = pairs.length;
 
   if (pairs.length === 0) {
     container.innerHTML = `<div class="col-span-full py-8 text-center text-gray-500">No matching equal pairs currently found.</div>`;
@@ -801,6 +938,8 @@ function renderHeroZero(heroPicks, lotSize) {
   const peList = heroPicks.pe || [];
 
   document.getElementById('heroPicksCount').textContent = ceList.length + peList.length;
+  const sideHero = document.getElementById('sideHeroCount');
+  if (sideHero) sideHero.textContent = ceList.length + peList.length;
 
   container.innerHTML = `
     <!-- CE HERO ZERO -->
@@ -1111,4 +1250,348 @@ function saveSettings() {
   state.refreshInterval = interval;
   startPolling();
   toggleSettingsModal();
+}
+
+// ==========================================
+// MASTER TRADING ACADEMY (LEARNING OBJECTS) ENGINE
+// ==========================================
+
+let academyState = {
+  currentLessonId: 'candle-anatomy',
+  activeCategory: 'all',
+  searchQuery: '',
+  completedLessons: JSON.parse(localStorage.getItem('sniper_completed_lessons') || '[]')
+};
+
+function initAcademy() {
+  if (!window.ACADEMY_LESSONS || window.ACADEMY_LESSONS.length === 0) return;
+  if (!window.ACADEMY_LESSONS.find(l => l.id === academyState.currentLessonId)) {
+    academyState.currentLessonId = window.ACADEMY_LESSONS[0].id;
+  }
+  renderAcademyList();
+  renderActiveLesson();
+  updateAcademyProgress();
+}
+
+function openAcademyWithCategory(cat) {
+  switchTab('academy');
+  filterAcademyCategory(cat);
+}
+
+function filterAcademyCategory(cat) {
+  academyState.activeCategory = cat;
+  
+  const categories = ['all', 'candlesticks', 'patterns', 'fibonacci', 'supply-demand', 'smc', 'indicators', 'options'];
+  categories.forEach(c => {
+    const btn = document.getElementById(`cat-${c}`);
+    if (!btn) return;
+    if (c === cat) {
+      btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-bullGreen text-black shadow';
+    } else {
+      btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder';
+    }
+  });
+
+  renderAcademyList();
+}
+
+function searchAcademyLessons() {
+  const input = document.getElementById('academySearchInput');
+  academyState.searchQuery = (input ? input.value : '').toLowerCase().trim();
+  renderAcademyList();
+}
+
+function renderAcademyList() {
+  const container = document.getElementById('academyLessonsList');
+  if (!container || !window.ACADEMY_LESSONS) return;
+
+  let filtered = window.ACADEMY_LESSONS.filter(lesson => {
+    const matchCat = academyState.activeCategory === 'all' || lesson.category === academyState.activeCategory;
+    const matchSearch = !academyState.searchQuery || 
+      lesson.title.toLowerCase().includes(academyState.searchQuery) ||
+      lesson.subtitle.toLowerCase().includes(academyState.searchQuery) ||
+      lesson.category.toLowerCase().includes(academyState.searchQuery);
+    return matchCat && matchSearch;
+  });
+
+  const countEl = document.getElementById('lessonListCount');
+  if (countEl) countEl.textContent = `${filtered.length} of ${window.ACADEMY_LESSONS.length} Lessons`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="py-12 text-center text-gray-500 text-xs">
+        <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+        No lessons match your search criteria.
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  container.innerHTML = filtered.map((lesson) => {
+    const isActive = lesson.id === academyState.currentLessonId;
+    const isCompleted = academyState.completedLessons.includes(lesson.id);
+
+    const badgeColor = 
+      lesson.category === 'candlesticks' ? 'text-bullGreen bg-bullGreen/15 border-bullGreen/30' :
+      lesson.category === 'patterns' ? 'text-accentGold bg-accentGold/15 border-accentGold/30' :
+      lesson.category === 'fibonacci' ? 'text-cyan-400 bg-cyan-400/15 border-cyan-400/30' :
+      lesson.category === 'smc' ? 'text-bearRed bg-bearRed/15 border-bearRed/30' :
+      lesson.category === 'indicators' ? 'text-indigo-400 bg-indigo-400/15 border-indigo-400/30' :
+      'text-bullGreen bg-bullGreen/15 border-bullGreen/30';
+
+    return `
+      <div onclick="selectLesson('${lesson.id}')" class="p-3 rounded-xl border transition cursor-pointer ${
+        isActive 
+          ? 'bg-tradeDark border-accentGold shadow-md' 
+          : 'bg-tradeDark/50 border-tradeBorder hover:border-gray-600 hover:bg-tradeDark'
+      }">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded border uppercase font-bold ${badgeColor}">
+              ${lesson.category}
+            </span>
+            <span class="text-[10px] text-gray-400 font-mono">${lesson.readTime}</span>
+          </div>
+          ${isCompleted ? `
+            <span class="text-bullGreen text-xs flex items-center gap-1 font-bold">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+            </span>
+          ` : `
+            <span class="text-gray-600 text-xs">
+              <i data-lucide="circle" class="w-3.5 h-3.5"></i>
+            </span>
+          `}
+        </div>
+
+        <h4 class="text-xs font-bold text-white mt-1.5 leading-snug ${isActive ? 'text-accentGold' : ''}">
+          ${lesson.title}
+        </h4>
+        <p class="text-[11px] text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+          ${lesson.subtitle}
+        </p>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function selectLesson(id) {
+  academyState.currentLessonId = id;
+  renderAcademyList();
+  renderActiveLesson();
+}
+
+function renderActiveLesson() {
+  const stage = document.getElementById('academyActiveStage');
+  if (!stage || !window.ACADEMY_LESSONS) return;
+
+  const lesson = window.ACADEMY_LESSONS.find(l => l.id === academyState.currentLessonId);
+  if (!lesson) return;
+
+  const currentIndex = window.ACADEMY_LESSONS.findIndex(l => l.id === academyState.currentLessonId);
+  const prevLesson = currentIndex > 0 ? window.ACADEMY_LESSONS[currentIndex - 1] : null;
+  const nextLesson = currentIndex < window.ACADEMY_LESSONS.length - 1 ? window.ACADEMY_LESSONS[currentIndex + 1] : null;
+  const isCompleted = academyState.completedLessons.includes(lesson.id);
+
+  const t = lesson.tradeDetails || {};
+
+  stage.innerHTML = `
+    <!-- Lesson Header -->
+    <div class="border-b border-tradeBorder pb-5 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono px-2.5 py-0.5 rounded-md uppercase font-bold bg-accentGold/20 text-accentGold border border-accentGold/30">
+            ${lesson.category}
+          </span>
+          <span class="text-xs font-mono text-gray-400 bg-tradeDark px-2 py-0.5 rounded border border-tradeBorder">
+            Level: ${lesson.level}
+          </span>
+          <span class="text-xs font-mono text-gray-400">
+            ⏱️ ${lesson.readTime}
+          </span>
+        </div>
+
+        <!-- Mark as Complete Button -->
+        <button onclick="toggleLessonCompleted('${lesson.id}')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow ${
+          isCompleted 
+            ? 'bg-bullGreen text-black hover:bg-bullGreen/90' 
+            : 'bg-tradeDark hover:bg-tradeBorder text-gray-300 border border-tradeBorder'
+        }">
+          <i data-lucide="${isCompleted ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
+          <span>${isCompleted ? 'Completed ✓' : 'Mark as Studied'}</span>
+        </button>
+      </div>
+
+      <h1 class="text-xl md:text-2xl font-black text-white tracking-tight leading-snug">
+        ${lesson.title}
+      </h1>
+      <p class="text-xs md:text-sm text-gray-300 font-medium">
+        ${lesson.subtitle}
+      </p>
+    </div>
+
+    <!-- Master Analyst Note Box -->
+    <div class="bg-gradient-to-r from-accentGold/10 via-tradeDark to-tradeCard border border-accentGold/40 rounded-xl p-4 flex items-start gap-3 text-xs leading-relaxed">
+      <div class="w-8 h-8 rounded-lg bg-accentGold text-black font-bold flex items-center justify-center shrink-0 text-base shadow">
+        💡
+      </div>
+      <div>
+        <strong class="text-accentGold uppercase tracking-wide block font-bold mb-1">Senior Proprietary Analyst Insight:</strong>
+        <p class="text-gray-200">${lesson.analystNote}</p>
+      </div>
+    </div>
+
+    <!-- VISUAL TRADE BLUEPRINT (SVG IMAGE IN PICTURE FORM) -->
+    <div class="space-y-2">
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-bold text-bullGreen uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="image" class="w-4 h-4"></i>
+          Institutional Trade Blueprint (Entry, Stop Loss & Targets in Picture Form)
+        </span>
+        <span class="text-[10px] text-gray-400 font-mono">Candlestick & Order Flow Geometry</span>
+      </div>
+      <div class="w-full rounded-xl overflow-hidden shadow-2xl border border-tradeBorder">
+        ${lesson.svgBlueprint}
+      </div>
+    </div>
+
+    <!-- Theoretical Breakdown & Mechanics -->
+    <div class="bg-tradeDark/70 border border-tradeBorder rounded-xl p-5 space-y-3 text-xs leading-relaxed text-gray-300">
+      <h3 class="text-sm font-bold text-white flex items-center gap-2">
+        <i data-lucide="book-marked" class="w-4 h-4 text-bullGreen"></i>
+        Auction Mechanics & Market Psychology
+      </h3>
+      <div>
+        ${lesson.theory}
+      </div>
+    </div>
+
+    <!-- Institutional Execution Card -->
+    <div class="bg-tradeDark border-2 border-bullGreen/40 rounded-xl p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-tradeBorder pb-2">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-bullGreen flex items-center gap-1.5">
+          <i data-lucide="crosshair" class="w-4 h-4"></i>
+          Sniper Trade Execution Parameters
+        </h3>
+        <span class="text-xs font-mono font-bold text-accentGold bg-accentGold/10 px-2 py-0.5 rounded border border-accentGold/20">
+          Risk-Reward: ${t.riskReward || '1:3.0'}
+        </span>
+      </div>
+
+      <!-- Execution Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        <div class="bg-tradeCard p-3 rounded-lg border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase font-mono block">Setup Type</span>
+          <strong class="text-white text-xs">${t.setupType || '--'}</strong>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-lg border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase font-mono block">Instrument Target</span>
+          <strong class="text-white text-xs">${t.instrument || '--'}</strong>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-lg border border-bullGreen/30">
+          <span class="text-[10px] text-bullGreen uppercase font-mono block font-bold">🟢 Entry Trigger</span>
+          <span class="text-gray-200 text-xs">${t.entryTrigger || '--'}</span>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-lg border border-bearRed/30">
+          <span class="text-[10px] text-bearRed uppercase font-mono block font-bold">🛑 Stop Loss Rule</span>
+          <span class="text-gray-200 text-xs">${t.stopLoss || '--'}</span>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-lg border border-tradeBorder">
+          <span class="text-[10px] text-gray-400 uppercase font-mono block">🎯 Target 1</span>
+          <strong class="text-bullGreen text-xs">${t.target1 || '--'}</strong>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-lg border border-tradeBorder">
+          <span class="text-[10px] text-gray-400 uppercase font-mono block">🚀 Target 2</span>
+          <strong class="text-cyan-400 text-xs">${t.target2 || '--'}</strong>
+        </div>
+      </div>
+
+      <!-- Execution Checklist -->
+      ${t.executionChecklist && t.executionChecklist.length > 0 ? `
+        <div class="pt-2 border-t border-tradeBorder/60 space-y-2">
+          <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider block">Pre-Trade Confirmation Checklist:</span>
+          <div class="space-y-1.5">
+            ${t.executionChecklist.map((item) => `
+              <div class="flex items-center gap-2 text-xs text-gray-300">
+                <i data-lucide="check-square" class="w-3.5 h-3.5 text-bullGreen shrink-0"></i>
+                <span>${item}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+
+    <!-- Golden Rules -->
+    ${lesson.rules && lesson.rules.length > 0 ? `
+      <div class="bg-tradeDark/50 border border-tradeBorder rounded-xl p-4 space-y-2 text-xs">
+        <h4 class="font-bold text-accentGold uppercase text-[10px] tracking-wider flex items-center gap-1.5">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+          Three Golden Analyst Rules:
+        </h4>
+        <ul class="list-disc pl-5 space-y-1 text-gray-300">
+          ${lesson.rules.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </div>
+    ` : ''}
+
+    <!-- Bottom Navigation (Previous / Next Lesson) -->
+    <div class="pt-4 border-t border-tradeBorder flex items-center justify-between gap-4">
+      ${prevLesson ? `
+        <button onclick="selectLesson('${prevLesson.id}')" class="px-4 py-2 rounded-xl bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 hover:text-white transition flex items-center gap-2">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          <div class="text-left">
+            <span class="text-[10px] text-gray-500 block uppercase">Previous Lesson</span>
+            <span class="font-bold truncate max-w-[140px] md:max-w-xs block">${prevLesson.title}</span>
+          </div>
+        </button>
+      ` : `<div></div>`}
+
+      ${nextLesson ? `
+        <button onclick="selectLesson('${nextLesson.id}')" class="px-4 py-2 rounded-xl bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs transition flex items-center gap-2 shadow-lg shadow-bullGreen/20">
+          <div class="text-right">
+            <span class="text-[10px] text-black/70 block uppercase font-mono">Next Lesson</span>
+            <span class="truncate max-w-[140px] md:max-w-xs block">${nextLesson.title}</span>
+          </div>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      ` : `<div></div>`}
+    </div>
+  `;
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function toggleLessonCompleted(id) {
+  const idx = academyState.completedLessons.indexOf(id);
+  if (idx >= 0) {
+    academyState.completedLessons.splice(idx, 1);
+  } else {
+    academyState.completedLessons.push(id);
+  }
+  localStorage.setItem('sniper_completed_lessons', JSON.stringify(academyState.completedLessons));
+  renderAcademyList();
+  renderActiveLesson();
+  updateAcademyProgress();
+}
+
+function updateAcademyProgress() {
+  const total = (window.ACADEMY_LESSONS || []).length;
+  if (total === 0) return;
+  const completed = academyState.completedLessons.length;
+  const percent = Math.round((completed / total) * 100);
+
+  const label = document.getElementById('academyProgressLabel');
+  const percentEl = document.getElementById('academyProgressPercent');
+  const circle = document.getElementById('academyProgressCircle');
+
+  if (label) label.textContent = `${completed} / ${total} Lessons`;
+  if (percentEl) percentEl.textContent = `${percent}%`;
+  if (circle) {
+    const circumference = 2 * Math.PI * 18; // ~113.1
+    const offset = circumference - (percent / 100) * circumference;
+    circle.style.strokeDashoffset = offset;
+  }
 }
