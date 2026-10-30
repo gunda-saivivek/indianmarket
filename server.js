@@ -25,7 +25,16 @@ function hashPassword(pwd) {
 function loadUsers() {
   try {
     if (fs.existsSync(USERS_FILE)) {
-      return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+      const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+      let modified = false;
+      users.forEach(u => {
+        if (u.status === 'pending') {
+          u.status = 'approved';
+          modified = true;
+        }
+      });
+      if (modified) saveUsers(users);
+      return users;
     }
   } catch (e) {
     console.error('Error loading users.json:', e);
@@ -869,17 +878,29 @@ const server = http.createServer(async (req, res) => {
         email: cleanEmail,
         passwordHash: hashPassword(password),
         role: 'user',
-        status: 'pending', // Requires admin approval
+        status: 'approved', // Instant automatic activation for anyone
         createdAt: new Date().toISOString()
       };
 
       users.push(newUser);
       saveUsers(users);
 
+      const token = crypto.randomBytes(32).toString('hex');
+      const sessionUser = {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        status: newUser.status
+      };
+      activeSessions.set(token, sessionUser);
+
       res.writeHead(201, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         success: true,
-        message: 'Account created successfully! Please wait for Admin (Vivek) to approve your access.'
+        message: 'Account created successfully! Welcome to The Market Sniper Shooters.',
+        token,
+        user: sessionUser
       }));
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -1012,22 +1033,19 @@ const server = http.createServer(async (req, res) => {
   // API endpoint: /api/live-data
   if (pathname === '/api/live-data') {
     const user = getAuthUser(req, parsedUrl);
-    if (!user) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Unauthorized: Please login to view live market signals.' }));
-      return;
-    }
-
-    // Verify fresh approval status
-    const users = loadUsers();
-    const fresh = users.find(u => u.email.toLowerCase() === user.email.toLowerCase());
-    if (!fresh || (fresh.status !== 'approved' && fresh.role !== 'admin')) {
-      res.writeHead(403, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        error: 'Access Pending: Your account is awaiting Admin approval.',
-        status: fresh?.status || 'pending'
-      }));
-      return;
+    // Public & Guest preview access is fully supported so anyone opening the link can view live data immediately!
+    // If a registered user token is supplied, verify their account is active.
+    if (user) {
+      const users = loadUsers();
+      const fresh = users.find(u => u.email.toLowerCase() === user.email.toLowerCase());
+      if (fresh && fresh.status === 'rejected') {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: 'Access Revoked: Your account has been suspended by Admin.',
+          status: 'rejected'
+        }));
+        return;
+      }
     }
 
     const index = (parsedUrl.query.index || 'nifty').toLowerCase();

@@ -51,7 +51,7 @@ function initWorkstationCharts() {
 
 async function checkAuthStatus(manual = false) {
   if (!state.token) {
-    showAuthModal();
+    showAuthModal('signup');
     return;
   }
 
@@ -67,7 +67,7 @@ async function checkAuthStatus(manual = false) {
       localStorage.removeItem('sniper_token');
       state.token = null;
       state.currentUser = null;
-      showAuthModal();
+      showAuthModal('login');
       return;
     }
 
@@ -103,16 +103,21 @@ function updateAuthUI() {
   if (!state.currentUser) {
     if (userSection) {
       userSection.innerHTML = `
-        <button onclick="showAuthModal()" class="px-3 py-1.5 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs shadow">
-          Sign In
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="showAuthModal('login')" class="px-2.5 py-1.5 rounded-lg bg-tradeBorder hover:bg-tradeBorder/80 text-gray-200 font-bold text-xs transition">
+            Sign In
+          </button>
+          <button onclick="showAuthModal('signup')" class="px-3 py-1.5 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-extrabold text-xs shadow transition">
+            Sign Up Free
+          </button>
+        </div>
       `;
     }
     if (sideUserSection) {
       sideUserSection.innerHTML = `
-        <button onclick="showAuthModal()" class="w-full py-2 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs shadow flex items-center justify-center gap-1.5">
-          <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-          <span>Sign In / Register</span>
+        <button onclick="showAuthModal('signup')" class="w-full py-2 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-extrabold text-xs shadow flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          <span>Open Free Account</span>
         </button>
       `;
     }
@@ -167,13 +172,21 @@ function updateAuthUI() {
   if (window.lucide) lucide.createIcons();
 }
 
-function showAuthModal() {
+function showAuthModal(defaultTab = 'signup') {
   document.getElementById('authModal').classList.remove('hidden');
-  switchAuthTab('login');
+  switchAuthTab(defaultTab);
+  if (window.lucide) lucide.createIcons();
 }
 
 function hideAuthModal() {
   document.getElementById('authModal').classList.add('hidden');
+}
+
+function enterGuestMode() {
+  state.isGuest = true;
+  hideAuthModal();
+  updateAuthUI();
+  startPolling();
 }
 
 function switchAuthTab(tab) {
@@ -242,7 +255,7 @@ async function handleSignupSubmit(e) {
   const alertEl = document.getElementById('authAlert');
 
   btn.disabled = true;
-  btn.textContent = 'Registering...';
+  btn.textContent = 'Activating Account...';
   alertEl.classList.add('hidden');
 
   try {
@@ -255,14 +268,27 @@ async function handleSignupSubmit(e) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Signup failed');
 
-    alertEl.textContent = "Registration successful! Your request was sent to the Administrator. Once approved, you can log in.";
-    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bullGreen/20 text-bullGreen border border-bullGreen/30';
-    alertEl.classList.remove('hidden');
+    // Instant automatic login!
+    if (data.token && data.user) {
+      state.token = data.token;
+      localStorage.setItem('sniper_token', data.token);
+      state.currentUser = data.user;
 
-    setTimeout(() => {
+      alertEl.textContent = "🎉 Account created and activated! Entering terminal...";
+      alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bullGreen/20 text-bullGreen border border-bullGreen/30';
+      alertEl.classList.remove('hidden');
+
+      setTimeout(() => {
+        hideAuthModal();
+        updateAuthUI();
+        const pendingAlert = document.getElementById('pendingAlert');
+        if (pendingAlert) pendingAlert.classList.add('hidden');
+        startPolling();
+      }, 700);
+    } else {
       switchAuthTab('login');
       document.getElementById('loginEmail').value = email;
-    }, 2500);
+    }
 
   } catch (err) {
     alertEl.textContent = err.message;
@@ -270,7 +296,7 @@ async function handleSignupSubmit(e) {
     alertEl.classList.remove('hidden');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Request Access';
+    btn.textContent = '🚀 Create Free Account & Enter Terminal';
   }
 }
 
@@ -950,14 +976,18 @@ function startPolling() {
 }
 
 async function fetchLiveData() {
-  if (!state.token) return;
+  if (!state.token && !state.isGuest) return;
 
   try {
+    const headers = {
+      'bypass-tunnel-reminder': 'true'
+    };
+    if (state.token) {
+      headers['Authorization'] = `Bearer ${state.token}`;
+    }
+
     const res = await fetch(`/api/live-data?index=${state.currentIndex}&expiryType=${state.activeExpiry}&_t=${Date.now()}`, {
-      headers: {
-        'Authorization': `Bearer ${state.token}`,
-        'bypass-tunnel-reminder': 'true'
-      }
+      headers
     });
 
     if (res.status === 401) {
