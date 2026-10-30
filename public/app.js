@@ -1393,32 +1393,55 @@ function renderAcademyHub() {
         </div>
 
         <!-- Topics Inside Module -->
-        <div class="pt-3 border-t border-tradeBorder/60 space-y-2">
-          <div class="text-[10px] font-mono uppercase tracking-wider text-gray-500 font-bold mb-1">
-            Curriculum Topics (${(mod.topics || []).length}):
+        <div class="pt-3 border-t border-tradeBorder/60 space-y-2.5">
+          <div class="text-[10px] font-mono uppercase tracking-wider text-gray-500 font-bold mb-1 flex items-center justify-between">
+            <span>Curriculum Topics (${(mod.topics || []).length}):</span>
+            <span class="text-[9px] text-accentGold font-bold">CLICK TOPIC OR SUB-TOPIC TO ENTER</span>
           </div>
-          <div class="space-y-1.5">
+          <div class="space-y-2">
             ${(mod.topics || []).map(topic => {
               const isDone = academyState.completedTopics.includes(topic.id);
+              const subs = topic.subTopics || [];
               return `
-                <div onclick="openTopicReader('${topic.id}')" class="p-2.5 rounded-xl bg-tradeDark/60 hover:bg-tradeDark border border-tradeBorder/80 hover:border-accentGold/60 transition cursor-pointer flex items-center justify-between gap-3 group/item">
-                  <div class="flex items-center gap-2.5 overflow-hidden">
-                    <span class="text-xs ${isDone ? 'text-bullGreen' : 'text-gray-500'} shrink-0">
-                      <i data-lucide="${isDone ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
-                    </span>
-                    <div class="truncate">
-                      <h4 class="text-xs font-semibold text-gray-200 group-hover/item:text-white truncate">
-                        ${topic.title}
-                      </h4>
-                      <p class="text-[10px] text-gray-500 truncate font-mono">
-                        ${topic.subtitle}
-                      </p>
+                <div class="p-3 rounded-xl bg-tradeDark/70 hover:bg-tradeDark border border-tradeBorder/80 hover:border-accentGold/60 transition shadow-sm space-y-2.5">
+                  <!-- Main Topic Header (Clickable) -->
+                  <div onclick="openTopicReader('${topic.id}')" class="cursor-pointer flex items-center justify-between gap-3 group/item">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                      <span class="text-xs ${isDone ? 'text-bullGreen' : 'text-gray-500'} shrink-0">
+                        <i data-lucide="${isDone ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
+                      </span>
+                      <div class="truncate">
+                        <h4 class="text-xs font-bold text-gray-200 group-hover/item:text-accentGold transition truncate">
+                          ${topic.title}
+                        </h4>
+                        <p class="text-[10px] text-gray-400 truncate font-mono">
+                          ${topic.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <span class="text-[10px] text-gray-400 font-mono">${topic.readTime}</span>
+                      <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-accentGold group-hover/item:translate-x-0.5 transition"></i>
                     </div>
                   </div>
-                  <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-[10px] text-gray-400 font-mono">${topic.readTime}</span>
-                    <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-accentGold group-hover/item:translate-x-0.5 transition"></i>
-                  </div>
+
+                  <!-- Direct Sub-Topic Navigation (User Requested) -->
+                  ${subs.length > 0 ? `
+                    <div class="pt-2 border-t border-tradeBorder/50">
+                      <div class="text-[9px] font-mono text-gray-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                        <span class="text-accentGold/80 font-bold">Sub-topics (${subs.length}):</span>
+                        <span class="text-[8px] text-gray-500 font-mono">Jump straight to section</span>
+                      </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        ${subs.map(sub => `
+                          <button onclick="event.stopPropagation(); openTopicReader('${topic.id}', '${sub.id}')" class="text-left px-2.5 py-1.5 rounded-lg bg-tradeCard/80 hover:bg-bullGreen/15 border border-tradeBorder/70 hover:border-bullGreen/50 text-gray-300 hover:text-white text-[11px] font-medium transition flex items-center gap-1.5 group/sub shadow-sm">
+                            <span class="w-1.5 h-1.5 rounded-full bg-accentGold group-hover/sub:bg-bullGreen shrink-0"></span>
+                            <span class="truncate">${sub.title}</span>
+                          </button>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
                 </div>
               `;
             }).join('')}
@@ -1441,7 +1464,7 @@ function renderAcademyHub() {
   updateAcademyProgress();
 }
 
-function openTopicReader(topicId) {
+function openTopicReader(topicId, subTopicId = null) {
   switchTab('academy');
   const hubView = document.getElementById('academyHubView');
   const readerView = document.getElementById('academyReaderView');
@@ -1450,7 +1473,26 @@ function openTopicReader(topicId) {
 
   academyState.currentTopicId = topicId;
   renderTopicReaderContent(topicId);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (subTopicId) {
+    setTimeout(() => {
+      scrollToSubTopic(subTopicId);
+    }, 150);
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function scrollToSubTopic(subId) {
+  const el = document.getElementById(subId);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Flash golden highlight ring so the user visually sees they arrived at their subtopic
+    el.classList.add('ring-2', 'ring-accentGold', 'shadow-2xl', 'transition-all', 'duration-500');
+    setTimeout(() => {
+      el.classList.remove('ring-2', 'ring-accentGold');
+    }, 2800);
+  }
 }
 
 function renderTopicReaderContent(topicId) {
@@ -1500,9 +1542,10 @@ function renderTopicReaderContent(topicId) {
   if (tocContainer) {
     if (tocItems.length > 0) {
       tocContainer.innerHTML = tocItems.map(item => `
-        <a href="#${item.id}" class="block py-1.5 px-2 rounded-lg text-gray-400 hover:text-accentGold hover:bg-tradeDark transition font-medium">
-          ${item.title}
-        </a>
+        <button onclick="scrollToSubTopic('${item.id}')" class="w-full text-left py-2 px-3 rounded-xl text-gray-300 hover:text-accentGold hover:bg-tradeDark/90 transition text-xs font-medium flex items-center justify-between group">
+          <span class="truncate">${item.title}</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-accentGold transition shrink-0"></i>
+        </button>
       `).join('');
     } else {
       tocContainer.innerHTML = `<div class="py-2 text-gray-500 text-[11px]">Overview, Blueprint & Execution</div>`;

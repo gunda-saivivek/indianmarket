@@ -160,22 +160,29 @@
         </button>
 
         <!-- Quick syllabus jumps -->
-        <div class="pl-2 pr-1 py-1 space-y-0.5 text-[11px] text-gray-400">
-          <button onclick="openTopicReader('topic-candle-anatomy')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center gap-1.5">
-            <span class="text-bullGreen font-mono font-bold text-[10px]">01.</span> Candlestick Mechanics
-          </button>
-          <button onclick="openTopicReader('topic-double-bottom-top')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-accentGold transition flex items-center gap-1.5">
-            <span class="text-accentGold font-mono font-bold text-[10px]">02.</span> W & M Patterns
-          </button>
-          <button onclick="openTopicReader('topic-fib-golden-pocket')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-cyan-400 transition flex items-center gap-1.5">
-            <span class="text-cyan-400 font-mono font-bold text-[10px]">03.</span> Fibonacci 0.618 Pocket
-          </button>
-          <button onclick="openTopicReader('topic-smc-order-blocks')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bearRed transition flex items-center gap-1.5">
-            <span class="text-bearRed font-mono font-bold text-[10px]">04.</span> Smart Money (SMC / OB)
-          </button>
-          <button onclick="openTopicReader('topic-options-greeks-gamma')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center gap-1.5">
-            <span class="text-bullGreen font-mono font-bold text-[10px]">05.</span> Gamma Explosion Rules
-          </button>
+        <div class="pl-2 pr-1 py-1 space-y-1 text-[11px] text-gray-400">
+          <div class="space-y-0.5">
+            <button onclick="openTopicReader('topic-candle-anatomy')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-bullGreen font-mono font-bold text-[10px]">01.</span> Candlestick Physics</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-candle-anatomy', 'sub-4')" class="text-[9px] text-gray-500 hover:text-bullGreen font-mono px-1 rounded bg-tradeDark border border-tradeBorder">Chart</span>
+            </button>
+            <button onclick="openTopicReader('topic-double-bottom-top')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-accentGold transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-accentGold font-mono font-bold text-[10px]">02.</span> W & M Patterns</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-double-bottom-top', 'sub-4')" class="text-[9px] text-gray-500 hover:text-accentGold font-mono px-1 rounded bg-tradeDark border border-tradeBorder">Chart</span>
+            </button>
+            <button onclick="openTopicReader('topic-fib-golden-pocket')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-cyan-400 transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-cyan-400 font-mono font-bold text-[10px]">03.</span> Fib Golden Pocket</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-fib-golden-pocket', 'sub-4')" class="text-[9px] text-gray-500 hover:text-cyan-400 font-mono px-1 rounded bg-tradeDark border border-tradeBorder">Chart</span>
+            </button>
+            <button onclick="openTopicReader('topic-smc-order-blocks')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bearRed transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-bearRed font-mono font-bold text-[10px]">04.</span> SMC Order Blocks</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-smc-order-blocks', 'sub-4')" class="text-[9px] text-gray-500 hover:text-bearRed font-mono px-1 rounded bg-tradeDark border border-tradeBorder">Chart</span>
+            </button>
+            <button onclick="openTopicReader('topic-options-greeks-gamma')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-bullGreen font-mono font-bold text-[10px]">05.</span> Gamma Blast Rules</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-options-greeks-gamma', 'sub-4')" class="text-[9px] text-gray-500 hover:text-bullGreen font-mono px-1 rounded bg-tradeDark border border-tradeBorder">Chart</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1093,7 +1100,7 @@
     </div>
   </div>
 
-  <script src="academy-data.js"></script>
-  <script src="app.js"></script>
+  <script src="academy-data.js?v=3.1"></script>
+  <script src="app.js?v=3.1"></script>
 </body>
 </html>
