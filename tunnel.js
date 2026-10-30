@@ -19,7 +19,7 @@ async function startTunnel() {
       while (true) {
         await new Promise(r => setTimeout(r, 25000));
         try {
-          const res = await fetch(url + '/api/live-data?index=nifty&expiryType=current');
+          const res = await fetch(url + '/');
           if (!res.ok && res.status !== 304) {
             console.log('[TUNNELMOLE] Keep-alive check returned status', res.status, '- Reconnecting...');
             break;

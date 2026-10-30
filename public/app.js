@@ -51,7 +51,7 @@ function initWorkstationCharts() {
 
 async function checkAuthStatus(manual = false) {
   if (!state.token) {
-    showAuthModal('signup');
+    showAuthModal('login');
     return;
   }
 
@@ -103,21 +103,16 @@ function updateAuthUI() {
   if (!state.currentUser) {
     if (userSection) {
       userSection.innerHTML = `
-        <div class="flex items-center gap-2">
-          <button onclick="showAuthModal('login')" class="px-2.5 py-1.5 rounded-lg bg-tradeBorder hover:bg-tradeBorder/80 text-gray-200 font-bold text-xs transition">
-            Sign In
-          </button>
-          <button onclick="showAuthModal('signup')" class="px-3 py-1.5 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-extrabold text-xs shadow transition">
-            Sign Up Free
-          </button>
-        </div>
+        <button onclick="showAuthModal('login')" class="px-3 py-1.5 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs shadow transition">
+          Sign In
+        </button>
       `;
     }
     if (sideUserSection) {
       sideUserSection.innerHTML = `
-        <button onclick="showAuthModal('signup')" class="w-full py-2 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-extrabold text-xs shadow flex items-center justify-center gap-1.5 transition">
-          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-          <span>Open Free Account</span>
+        <button onclick="showAuthModal('login')" class="w-full py-2 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black font-bold text-xs shadow flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+          <span>Sign In / Request Access</span>
         </button>
       `;
     }
@@ -172,7 +167,7 @@ function updateAuthUI() {
   if (window.lucide) lucide.createIcons();
 }
 
-function showAuthModal(defaultTab = 'signup') {
+function showAuthModal(defaultTab = 'login') {
   document.getElementById('authModal').classList.remove('hidden');
   switchAuthTab(defaultTab);
   if (window.lucide) lucide.createIcons();
@@ -180,13 +175,6 @@ function showAuthModal(defaultTab = 'signup') {
 
 function hideAuthModal() {
   document.getElementById('authModal').classList.add('hidden');
-}
-
-function enterGuestMode() {
-  state.isGuest = true;
-  hideAuthModal();
-  updateAuthUI();
-  startPolling();
 }
 
 function switchAuthTab(tab) {
@@ -255,7 +243,7 @@ async function handleSignupSubmit(e) {
   const alertEl = document.getElementById('authAlert');
 
   btn.disabled = true;
-  btn.textContent = 'Activating Account...';
+  btn.textContent = 'Submitting Request...';
   alertEl.classList.add('hidden');
 
   try {
@@ -268,33 +256,33 @@ async function handleSignupSubmit(e) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Signup failed');
 
-    // Instant automatic login!
-    if (data.token && data.user) {
-      state.token = data.token;
-      localStorage.setItem('sniper_token', data.token);
-      state.currentUser = data.user;
+    alertEl.innerHTML = `
+      <div class="space-y-1">
+        <div class="font-bold text-accentGold flex items-center gap-1.5">
+          <span>⏳ Request Submitted Successfully!</span>
+        </div>
+        <p class="text-[11px] text-gray-300">
+          Your account has been submitted and is awaiting approval by Administrator (Sai Vivek). Once approved, you can Sign In with your email & password.
+        </p>
+      </div>
+    `;
+    alertEl.className = 'p-3.5 rounded-xl text-xs leading-relaxed bg-accentGold/20 text-accentGold border border-accentGold/40 font-medium';
+    alertEl.classList.remove('hidden');
 
-      alertEl.textContent = "🎉 Account created and activated! Entering terminal...";
-      alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bullGreen/20 text-bullGreen border border-bullGreen/30';
-      alertEl.classList.remove('hidden');
-
-      setTimeout(() => {
-        hideAuthModal();
-        updateAuthUI();
-        const pendingAlert = document.getElementById('pendingAlert');
-        if (pendingAlert) pendingAlert.classList.add('hidden');
-        startPolling();
-      }, 700);
-    } else {
+    setTimeout(() => {
       switchAuthTab('login');
       document.getElementById('loginEmail').value = email;
-    }
+      document.getElementById('loginPassword').value = '';
+    }, 3500);
 
   } catch (err) {
     alertEl.textContent = err.message;
     alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bearRed/20 text-bearRed border border-bearRed/30';
     alertEl.classList.remove('hidden');
   } finally {
+    btn.disabled = false;
+    btn.textContent = '📝 Request Access from Admin';
+  }
     btn.disabled = false;
     btn.textContent = '🚀 Create Free Account & Enter Terminal';
   }
@@ -976,15 +964,13 @@ function startPolling() {
 }
 
 async function fetchLiveData() {
-  if (!state.token && !state.isGuest) return;
+  if (!state.token) return;
 
   try {
     const headers = {
-      'bypass-tunnel-reminder': 'true'
+      'bypass-tunnel-reminder': 'true',
+      'Authorization': `Bearer ${state.token}`
     };
-    if (state.token) {
-      headers['Authorization'] = `Bearer ${state.token}`;
-    }
 
     const res = await fetch(`/api/live-data?index=${state.currentIndex}&expiryType=${state.activeExpiry}&_t=${Date.now()}`, {
       headers

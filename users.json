@@ -9,21 +9,21 @@
     "createdAt": "2026-10-30T15:00:00.000Z"
   },
   {
-    "id": "user-1793376740634",
-    "name": "Pro Trader",
-    "email": "newtrader_1793376740616@market.io",
-    "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "id": "user-1793381777890",
+    "name": "Vivekkk",
+    "email": "gsv.200000@gmail.com",
+    "passwordHash": "46a5f04813c208f6d910f670b98705d00fd0131b47cd0a22fbed0c295ea58969",
     "role": "user",
-    "status": "approved",
-    "createdAt": "2026-10-30T16:12:20.638Z"
+    "status": "pending",
+    "createdAt": "2026-10-30T17:36:17.891Z"
   },
   {
-    "id": "user-1793376806858",
-    "name": "Pro Trader",
-    "email": "newtrader_1793376806852@market.io",
-    "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "id": "user-1793381922045",
+    "name": "Srujanvarma",
+    "email": "srujanvarmapinnamaraju@gmail.com",
+    "passwordHash": "e91f0050766c24114e8d3fd3dbb2592aa39c6322d865fe36546c0aeb205d532c",
     "role": "user",
-    "status": "approved",
-    "createdAt": "2026-10-30T16:13:26.859Z"
+    "status": "pending",
+    "createdAt": "2026-10-30T17:38:42.045Z"
   }
 ]
