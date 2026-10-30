@@ -8,8 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- TradingView Advanced Real-Time Chart Widget -->
-  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -335,12 +333,7 @@
     <!-- TABS BAR -->
     <div class="flex flex-wrap items-center justify-between border-b border-tradeBorder pb-2 gap-2">
       <div class="flex flex-wrap gap-1.5">
-        <button id="tabChart" onclick="switchTab('chart')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-tradeCard text-white border border-tradeBorder shadow">
-          <i data-lucide="candlestick-chart" class="w-4 h-4 text-bullGreen"></i>
-          <span>📈 Live Charts (Multi-TF)</span>
-        </button>
-
-        <button id="tabEqual" onclick="switchTab('equal')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
+        <button id="tabEqual" onclick="switchTab('equal')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-tradeCard text-white border border-tradeBorder shadow">
           <i data-lucide="scale" class="w-4 h-4 text-accentGold"></i>
           <span>⚖️ Equal CE & PE Pairs</span>
           <span class="text-[10px] bg-accentGold/20 text-accentGold px-1.5 py-0.5 rounded-full" id="equalPairsCount">--</span>
@@ -371,68 +364,8 @@
       </div>
     </div>
 
-    <!-- VIEW 0: LIVE CHARTS STUDIO (MULTI-TIMEFRAME PANEL) -->
-    <section id="viewChart" class="space-y-4">
-      <div class="bg-tradeCard border border-tradeBorder rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow">
-        
-        <!-- Active Chart Info -->
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg bg-bullGreen/20 text-bullGreen border border-bullGreen/30 flex items-center justify-center font-bold text-xs">
-            <i data-lucide="line-chart" class="w-4 h-4"></i>
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <span id="chartSymbolLabel">NIFTY 50</span>
-              <span class="text-[10px] bg-tradeDark px-2 py-0.5 rounded border border-tradeBorder font-mono text-gray-400" id="chartExchangeLabel">NSE:NIFTY</span>
-            </h3>
-            <p class="text-[11px] text-gray-400">Advanced Real-Time Candlestick Chart</p>
-          </div>
-        </div>
-
-        <!-- TIMEFRAME SELECTOR PANEL -->
-        <div class="flex items-center gap-1.5 bg-tradeDark p-1 rounded-xl border border-tradeBorder text-xs font-mono">
-          <span class="text-[10px] text-gray-500 uppercase px-2 font-semibold">Timeframe:</span>
-          <button id="tf-1" onclick="switchTimeframe('1')" class="px-2.5 py-1 rounded-lg transition text-gray-400 hover:text-white">1m</button>
-          <button id="tf-3" onclick="switchTimeframe('3')" class="px-2.5 py-1 rounded-lg transition text-gray-400 hover:text-white">3m</button>
-          <button id="tf-5" onclick="switchTimeframe('5')" class="px-2.5 py-1 rounded-lg transition bg-bullGreen text-black font-bold shadow">5m</button>
-          <button id="tf-15" onclick="switchTimeframe('15')" class="px-2.5 py-1 rounded-lg transition text-gray-400 hover:text-white">15m</button>
-          <button id="tf-30" onclick="switchTimeframe('30')" class="px-2.5 py-1 rounded-lg transition text-gray-400 hover:text-white">30m</button>
-          <button id="tf-60" onclick="switchTimeframe('60')" class="px-2.5 py-1 rounded-lg transition text-gray-400 hover:text-white">1H</button>
-          <button id="tf-D" onclick="switchTimeframe('D')" class="px-2.5 py-1 rounded-lg transition text-gray-400 hover:text-white">1D</button>
-        </div>
-
-        <!-- Technical Aids & Direct Link -->
-        <div class="flex items-center gap-2 text-xs">
-          <button onclick="openFullTradingView()" class="px-3 py-1.5 bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-gray-200 hover:text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow">
-            <i data-lucide="external-link" class="w-3.5 h-3.5 text-bullGreen"></i>
-            <span>Open in TradingView ↗</span>
-          </button>
-        </div>
-
-      </div>
-
-      <!-- Quick Ticker Helpers & Notice -->
-      <div class="flex flex-wrap items-center justify-between text-xs text-gray-400 px-1 gap-2">
-        <div class="flex items-center gap-2">
-          <span class="text-[11px] text-gray-500">Fast Tickers:</span>
-          <button onclick="setChartSpecificSymbol('NSE:NIFTY')" class="px-2 py-0.5 rounded bg-tradeCard hover:bg-tradeBorder text-gray-300 font-mono text-[11px] border border-tradeBorder">NSE:NIFTY</button>
-          <button onclick="setChartSpecificSymbol('NSE:NIFTYBEES')" class="px-2 py-0.5 rounded bg-tradeCard hover:bg-tradeBorder text-bullGreen font-mono text-[11px] border border-tradeBorder" title="Tracks Nifty 50 tick-for-tick with 100% free streaming">NIFTY BEES (Unrestricted)</button>
-          <button onclick="setChartSpecificSymbol('BSE:SENSEX')" class="px-2 py-0.5 rounded bg-tradeCard hover:bg-tradeBorder text-gray-300 font-mono text-[11px] border border-tradeBorder">BSE:SENSEX</button>
-          <button onclick="setChartSpecificSymbol('NSE:BANKNIFTY')" class="px-2 py-0.5 rounded bg-tradeCard hover:bg-tradeBorder text-gray-300 font-mono text-[11px] border border-tradeBorder">NSE:BANKNIFTY</button>
-        </div>
-        <div class="text-[11px] text-gray-500">
-          💡 If TradingView shows symbol restriction, switch to <strong class="text-bullGreen cursor-pointer hover:underline" onclick="setChartSpecificSymbol('NSE:NIFTYBEES')">NIFTY BEES</strong> or click <strong class="text-white cursor-pointer hover:underline" onclick="openFullTradingView()">Open in TradingView ↗</strong>
-        </div>
-      </div>
-
-      <!-- TradingView Embed Container -->
-      <div class="w-full h-[600px] rounded-xl overflow-hidden border border-tradeBorder bg-tradeDark shadow-2xl relative">
-        <div id="tradingview_chart_container" class="w-full h-full"></div>
-      </div>
-    </section>
-
     <!-- VIEW 1: EQUAL CE & PE PAIRS (MATCHED STRADDLES / STRANGLES) -->
-    <section id="viewEqual" class="space-y-4 hidden">
+    <section id="viewEqual" class="space-y-4">
       <div class="bg-tradeCard/50 border border-tradeBorder/60 rounded-xl p-3 flex items-start gap-3 text-xs text-gray-300">
         <i data-lucide="info" class="w-5 h-5 text-accentGold shrink-0 mt-0.5"></i>
         <div>

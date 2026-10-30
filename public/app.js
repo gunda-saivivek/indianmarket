@@ -4,8 +4,7 @@
 
 let state = {
   currentIndex: 'nifty',
-  activeTab: 'chart',
-  currentTf: '5',
+  activeTab: 'equal',
   activeExpiry: 'current',
   filterText: '',
   data: null,
@@ -59,9 +58,6 @@ async function checkAuthStatus(manual = false) {
       hideAuthModal();
       document.getElementById('pendingAlert').classList.add('hidden');
       startPolling();
-      if (state.activeTab === 'chart') {
-        renderChartStudio();
-      }
     } else {
       // Pending or Rejected
       if (state.refreshTimer) clearInterval(state.refreshTimer);
@@ -415,131 +411,35 @@ function switchIndex(indexName) {
   document.getElementById('spotLabel').textContent = `${indexName.toUpperCase()} SPOT`;
   fetchLiveData();
 
-  // If chart is currently active, update chart symbol
-  if (state.activeTab === 'chart') {
-    renderChartStudio();
-  }
 }
 
 function switchTab(tab) {
   state.activeTab = tab;
-  ['tabChart', 'tabEqual', 'tabHero', 'tabNews', 'tabLadder'].forEach(id => {
+  ['tabEqual', 'tabHero', 'tabNews', 'tabLadder'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white';
   });
 
-  const activeBtnId = tab === 'chart' ? 'tabChart' : tab === 'equal' ? 'tabEqual' : tab === 'hero' ? 'tabHero' : tab === 'news' ? 'tabNews' : 'tabLadder';
+  const activeBtnId = tab === 'equal' ? 'tabEqual' : tab === 'hero' ? 'tabHero' : tab === 'news' ? 'tabNews' : 'tabLadder';
   const activeBtn = document.getElementById(activeBtnId);
   if (activeBtn) {
     activeBtn.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-tradeCard text-white border border-tradeBorder shadow';
   }
 
-  document.getElementById('viewChart').classList.toggle('hidden', tab !== 'chart');
-  document.getElementById('viewEqual').classList.toggle('hidden', tab !== 'equal');
-  document.getElementById('viewHero').classList.toggle('hidden', tab !== 'hero');
-  document.getElementById('viewNews').classList.toggle('hidden', tab !== 'news');
-  document.getElementById('viewLadder').classList.toggle('hidden', tab !== 'ladder');
+  const elEqual = document.getElementById('viewEqual');
+  const elHero = document.getElementById('viewHero');
+  const elNews = document.getElementById('viewNews');
+  const elLadder = document.getElementById('viewLadder');
 
-  if (tab === 'chart') {
-    renderChartStudio();
-  } else if (tab === 'news') {
+  if (elEqual) elEqual.classList.toggle('hidden', tab !== 'equal');
+  if (elHero) elHero.classList.toggle('hidden', tab !== 'hero');
+  if (elNews) elNews.classList.toggle('hidden', tab !== 'news');
+  if (elLadder) elLadder.classList.toggle('hidden', tab !== 'ladder');
+
+  if (tab === 'news') {
     loadLiveNews();
   }
-}
-
-// ==========================================
-// TRADINGVIEW LIVE CHART STUDIO ENGINE
-// ==========================================
-
-let tvWidget = null;
-
-function renderChartStudio() {
-  const container = document.getElementById('tradingview_chart_container');
-  if (!container) return;
-
-  const defaultMap = {
-    'nifty': 'NSE:NIFTY',
-    'sensex': 'BSE:SENSEX',
-    'banknifty': 'NSE:BANKNIFTY'
-  };
-
-  const symbol = state.chartSymbol || defaultMap[state.currentIndex] || 'NSE:NIFTY';
-  const labelMap = {
-    'NSE:NIFTY': 'NIFTY 50 (SPOT)',
-    'NSE:NIFTYBEES': 'NIFTY BeES (ETF - UNRESTRICTED)',
-    'BSE:SENSEX': 'SENSEX',
-    'NSE:BANKNIFTY': 'BANK NIFTY'
-  };
-
-  const titleEl = document.getElementById('chartSymbolLabel');
-  const exchEl = document.getElementById('chartExchangeLabel');
-  if (titleEl) titleEl.textContent = labelMap[symbol] || symbol;
-  if (exchEl) exchEl.textContent = symbol;
-
-  container.innerHTML = '';
-
-  const widgetContainer = document.createElement('div');
-  widgetContainer.className = 'tradingview-widget-container';
-  widgetContainer.style.height = '100%';
-  widgetContainer.style.width = '100%';
-
-  const widgetDiv = document.createElement('div');
-  widgetDiv.className = 'tradingview-widget-container__widget';
-  widgetDiv.style.height = '100%';
-  widgetDiv.style.width = '100%';
-  widgetContainer.appendChild(widgetDiv);
-
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-  script.async = true;
-  script.innerHTML = JSON.stringify({
-    "autosize": true,
-    "symbol": symbol,
-    "interval": state.currentTf || "5",
-    "timezone": "Asia/Kolkata",
-    "theme": "dark",
-    "style": "1",
-    "locale": "en",
-    "allow_symbol_change": true,
-    "calendar": false,
-    "support_host": "https://www.tradingview.com"
-  });
-
-  widgetContainer.appendChild(script);
-  container.appendChild(widgetContainer);
-}
-
-function setChartSpecificSymbol(sym) {
-  state.chartSymbol = sym;
-  renderChartStudio();
-}
-
-function openFullTradingView() {
-  const defaultMap = {
-    'nifty': 'NSE:NIFTY',
-    'sensex': 'BSE:SENSEX',
-    'banknifty': 'NSE:BANKNIFTY'
-  };
-  const symbol = state.chartSymbol || defaultMap[state.currentIndex] || 'NSE:NIFTY';
-  window.open(`https://in.tradingview.com/chart/?symbol=${encodeURIComponent(symbol)}`, '_blank');
-}
-
-function switchTimeframe(tf) {
-  state.currentTf = tf;
-  const tfList = ['1', '3', '5', '15', '30', '60', 'D'];
-  tfList.forEach(t => {
-    const el = document.getElementById(`tf-${t}`);
-    if (!el) return;
-    if (t === tf) {
-      el.className = 'px-2.5 py-1 rounded-lg transition bg-bullGreen text-black font-bold shadow';
-    } else {
-      el.className = 'px-2.5 py-1 rounded-lg transition text-gray-400 hover:text-white';
-    }
-  });
-
-  renderChartStudio();
 }
 
 // ==========================================
