@@ -1,6 +1,6 @@
-# 🚀 Indian Market Pulse Pro
+# 🎯 The Market Sniper Shooters
 
-Live Equal CE/PE & Hero-Zero Trade Intelligence Engine for **NIFTY 50**, **SENSEX**, and **BANK NIFTY**.
+Sniper Precision Equal CE/PE & Hero-Zero Trade Intelligence Engine for **NIFTY 50**, **SENSEX**, and **BANK NIFTY**.
 
 ---
 

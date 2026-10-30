@@ -1,5 +1,5 @@
 /**
- * Market Pulse Pro - Frontend Application Engine
+ * The Market Sniper Shooters - Frontend Application Engine
  */
 
 let state = {

@@ -543,7 +543,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n=============================================================`);
-  console.log(`🚀 MARKET PULSE PRO APPLICATION IS RUNNING!`);
+  console.log(`🎯 THE MARKET SNIPER SHOOTERS APPLICATION IS RUNNING!`);
   console.log(`📡 Local URL:   http://localhost:${PORT}`);
   console.log(`⚡ Live Feed:  Nifty 50, Sensex, and Bank Nifty active`);
   console.log(`=============================================================\n`);

@@ -1,6 +1,6 @@
 @echo off
 echo ============================================================
-echo   SHARING MARKET PULSE PRO WITH OTHERS ANYWHERE IN THE WORLD
+echo   SHARING THE MARKET SNIPER SHOOTERS ANYWHERE IN THE WORLD
 echo ============================================================
 echo.
 echo Make sure "node server.js" is running in the background.

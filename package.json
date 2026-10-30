@@ -1,7 +1,7 @@
 {
-  "name": "indian-market-pulse",
+  "name": "the-market-sniper-shooters",
   "version": "1.0.0",
-  "description": "Live Indian Market - Equal CE/PE & Hero-Zero Trade Intelligence for Nifty, Sensex, and Bank Nifty",
+  "description": "The Market Sniper Shooters - Equal CE/PE & Hero-Zero Trade Intelligence for Nifty, Sensex, and Bank Nifty",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
