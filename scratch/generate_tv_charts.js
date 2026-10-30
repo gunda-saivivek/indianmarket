@@ -2,7 +2,7 @@
  * Realistic TradingView Candlestick Chart Generators for All 20 Master Academy Topics
  */
 
-const { renderTradingViewChart } = require('./test_chart.js');
+const { makeAnimatedTradingViewChart: renderTradingViewChart } = require('./tv_animated_engine.js');
 
 // Helper to generate a realistic price walk
 function walk(start, changes) {

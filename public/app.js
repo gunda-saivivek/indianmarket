@@ -1300,14 +1300,14 @@ function openAcademyWithCategory(cat) {
 function filterAcademyCategory(cat) {
   academyState.activeCategory = cat;
   
-  const categories = ['all', 'candlesticks', 'patterns', 'fibonacci', 'supply-demand', 'smc', 'indicators', 'options'];
+  const categories = ['all', 'candlesticks', 'patterns', 'malaysian', 'fvg-ifvg', 'liquidity-amt', 'fibonacci', 'indicators', 'options'];
   categories.forEach(c => {
     const btn = document.getElementById(`cat-${c}`);
     if (!btn) return;
     if (c === cat) {
-      btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-bullGreen text-black shadow';
+      btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition bg-bullGreen text-black shadow-lg shadow-bullGreen/20';
     } else {
-      btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder';
+      btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder';
     }
   });
 

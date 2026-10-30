@@ -56,3 +56,45 @@
 .strike-row:hover {
   background-color: rgba(35, 41, 54, 0.6);
 }
+
+/* Institutional Trading UI Button & Card Enhancements */
+html {
+  scroll-behavior: smooth;
+}
+
+.tv-btn {
+  background: linear-gradient(180deg, #1e222d 0%, #151922 100%);
+  border: 1px solid #2a2e39;
+  transition: all 0.2s ease-in-out;
+}
+
+.tv-btn:hover {
+  border-color: #089981;
+  box-shadow: 0 0 12px rgba(8, 153, 129, 0.25);
+  transform: translateY(-1px);
+}
+
+.glass-panel {
+  background: rgba(21, 25, 34, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(42, 46, 57, 0.7);
+}
+
+.subtopic-chip {
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.subtopic-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes goldGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(247, 166, 0, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(247, 166, 0, 0); }
+}
+
+.highlight-gold {
+  animation: goldGlow 1.5s 2;
+}
