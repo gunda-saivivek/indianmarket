@@ -99,6 +99,8 @@ function updateAuthUI() {
   const adminBtn = document.getElementById('btnAdminPanel');
   const sideUserSection = document.getElementById('sideUserSection');
   const sideAdminBtn = document.getElementById('sideBtnAdmin');
+  const sideBtnAdminNav = document.getElementById('sideBtnAdminNav');
+  const adminPendingBanner = document.getElementById('adminPendingBanner');
 
   if (!state.currentUser) {
     if (userSection) {
@@ -118,6 +120,8 @@ function updateAuthUI() {
     }
     if (adminBtn) adminBtn.classList.add('hidden');
     if (sideAdminBtn) sideAdminBtn.classList.add('hidden');
+    if (sideBtnAdminNav) sideBtnAdminNav.classList.add('hidden');
+    if (adminPendingBanner) adminPendingBanner.classList.add('hidden');
     if (window.lucide) lucide.createIcons();
     return;
   }
@@ -126,10 +130,13 @@ function updateAuthUI() {
   if (isAdmin) {
     if (adminBtn) adminBtn.classList.remove('hidden');
     if (sideAdminBtn) sideAdminBtn.classList.remove('hidden');
+    if (sideBtnAdminNav) sideBtnAdminNav.classList.remove('hidden');
     checkPendingAdminUsers();
   } else {
     if (adminBtn) adminBtn.classList.add('hidden');
     if (sideAdminBtn) sideAdminBtn.classList.add('hidden');
+    if (sideBtnAdminNav) sideBtnAdminNav.classList.add('hidden');
+    if (adminPendingBanner) adminPendingBanner.classList.add('hidden');
   }
 
   if (userSection) {
@@ -350,12 +357,21 @@ async function checkPendingAdminUsers() {
     const pendingCount = (data.users || []).filter(u => u.status === 'pending').length;
     const badge = document.getElementById('pendingBadge');
     const sideBadge = document.getElementById('sidePendingBadge');
+    const sideNavBadge = document.getElementById('sideNavPendingBadge');
+    const banner = document.getElementById('adminPendingBanner');
+    const bannerCount = document.getElementById('bannerPendingCount');
+
     if (pendingCount > 0) {
       if (badge) { badge.textContent = `${pendingCount} Pending`; badge.classList.remove('hidden'); }
       if (sideBadge) { sideBadge.textContent = `${pendingCount}`; sideBadge.classList.remove('hidden'); }
+      if (sideNavBadge) { sideNavBadge.textContent = `${pendingCount} Pending`; sideNavBadge.classList.remove('hidden'); }
+      if (banner) banner.classList.remove('hidden');
+      if (bannerCount) bannerCount.textContent = `${pendingCount} Customer${pendingCount > 1 ? 's' : ''} Pending`;
     } else {
       if (badge) badge.classList.add('hidden');
       if (sideBadge) sideBadge.classList.add('hidden');
+      if (sideNavBadge) sideNavBadge.classList.add('hidden');
+      if (banner) banner.classList.add('hidden');
     }
   } catch (e) {}
 }
@@ -376,12 +392,20 @@ async function loadAdminUsers() {
     const pendingCount = users.filter(u => u.status === 'pending').length;
     const badge = document.getElementById('pendingBadge');
     const sideBadge = document.getElementById('sidePendingBadge');
+    const sideNavBadge = document.getElementById('sideNavPendingBadge');
+    const banner = document.getElementById('adminPendingBanner');
+    const bannerCount = document.getElementById('bannerPendingCount');
     if (pendingCount > 0) {
       if (badge) { badge.textContent = `${pendingCount} Pending`; badge.classList.remove('hidden'); }
       if (sideBadge) { sideBadge.textContent = `${pendingCount}`; sideBadge.classList.remove('hidden'); }
+      if (sideNavBadge) { sideNavBadge.textContent = `${pendingCount} Pending`; sideNavBadge.classList.remove('hidden'); }
+      if (banner) banner.classList.remove('hidden');
+      if (bannerCount) bannerCount.textContent = `${pendingCount} Customer${pendingCount > 1 ? 's' : ''} Pending`;
     } else {
       if (badge) badge.classList.add('hidden');
       if (sideBadge) sideBadge.classList.add('hidden');
+      if (sideNavBadge) sideNavBadge.classList.add('hidden');
+      if (banner) banner.classList.add('hidden');
     }
 
     if (users.length === 0) {

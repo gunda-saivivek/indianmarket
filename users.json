@@ -9,12 +9,12 @@
     "createdAt": "2026-10-30T15:00:00.000Z"
   },
   {
-    "id": "user-1793381777890",
-    "name": "Vivekkk",
+    "id": "admin-2",
+    "name": "Vivekkk (Admin)",
     "email": "gsv.200000@gmail.com",
     "passwordHash": "46a5f04813c208f6d910f670b98705d00fd0131b47cd0a22fbed0c295ea58969",
-    "role": "user",
-    "status": "pending",
+    "role": "admin",
+    "status": "approved",
     "createdAt": "2026-10-30T17:36:17.891Z"
   },
   {
