@@ -20,7 +20,9 @@ const {
 const {
   handleGetUsers,
   handleAdminAction,
-  handleGetStats
+  handleGetStats,
+  handleGetFootprints,
+  handleClearFootprints
 } = require('./controllers/adminController');
 
 const {
@@ -1013,6 +1015,14 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname === '/api/admin/stats' && req.method === 'GET') {
     return handleGetStats(req, res, parsedUrl);
+  }
+
+  if (pathname === '/api/admin/footprints' && req.method === 'GET') {
+    return handleGetFootprints(req, res, parsedUrl);
+  }
+
+  if (pathname === '/api/admin/footprints/clear' && req.method === 'POST') {
+    return handleClearFootprints(req, res, parsedUrl);
   }
 
   // ==========================================

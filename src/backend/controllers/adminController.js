@@ -7,6 +7,11 @@ const {
   getAuthUser,
   activeSessions
 } = require('../services/authService');
+const {
+  logFootprint,
+  getRecentFootprints,
+  clearFootprints
+} = require('../services/auditService');
 
 async function handleGetUsers(req, res, parsedUrl) {
   const user = getAuthUser(req, parsedUrl);
@@ -47,10 +52,13 @@ async function handleAdminAction(req, res, parsedUrl) {
         return;
       }
       await deleteUserByEmail(cleanEmail);
+      await logFootprint({ action: 'ADMIN_DELETE', email: user.email, name: user.name, role: user.role, req, details: `Permanently deleted user: ${cleanEmail}`, status: 'SUCCESS' });
     } else if (action === 'approve') {
       await updateUserStatus(cleanEmail, 'approved');
+      await logFootprint({ action: 'ADMIN_APPROVE', email: user.email, name: user.name, role: user.role, req, details: `Granted trading clearance to: ${cleanEmail}`, status: 'SUCCESS' });
     } else if (action === 'reject') {
       await updateUserStatus(cleanEmail, 'rejected');
+      await logFootprint({ action: 'ADMIN_REJECT', email: user.email, name: user.name, role: user.role, req, details: `Revoked trading access from: ${cleanEmail}`, status: 'SUCCESS' });
     }
 
     for (const [t, s] of activeSessions.entries()) {
@@ -95,8 +103,46 @@ async function handleGetStats(req, res, parsedUrl) {
   }));
 }
 
+async function handleGetFootprints(req, res, parsedUrl) {
+  const user = getAuthUser(req, parsedUrl);
+  if (!user || user.role !== 'admin') {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Admin access required' }));
+    return;
+  }
+
+  const limit = parseInt(parsedUrl?.query?.limit || '100', 10);
+  const logs = await getRecentFootprints(limit);
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({
+    success: true,
+    logs
+  }));
+}
+
+async function handleClearFootprints(req, res, parsedUrl) {
+  const user = getAuthUser(req, parsedUrl);
+  if (!user || user.role !== 'admin') {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Admin access required' }));
+    return;
+  }
+
+  await clearFootprints();
+  await logFootprint({ action: 'AUDIT_CLEAR', email: user.email, name: user.name, role: user.role, req, details: 'Admin cleared audit footprint logs', status: 'SUCCESS' });
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({
+    success: true,
+    message: 'Audit logs cleared successfully'
+  }));
+}
+
 module.exports = {
   handleGetUsers,
   handleAdminAction,
-  handleGetStats
+  handleGetStats,
+  handleGetFootprints,
+  handleClearFootprints
 };

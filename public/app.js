@@ -588,6 +588,154 @@ async function handleAdminUserAction(email, action) {
     if (!res.ok) throw new Error(data.error || "Action failed");
 
     loadAdminUsers();
+    loadAdminFootprints();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function switchAdminTab(tab) {
+  const viewUsers = document.getElementById('adminViewUsers');
+  const viewFootprints = document.getElementById('adminViewFootprints');
+  const tabUsers = document.getElementById('adminTabUsers');
+  const tabFootprints = document.getElementById('adminTabFootprints');
+
+  if (tab === 'footprints') {
+    if (viewUsers) viewUsers.classList.add('hidden');
+    if (viewFootprints) viewFootprints.classList.remove('hidden');
+
+    if (tabUsers) {
+      tabUsers.className = 'py-2.5 border-b-2 border-transparent text-gray-400 hover:text-white font-medium flex items-center gap-1.5 transition';
+    }
+    if (tabFootprints) {
+      tabFootprints.className = 'py-2.5 border-b-2 border-accentGold text-accentGold font-bold flex items-center gap-1.5 transition';
+    }
+    loadAdminFootprints();
+  } else {
+    if (viewUsers) viewUsers.classList.remove('hidden');
+    if (viewFootprints) viewFootprints.classList.add('hidden');
+
+    if (tabUsers) {
+      tabUsers.className = 'py-2.5 border-b-2 border-accentGold text-accentGold font-bold flex items-center gap-1.5 transition';
+    }
+    if (tabFootprints) {
+      tabFootprints.className = 'py-2.5 border-b-2 border-transparent text-gray-400 hover:text-white font-medium flex items-center gap-1.5 transition';
+    }
+    loadAdminUsers();
+  }
+}
+
+async function loadAdminFootprints() {
+  const tbody = document.getElementById('adminFootprintsBody');
+  if (!tbody || !state.token) return;
+
+  try {
+    const res = await fetch('/api/admin/footprints?limit=100', {
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'bypass-tunnel-reminder': 'true'
+      }
+    });
+
+    const data = await parseJsonResponse(res);
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch footprints');
+
+    const logs = data.logs || [];
+    if (logs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-gray-500">No footprints recorded yet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = logs.map(log => {
+      let badgeColor = 'bg-gray-800 text-gray-300 border-gray-700';
+      let icon = '•';
+
+      if (log.action === 'LOGIN') {
+        if (log.status === 'SUCCESS') {
+          badgeColor = 'bg-bullGreen/20 text-bullGreen border-bullGreen/40';
+          icon = '🟢';
+        } else if (log.status === 'BLOCKED' || log.status === 'FAILURE') {
+          badgeColor = 'bg-bearRed/20 text-bearRed border-bearRed/40';
+          icon = '🔴';
+        } else {
+          badgeColor = 'bg-accentGold/20 text-accentGold border-accentGold/40';
+          icon = '🟡';
+        }
+      } else if (log.action === 'LOGOUT') {
+        badgeColor = 'bg-blue-500/20 text-blue-400 border-blue-500/40';
+        icon = '🔵';
+      } else if (log.action === 'SIGNUP') {
+        badgeColor = 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+        icon = '✨';
+      } else if (log.action.startsWith('ADMIN_')) {
+        badgeColor = 'bg-accentGold/20 text-accentGold border-accentGold/40';
+        icon = '👑';
+      } else if (log.action === 'DATA_ACCESS') {
+        badgeColor = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+        icon = '📡';
+      } else if (log.action === 'ACCESS_DENIED') {
+        badgeColor = 'bg-bearRed/20 text-bearRed border-bearRed/40';
+        icon = '🚫';
+      }
+
+      const dateStr = log.timestamp ? new Date(log.timestamp).toLocaleString('en-IN', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+      }) : 'Just now';
+
+      let simpleUa = 'Desktop';
+      const ua = log.userAgent || '';
+      if (/mobile|iphone|android/i.test(ua)) simpleUa = 'Mobile';
+      if (/mac/i.test(ua)) simpleUa += ' (Mac)';
+      else if (/win/i.test(ua)) simpleUa += ' (Win)';
+      else if (/linux/i.test(ua)) simpleUa += ' (Linux)';
+
+      return `
+        <tr class="hover:bg-tradeCard/50 transition">
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}">
+              <span>${icon}</span>
+              <span>${log.action}</span>
+            </span>
+          </td>
+          <td class="py-2.5 px-3">
+            <strong class="text-white block font-medium text-[11px]">${log.name || log.email}</strong>
+            <span class="text-gray-400 text-[10px]">${log.email}</span>
+          </td>
+          <td class="py-2.5 px-3 text-gray-300 text-[11px]">
+            <span>${log.details || '-'}</span>
+          </td>
+          <td class="py-2.5 px-3 text-gray-400 text-[10px] whitespace-nowrap">
+            <span class="text-gray-300">${log.ip || '127.0.0.1'}</span>
+            <span class="text-gray-500 block text-[9px]">${simpleUa}</span>
+          </td>
+          <td class="py-2.5 px-3 text-right text-gray-400 text-[10px] whitespace-nowrap">
+            ${dateStr}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    const countBadge = document.getElementById('footprintCountBadge');
+    if (countBadge) countBadge.textContent = `${logs.length} LOGS`;
+
+  } catch (err) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-bearRed">${err.message}</td></tr>`;
+  }
+}
+
+async function clearAdminFootprints() {
+  if (!confirm('Are you sure you want to clear all security footprint audit logs?')) return;
+  try {
+    const res = await fetch('/api/admin/footprints/clear', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'bypass-tunnel-reminder': 'true'
+      }
+    });
+    const data = await parseJsonResponse(res);
+    if (!res.ok) throw new Error(data.error || 'Failed to clear logs');
+    loadAdminFootprints();
   } catch (err) {
     alert(err.message);
   }

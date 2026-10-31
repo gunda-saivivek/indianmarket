@@ -7,6 +7,7 @@ const {
   getAuthUser,
   isLegitGmail
 } = require('../services/authService');
+const { logFootprint } = require('../services/auditService');
 
 function parseJsonBody(req) {
   return new Promise((resolve, reject) => {
@@ -25,24 +26,35 @@ function parseJsonBody(req) {
 async function handleLogin(req, res) {
   try {
     const { email, password } = await parseJsonBody(req);
-    if (!email || !password) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+
+    if (!cleanEmail || !password) {
+      await logFootprint({ action: 'LOGIN', email: cleanEmail || 'empty', req, details: 'Missing email or password', status: 'FAILURE' });
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Email and password are required' }));
       return;
     }
 
-    const user = await findUserByEmail(email);
+    const user = await findUserByEmail(cleanEmail);
 
     if (!user || user.passwordHash !== hashPassword(password)) {
+      await logFootprint({ action: 'LOGIN', email: cleanEmail, req, details: 'Invalid email or password attempt', status: 'FAILURE' });
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Invalid email or password' }));
       return;
     }
 
     if (user.status === 'rejected') {
+      await logFootprint({ action: 'LOGIN', email: cleanEmail, name: user.name, role: user.role, req, details: 'Blocked: Revoked user tried to log in', status: 'BLOCKED' });
       res.writeHead(403, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Access Revoked: Your account access has been revoked by the Administrator.' }));
       return;
+    }
+
+    if (user.status === 'pending' && user.role !== 'admin') {
+      await logFootprint({ action: 'LOGIN', email: cleanEmail, name: user.name, role: user.role, req, details: 'Login attempt while pending admin approval', status: 'PENDING' });
+    } else {
+      await logFootprint({ action: 'LOGIN', email: cleanEmail, name: user.name, role: user.role, req, details: 'User successfully signed in', status: 'SUCCESS' });
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -68,6 +80,7 @@ async function handleSignup(req, res) {
 
     const cleanEmail = email.toLowerCase().trim();
     if (!isLegitGmail(cleanEmail)) {
+      await logFootprint({ action: 'SIGNUP', email: cleanEmail, name, req, details: 'Invalid non-Gmail registration attempted', status: 'FAILURE' });
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Caution: Please enter a correct Gmail address (ending with @gmail.com)' }));
       return;
@@ -81,6 +94,7 @@ async function handleSignup(req, res) {
 
     const existingUser = await findUserByEmail(cleanEmail);
     if (existingUser) {
+      await logFootprint({ action: 'SIGNUP', email: cleanEmail, name, req, details: 'Duplicate Gmail registration attempted', status: 'FAILURE' });
       res.writeHead(409, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'An account with this Gmail address already exists' }));
       return;
@@ -97,6 +111,7 @@ async function handleSignup(req, res) {
     };
 
     await createUser(newUser);
+    await logFootprint({ action: 'SIGNUP', email: cleanEmail, name: newUser.name, role: 'user', req, details: 'New user registered and queued for approval', status: 'SUCCESS' });
 
     res.writeHead(201, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -135,10 +150,15 @@ async function handleMe(req, res, parsedUrl) {
   res.end(JSON.stringify({ success: true, user }));
 }
 
-function handleLogout(req, res) {
+async function handleLogout(req, res) {
   const authHeader = req.headers['authorization'];
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    activeSessions.delete(authHeader.substring(7).trim());
+    const token = authHeader.substring(7).trim();
+    const session = activeSessions.get(token);
+    if (session) {
+      await logFootprint({ action: 'LOGOUT', email: session.email, name: session.name, role: session.role, req, details: 'User signed out', status: 'SUCCESS' });
+    }
+    activeSessions.delete(token);
   }
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ success: true }));
