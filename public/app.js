@@ -20,7 +20,7 @@ let state = {
 
 // Initial startup
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
   initWorkstationCharts();
   switchTab('executive');
   checkAuthStatus();
@@ -122,7 +122,7 @@ function updateAuthUI() {
     const sideTabAdmin = document.getElementById('sideTabAdmin');
     if (tabAdmin) tabAdmin.classList.add('hidden');
     if (sideTabAdmin) sideTabAdmin.classList.add('hidden');
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
     return;
   }
 
@@ -174,13 +174,13 @@ function updateAuthUI() {
     `;
   }
 
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
 }
 
 function showAuthModal(defaultTab = 'login') {
   document.getElementById('authModal').classList.remove('hidden');
   switchAuthTab(defaultTab);
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
 }
 
 function hideAuthModal() {
@@ -474,7 +474,7 @@ async function loadAdminUsers() {
     if (tbody) tbody.innerHTML = usersHtml;
     if (pageTbody) pageTbody.innerHTML = usersHtml;
 
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
 
   } catch (err) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-bearRed">${err.message}</td></tr>`;
@@ -650,10 +650,13 @@ function switchTab(tab) {
     loadAdminUsers();
   } else if (tab === 'equal') {
     if (state.lastData) renderEqualPairs(state.lastData.equalPairs || []);
+    else fetchLiveData();
   } else if (tab === 'hero') {
     if (state.lastData) renderHeroZero(state.lastData.heroPicks || { ce: [], pe: [] }, state.lastData.lotSize);
+    else fetchLiveData();
   } else if (tab === 'ladder') {
     if (state.lastData) renderLadder(state.lastData.chain || [], state.lastData.atmStrike);
+    else fetchLiveData();
   } else if (tab === 'bull' || tab === 'bear' || tab === 'executive') {
     if (state.lastData) {
       renderExecutiveHub(state.lastData);
@@ -670,7 +673,7 @@ function switchTab(tab) {
     if (backdrop) backdrop.classList.add('hidden');
   }
 
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
 }
 
 // ==========================================
@@ -1002,7 +1005,7 @@ async function loadLiveNews(force = false) {
     `;
   }).join('');
 
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
 }
 
 function onExpiryChange() {
@@ -1145,7 +1148,7 @@ function renderUI(data) {
   // Render Ladder
   renderLadder(data.chain || [], data.atmStrike);
 
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
 }
 
 /**
@@ -1510,7 +1513,7 @@ function openTradeModal(strikeStr, type, ltp, category) {
   updateLotCalc();
 
   modal.classList.remove('hidden');
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
 }
 
 function generateTradingReason(strike, type, ltp, spot, category, indexName) {
@@ -1596,11 +1599,11 @@ function copyUpstoxString() {
     const btn = document.getElementById('btnCopy');
     btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>Copied!</span>`;
     btn.classList.replace('bg-upstoxPurple', 'bg-bullGreen');
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
     setTimeout(() => {
       btn.innerHTML = `<i data-lucide="copy" class="w-3.5 h-3.5"></i><span>Copy</span>`;
       btn.classList.replace('bg-bullGreen', 'bg-upstoxPurple');
-      if (window.lucide) lucide.createIcons();
+      if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
     }, 2000);
   });
 }
@@ -1730,7 +1733,7 @@ function renderAcademyHub() {
         <p class="text-xs text-gray-400">Try searching for "Candlestick", "Hammer", "Fibonacci", "Order Block", or "Gamma".</p>
       </div>
     `;
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
     updateAcademyProgress();
     return;
   }
@@ -1839,7 +1842,7 @@ function renderAcademyHub() {
     `;
   }).join('');
 
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
   updateAcademyProgress();
 }
 
@@ -2112,7 +2115,7 @@ function renderTopicReaderContent(topicId) {
     </div>
   `;
 
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
 }
 
 function navigateReader(direction) {
