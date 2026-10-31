@@ -9,6 +9,25 @@ const path = require('path');
 const url = require('url');
 const crypto = require('crypto');
 
+// Modular Controllers
+const {
+  handleLogin,
+  handleSignup,
+  handleMe,
+  handleLogout
+} = require('./controllers/authController');
+
+const {
+  handleGetUsers,
+  handleAdminAction,
+  handleGetStats
+} = require('./controllers/adminController');
+
+const {
+  handleLiveData,
+  handleLiveNews
+} = require('./controllers/marketController');
+
 const PORT = process.env.PORT || 7171;
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const FRONTEND_DIR = path.join(ROOT_DIR, 'src', 'frontend');
@@ -963,293 +982,52 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ==========================================
-  // AUTH API ENDPOINTS
+  // AUTH API ENDPOINTS (Delegated to authController)
   // ==========================================
-
-  function isLegitGmail(email) {
-    if (!email || typeof email !== 'string') return false;
-    const clean = email.trim().toLowerCase();
-    // Validate that the email is a legitimate Gmail format
-    return /^[a-zA-Z0-9._%+-]+@(?:gmail\.com|googlemail\.com)$/i.test(clean);
-  }
-
-  // POST /api/auth/login
   if (pathname === '/api/auth/login' && req.method === 'POST') {
-    try {
-      const { email, password } = await parseJsonBody(req);
-      if (!email || !password) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Email and password are required' }));
-        return;
-      }
-
-      const user = await findUserByEmail(email);
-
-      if (!user || user.passwordHash !== hashPassword(password)) {
-        res.writeHead(401, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid email or password' }));
-        return;
-      }
-
-      if (user.status === 'rejected') {
-        res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Access Revoked: Your account access has been revoked by the Administrator.' }));
-        return;
-      }
-
-      const token = crypto.randomBytes(32).toString('hex');
-      const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status };
-      activeSessions.set(token, sessionUser);
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, token, user: sessionUser }));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
+    return handleLogin(req, res);
   }
 
-  // POST /api/auth/signup
   if (pathname === '/api/auth/signup' && req.method === 'POST') {
-    try {
-      const { name, email, password } = await parseJsonBody(req);
-      if (!name || !email || !password) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Name, Gmail address, and password are required' }));
-        return;
-      }
-
-      const cleanEmail = email.toLowerCase().trim();
-      if (!isLegitGmail(cleanEmail)) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Caution: Please enter a correct Gmail address (ending with @gmail.com)' }));
-        return;
-      }
-
-      if (password.length < 6) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Password must be at least 6 characters long' }));
-        return;
-      }
-
-      const existingUser = await findUserByEmail(cleanEmail);
-      if (existingUser) {
-        res.writeHead(409, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'An account with this Gmail address already exists' }));
-        return;
-      }
-
-      const newUser = {
-        id: 'user-' + Date.now(),
-        name: name.trim(),
-        email: cleanEmail,
-        passwordHash: hashPassword(password),
-        role: 'user',
-        status: 'pending', // Strictly requires Admin (gsv.200000@gmail.com) approval before access
-        createdAt: new Date().toISOString()
-      };
-
-      await createUser(newUser);
-
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        message: 'Registration submitted successfully! Your account is awaiting approval by Administrator before access.',
-        user: {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-          status: 'pending'
-        }
-      }));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
+    return handleSignup(req, res);
   }
 
-  // GET /api/auth/me
   if (pathname === '/api/auth/me' && req.method === 'GET') {
-    const user = getAuthUser(req, parsedUrl);
-    if (!user) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Not authenticated' }));
-      return;
-    }
-
-    // Refresh live status in case admin just approved
-    const fresh = await findUserByEmail(user.email);
-    if (fresh) {
-      user.status = fresh.status;
-      user.role = fresh.role;
-      user.name = fresh.name;
-    }
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: true, user }));
-    return;
+    return handleMe(req, res, parsedUrl);
   }
 
-  // POST /api/auth/logout
   if (pathname === '/api/auth/logout' && req.method === 'POST') {
-    const authHeader = req.headers['authorization'];
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      activeSessions.delete(authHeader.substring(7).trim());
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: true }));
-    return;
+    return handleLogout(req, res);
   }
 
   // ==========================================
-  // ADMIN DASHBOARD ENDPOINTS
+  // ADMIN DASHBOARD ENDPOINTS (Delegated to adminController)
   // ==========================================
-
-  // GET /api/admin/users
   if (pathname === '/api/admin/users' && req.method === 'GET') {
-    const user = getAuthUser(req, parsedUrl);
-    if (!user || user.role !== 'admin') {
-      res.writeHead(403, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Admin access required' }));
-      return;
-    }
-
-    const users = await getAllUsers();
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: true, users }));
-    return;
+    return handleGetUsers(req, res, parsedUrl);
   }
 
-  // POST /api/admin/action
   if (pathname === '/api/admin/action' && req.method === 'POST') {
-    const user = getAuthUser(req, parsedUrl);
-    if (!user || user.role !== 'admin') {
-      res.writeHead(403, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Admin access required' }));
-      return;
-    }
+    return handleAdminAction(req, res, parsedUrl);
+  }
 
-    try {
-      const { email, action } = await parseJsonBody(req);
-      const cleanEmail = (email || '').toLowerCase().trim();
-      const targetUser = await findUserByEmail(cleanEmail);
-
-      if (!targetUser) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'User not found' }));
-        return;
-      }
-
-      if (action === 'delete') {
-        if (targetUser.role === 'admin') {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Cannot delete the admin account' }));
-          return;
-        }
-        await deleteUserByEmail(cleanEmail);
-      } else if (action === 'approve') {
-        await updateUserStatus(cleanEmail, 'approved');
-      } else if (action === 'reject') {
-        await updateUserStatus(cleanEmail, 'rejected');
-      }
-
-      // Update active sessions in memory
-      for (const [t, s] of activeSessions.entries()) {
-        if (s.email.toLowerCase() === cleanEmail) {
-          if (action === 'delete' || action === 'reject') {
-            activeSessions.delete(t);
-          } else {
-            s.status = action === 'approve' ? 'approved' : targetUser.status;
-          }
-        }
-      }
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ 
-        success: true, 
-        message: action === 'reject' ? 'User access revoked successfully' : `User ${action}d successfully` 
-      }));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
+  if (pathname === '/api/admin/stats' && req.method === 'GET') {
+    return handleGetStats(req, res, parsedUrl);
   }
 
   // ==========================================
   // PROTECTED LIVE MARKET DATA API
   // ==========================================
 
-  // API endpoint: /api/live-data
+  // ==========================================
+  // LIVE MARKET & NEWS ENDPOINTS (Delegated to marketController)
+  // ==========================================
   if (pathname === '/api/live-data') {
-    const user = getAuthUser(req, parsedUrl);
-    if (!user) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Unauthorized: Please log in to view live market signals.' }));
-      return;
-    }
-
-    // Verify fresh approval status by Admin
-    const fresh = await findUserByEmail(user.email);
-    if (!fresh || (fresh.status !== 'approved' && fresh.role !== 'admin')) {
-      res.writeHead(403, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        error: 'Access Pending: Your account is awaiting Administrator approval by Sai Vivek.',
-        status: fresh?.status || 'pending'
-      }));
-      return;
-    }
-
-    const index = (parsedUrl.query.index || 'nifty').toLowerCase();
-    const expiryType = (parsedUrl.query.expiryType || 'current').toLowerCase();
-
-    try {
-      let data = null;
-      if (index === 'sensex') {
-        data = await handleSensexData(expiryType);
-      } else {
-        data = await handleNseData(index, expiryType);
-      }
-
-      res.writeHead(200, {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      });
-      res.end(JSON.stringify(data));
-    } catch (err) {
-      console.error('API error:', err);
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
+    return handleLiveData(req, res, parsedUrl, handleNseData, handleSensexData);
   }
 
-  // API endpoint: /api/live-news (Protected for approved users)
   if (pathname === '/api/live-news') {
-    const user = getAuthUser(req, parsedUrl);
-    if (!user) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Unauthorized' }));
-      return;
-    }
-
-    try {
-      const news = await fetchLiveNews();
-      res.writeHead(200, {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store'
-      });
-      res.end(JSON.stringify({ success: true, news }));
-    } catch (err) {
-      console.error('News fetch error:', err.message);
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Failed to fetch live news' }));
-    }
-    return;
+    return handleLiveNews(req, res, parsedUrl, fetchLiveNews);
   }
 
   // API endpoint: /api/settings
