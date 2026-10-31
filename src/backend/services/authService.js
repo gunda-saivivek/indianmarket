@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { syncUsersToGitAndCiCd } = require('./gitSyncService');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..', '..');
 const USERS_FILE = path.join(__dirname, '..', 'data', 'users.json');
@@ -139,7 +140,6 @@ async function createUser(newUser) {
         newUser.status || 'pending',
         newUser.createdAt || new Date().toISOString()
       ]);
-      return newUser;
     } catch (e) {
       console.error('Error creating user in pgPool:', e.message);
     }
@@ -147,6 +147,7 @@ async function createUser(newUser) {
   const users = loadUsers();
   users.push(newUser);
   saveUsers(users);
+  syncUsersToGitAndCiCd(`new member registered: ${newUser.name} (${clean})`);
   return newUser;
 }
 
@@ -164,6 +165,7 @@ async function updateUserStatus(email, status) {
   if (u) {
     u.status = status;
     saveUsers(users);
+    syncUsersToGitAndCiCd(`updated status of ${clean} to ${status}`);
   }
 }
 
@@ -179,6 +181,7 @@ async function deleteUserByEmail(email) {
   let users = loadUsers();
   users = users.filter(u => u.email.toLowerCase() !== clean);
   saveUsers(users);
+  syncUsersToGitAndCiCd(`deleted member: ${clean}`);
 }
 
 const activeSessions = new Map();
