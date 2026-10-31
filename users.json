@@ -2,20 +2,20 @@
   {
     "id": "admin-1",
     "name": "Sai Vivek (Admin)",
-    "email": "gunda.saivivek@gmail.com",
-    "passwordHash": "be6614f7096f2985048a18ed99ff281e772bcbae5b30c4c624c2eee7c3de16c0",
+    "email": "gsv.200000@gmail.com",
+    "passwordHash": "46a5f04813c208f6d910f670b98705d00fd0131b47cd0a22fbed0c295ea58969",
     "role": "admin",
     "status": "approved",
     "createdAt": "2026-10-30T15:00:00.000Z"
   },
   {
-    "id": "admin-2",
-    "name": "Vivekkk (Admin)",
-    "email": "gsv.200000@gmail.com",
-    "passwordHash": "46a5f04813c208f6d910f670b98705d00fd0131b47cd0a22fbed0c295ea58969",
-    "role": "admin",
+    "id": "user-1",
+    "name": "Sai Vivek",
+    "email": "gunda.saivivek@gmail.com",
+    "passwordHash": "be6614f7096f2985048a18ed99ff281e772bcbae5b30c4c624c2eee7c3de16c0",
+    "role": "user",
     "status": "approved",
-    "createdAt": "2026-10-30T17:36:17.891Z"
+    "createdAt": "2026-10-30T15:00:00.000Z"
   },
   {
     "id": "user-1793381922045",

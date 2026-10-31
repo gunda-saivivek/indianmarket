@@ -36,7 +36,7 @@ function loadUsers() {
   const defaultAdmin = [{
     id: 'admin-1',
     name: 'Sai Vivek (Admin)',
-    email: 'gunda.saivivek@gmail.com',
+    email: 'gsv.200000@gmail.com',
     passwordHash: hashPassword('Money@2027#'),
     role: 'admin',
     status: 'approved',
@@ -830,7 +830,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   async function sendVerificationEmail(toEmail, code, name) {
-    const user = process.env.GMAIL_USER || 'gunda.saivivek@gmail.com';
+    const user = process.env.GMAIL_USER || 'gsv.200000@gmail.com';
     const pass = process.env.GMAIL_APP_PASSWORD;
 
     if (!pass) {
