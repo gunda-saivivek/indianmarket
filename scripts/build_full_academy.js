@@ -1668,7 +1668,13 @@ window.ACADEMY_DEEP_TOPICS = ${JSON.stringify(deepTopics, null, 2)};
 const outputPath = path.join(__dirname, '..', 'public', 'academy-data.js');
 fs.writeFileSync(outputPath, fileContent, 'utf8');
 
-console.log('✅ Successfully compiled public/academy-data.js with:');
+const srcOutputPath = path.join(__dirname, '..', 'src', 'frontend', 'academy-data.js');
+try {
+  fs.mkdirSync(path.dirname(srcOutputPath), { recursive: true });
+  fs.writeFileSync(srcOutputPath, fileContent, 'utf8');
+} catch (e) {}
+
+console.log('✅ Successfully compiled academy-data.js to public/ and src/frontend/ with:');
 console.log(`- ${modules.length} Modules (Zero physics, pure trading basics to pro)`);
 console.log(`- ${Object.keys(deepTopics).length} Topics with dedicated spoon-fed lessons`);
 console.log(`- 22 DISTINCT, UNIQUE SVG Blueprints!`);

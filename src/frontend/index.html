@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Market Sniper Shooters - Equal CE/PE & Hero-Zero Intelligence</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            tradeDark: '#0b0e14',
+            tradeCard: '#151922',
+            tradeBorder: '#232936',
+            bullGreen: '#00c076',
+            bearRed: '#ff3b57',
+            accentGold: '#f7a600',
+            upstoxPurple: '#6a38eb'
+          }
+        }
+      }
+    }
+  </script>
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('market_sniper_theme');
+        if (savedTheme === 'light') {
+          document.documentElement.classList.add('theme-light');
+          document.addEventListener('DOMContentLoaded', function() {
+            if (document.body) document.body.classList.add('theme-light');
+          });
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css?v=22.0">
+</head>
+<body class="bg-tradeDark text-gray-200 min-h-screen font-sans antialiased selection:bg-bullGreen selection:text-black">
+
+  <!-- MOBILE SIDEBAR BACKDROP -->
+  <div id="mobileSidebarBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 hidden md:hidden"></div>
+
+  <!-- LEFT SIDEBAR MENU BAR -->
+  <aside id="mainSidebar" class="fixed top-0 bottom-0 left-0 w-64 bg-tradeCard border-r border-tradeBorder z-50 flex flex-col transition-transform duration-300 transform -translate-x-full md:translate-x-0 shadow-2xl">
+    
+    <!-- Sidebar Header (Brand) -->
+    <div class="p-4 border-b border-tradeBorder flex items-center justify-between bg-tradeDark/60">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-lg text-black shadow-lg shadow-accentGold/20">
+          🎯
+        </div>
+        <div>
+          <h1 class="text-xs font-black tracking-tight text-white flex items-center gap-1.5 leading-tight">
+            THE MARKET SNIPER <span class="text-[9px] bg-bullGreen/20 text-bullGreen font-mono px-1 py-0.2 rounded border border-bullGreen/30 font-bold">PRO</span>
+          </h1>
+          <p class="text-[10px] text-accentGold font-medium">Dalal Street Trading Desk</p>
+        </div>
+      </div>
+      <button onclick="toggleMobileSidebar()" class="md:hidden text-gray-400 hover:text-white p-1 rounded hover:bg-tradeBorder">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Sidebar Scrollable Body -->
+    <div class="flex-1 overflow-y-auto p-3 space-y-5">
+
+      <!-- SECTION 1: MARKET INDICES -->
+      <div class="space-y-1.5">
+        <div class="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 flex items-center justify-between">
+          <span>MARKET INDICES</span>
+          <span class="w-2 h-2 rounded-full bg-bullGreen animate-ping"></span>
+        </div>
+        
+        <!-- NIFTY 50 Button -->
+        <button id="sideBtnNifty" onclick="switchIndex('nifty')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border bg-bullGreen/15 border-bullGreen/40 text-white shadow-sm">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-bullGreen/20 text-bullGreen flex items-center justify-center font-bold text-xs">
+              N
+            </div>
+            <div>
+              <div class="text-xs font-bold leading-tight">NIFTY 50</div>
+              <div class="text-[10px] text-gray-400 font-mono">NSE Benchmark</div>
+            </div>
+          </div>
+          <span id="sideSpotNifty" class="text-xs font-mono font-bold text-bullGreen">--</span>
+        </button>
+
+        <!-- SENSEX Button -->
+        <button id="sideBtnSensex" onclick="switchIndex('sensex')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border border-transparent hover:border-tradeBorder hover:bg-tradeDark text-gray-300">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-accentGold/20 text-accentGold flex items-center justify-center font-bold text-xs">
+              S
+            </div>
+            <div>
+              <div class="text-xs font-bold leading-tight">SENSEX</div>
+              <div class="text-[10px] text-gray-400 font-mono">BSE 30</div>
+            </div>
+          </div>
+          <span id="sideSpotSensex" class="text-xs font-mono font-bold text-gray-300">--</span>
+        </button>
+
+        <!-- BANK NIFTY Button -->
+        <button id="sideBtnBankNifty" onclick="switchIndex('banknifty')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border border-transparent hover:border-tradeBorder hover:bg-tradeDark text-gray-300">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
+              B
+            </div>
+            <div>
+              <div class="text-xs font-bold leading-tight">BANK NIFTY</div>
+              <div class="text-[10px] text-gray-400 font-mono">Banking High-Beta</div>
+            </div>
+          </div>
+          <span id="sideSpotBankNifty" class="text-xs font-mono font-bold text-gray-300">--</span>
+        </button>
+      </div>
+
+      <!-- SECTION 2: EXECUTIVE WORKSPACES (THE 3 PILLARS) -->
+      <div class="space-y-1.5">
+        <div class="px-2 text-[10px] font-bold uppercase tracking-wider text-accentGold flex items-center justify-between">
+          <span>EXECUTIVE WORKSPACES</span>
+          <span class="text-[9px] bg-accentGold/20 text-accentGold font-mono px-1.5 py-0.2 rounded font-bold">PRIMARY</span>
+        </div>
+
+        <button id="sideTabExecutive" onclick="switchTab('executive')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2.5 bg-tradeDark text-white border border-tradeBorder shadow-sm">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-accentGold"></i>
+          <span class="flex-1">🎯 Executive Center</span>
+        </button>
+
+        <button id="sideTabBull" onclick="switchTab('bull')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-bullGreen hover:bg-bullGreen/10 border border-transparent">
+          <i data-lucide="trending-up" class="w-4 h-4 text-bullGreen"></i>
+          <span class="flex-1">🟢 Bull Desk (CE Trades)</span>
+          <span class="text-[9px] bg-bullGreen/20 text-bullGreen px-1.5 py-0.5 rounded-full font-mono font-bold" id="sideBullBadge">BUY CE</span>
+        </button>
+
+        <button id="sideTabBear" onclick="switchTab('bear')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-bearRed hover:bg-bearRed/10 border border-transparent">
+          <i data-lucide="trending-down" class="w-4 h-4 text-bearRed"></i>
+          <span class="flex-1">🔴 Bear Desk (PE Trades)</span>
+          <span class="text-[9px] bg-bearRed/20 text-bearRed px-1.5 py-0.5 rounded-full font-mono font-bold" id="sideBearBadge">BUY PE</span>
+        </button>
+
+        <button id="sideTabAcademy" onclick="openAcademyDashboard()" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-accentGold hover:bg-accentGold/10 border border-transparent">
+          <i data-lucide="graduation-cap" class="w-4 h-4 text-accentGold"></i>
+          <span class="flex-1">🎓 Learning Hub (Academy)</span>
+          <span class="text-[9px] bg-accentGold/20 text-accentGold px-1.5 py-0.5 rounded-full font-mono font-bold">8 MODS</span>
+        </button>
+      </div>
+
+      <!-- SECTION 3: SNIPER DESK TOOLS -->
+      <div class="space-y-1 pt-2 border-t border-tradeBorder/60">
+        <div class="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+          DESK INTELLIGENCE TOOLS
+        </div>
+
+        <button id="sideTabEqual" onclick="switchTab('equal')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-white hover:bg-tradeDark">
+          <i data-lucide="scale" class="w-4 h-4 text-accentGold"></i>
+          <span class="flex-1">Equal CE & PE Pairs</span>
+          <span class="text-[10px] bg-accentGold/20 text-accentGold px-1.5 py-0.2 rounded-full font-mono" id="sideEqualCount">--</span>
+        </button>
+
+        <button id="sideTabHero" onclick="switchTab('hero')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-white hover:bg-tradeDark">
+          <i data-lucide="zap" class="w-4 h-4 text-bullGreen"></i>
+          <span class="flex-1">Hero-Zero Hotlist</span>
+          <span class="text-[10px] bg-bullGreen/20 text-bullGreen px-1.5 py-0.2 rounded-full font-mono" id="sideHeroCount">--</span>
+        </button>
+
+        <button id="sideTabNews" onclick="switchTab('news')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-white hover:bg-tradeDark">
+          <i data-lucide="newspaper" class="w-4 h-4 text-cyan-400"></i>
+          <span class="flex-1">Live News & Impact</span>
+          <span class="text-[9px] bg-cyan-400/20 text-cyan-400 px-1 py-0.2 rounded font-mono animate-pulse">LIVE</span>
+        </button>
+
+        <button id="sideTabLadder" onclick="switchTab('ladder')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-white hover:bg-tradeDark">
+          <i data-lucide="list" class="w-4 h-4 text-indigo-400"></i>
+          <span class="flex-1">Full Option Ladder</span>
+        </button>
+
+        <!-- Admin Desk Sidebar Item (Visible only to Admin) -->
+        <button id="sideTabAdmin" onclick="switchTab('admin')" class="hidden w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-accentGold hover:text-white hover:bg-tradeDark">
+          <i data-lucide="crown" class="w-4 h-4 text-accentGold"></i>
+          <span class="flex-1">👑 Admin Desk</span>
+          <span id="sideAdminTabBadge" class="hidden bg-bearRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">0</span>
+        </button>
+      </div>
+
+      <!-- Quick syllabus jumps -->
+        <div class="pl-2 pr-1 py-1 space-y-1 text-[11px] text-gray-400">
+          <div class="space-y-0.5">
+            <button onclick="openTopicReader('topic-malaysian-qmr')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-cyan-400 transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-cyan-400 font-mono font-bold text-[10px]">01.</span> Malaysian QMR Setup</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-malaysian-qmr', 'sub-4')" class="text-[9px] text-gray-400 hover:text-cyan-400 font-mono px-1 rounded bg-tradeDark border border-cyan-400/30">Chart</span>
+            </button>
+            <button onclick="openTopicReader('topic-ifvg-inversion')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bearRed transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-bearRed font-mono font-bold text-[10px]">02.</span> DodgysDD iFVG Model</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-ifvg-inversion', 'sub-4')" class="text-[9px] text-gray-400 hover:text-bearRed font-mono px-1 rounded bg-tradeDark border border-bearRed/30">Chart</span>
+            </button>
+            <button onclick="openTopicReader('topic-amt-pdh-pdl')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-indigo-400 transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-indigo-400 font-mono font-bold text-[10px]">03.</span> Atlas AMT PDH/PDL</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-amt-pdh-pdl', 'sub-4')" class="text-[9px] text-gray-400 hover:text-indigo-400 font-mono px-1 rounded bg-tradeDark border border-indigo-400/30">Chart</span>
+            </button>
+            <button onclick="openTopicReader('topic-candle-hammer')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-bullGreen transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-bullGreen font-mono font-bold text-[10px]">04.</span> Hammer Absorption</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-candle-hammer', 'sub-4')" class="text-[9px] text-gray-400 hover:text-bullGreen font-mono px-1 rounded bg-tradeDark border border-tradeBorder">Chart</span>
+            </button>
+            <button onclick="openTopicReader('topic-options-greeks-gamma')" class="w-full text-left py-1 px-1 rounded hover:bg-tradeDark hover:text-accentGold transition flex items-center justify-between group">
+              <span class="flex items-center gap-1.5"><span class="text-accentGold font-mono font-bold text-[10px]">05.</span> 1:15 PM Gamma Blast</span>
+              <span onclick="event.stopPropagation(); openTopicReader('topic-options-greeks-gamma', 'sub-4')" class="text-[9px] text-gray-400 hover:text-accentGold font-mono px-1 rounded bg-tradeDark border border-tradeBorder">Chart</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sidebar Footer (User / Admin / Logout) -->
+    <div class="p-3 border-t border-tradeBorder bg-tradeDark/60 space-y-2">
+      <!-- Admin Panel Button (if admin) -->
+      <button id="sideBtnAdmin" onclick="openAdminModal()" class="hidden w-full py-2 px-3 rounded-lg bg-accentGold/20 hover:bg-accentGold/30 text-accentGold border border-accentGold/40 font-bold text-xs flex items-center justify-between transition">
+        <span class="flex items-center gap-1.5">
+          <i data-lucide="crown" class="w-4 h-4"></i>
+          <span>Admin Panel</span>
+        </span>
+        <span id="sidePendingBadge" class="hidden bg-bearRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+      </button>
+
+      <!-- User Info & Logout Strip -->
+      <div id="sideUserSection" class="flex items-center justify-between text-xs">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- TOP NAVIGATION (WITH DESKTOP LEFT PADDING) -->
+  <header class="border-b border-tradeBorder bg-tradeCard/80 backdrop-blur sticky top-0 z-30 px-4 py-3 md:pl-64">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Mobile Hamburger & Brand/Status -->
+      <div class="flex items-center gap-3">
+        <!-- Mobile Drawer Toggle Button -->
+        <button onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-lg bg-tradeDark border border-tradeBorder text-gray-300 hover:text-white transition">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex items-center gap-2.5 md:hidden">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-sm text-black">
+            🎯
+          </div>
+          <div>
+            <h1 class="text-xs font-extrabold text-white">MARKET SNIPER</h1>
+            <p class="text-[9px] text-accentGold">Trading Desk</p>
+          </div>
+        </div>
+
+        <!-- Desktop Quick Index Badges -->
+        <div class="hidden lg:flex items-center gap-2 bg-tradeDark px-3 py-1.5 rounded-lg border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase font-semibold">Desk:</span>
+          <span id="activeDeskLabel" class="text-xs font-bold text-white font-mono flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-bullGreen"></span>
+            NIFTY 50
+          </span>
+        </div>
+      </div>
+
+      <!-- Live Spot & Status -->
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 bg-tradeDark px-3 py-1.5 rounded-lg border border-tradeBorder">
+          <div>
+            <span class="text-xs text-gray-400 uppercase tracking-wider block" id="spotLabel">NIFTY SPOT</span>
+            <div class="flex items-baseline gap-2">
+              <span id="liveSpot" class="text-lg font-mono font-bold text-white tracking-wide">--</span>
+              <span id="liveChange" class="text-xs font-mono font-medium text-gray-400">--</span>
+            </div>
+          </div>
+          <div class="h-6 w-px bg-tradeBorder"></div>
+          <div>
+            <span class="text-[10px] text-gray-500 block">DAY RANGE</span>
+            <span id="dayRange" class="text-xs font-mono text-gray-300">L: -- | H: --</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-bullGreen opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-bullGreen"></span>
+          </span>
+          <span class="text-xs font-mono text-gray-400 hidden sm:inline" id="liveTimer">LIVE FEED</span>
+          
+          <button onclick="toggleSettingsModal()" title="Settings & Appearance" class="p-2 rounded-lg bg-tradeDark border border-tradeBorder hover:border-gray-500 text-gray-400 hover:text-white transition">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Quick Theme Toggle Button (Dark / Light) -->
+          <button id="headerThemeBtn" onclick="toggleThemeQuick()" title="Switch Light / Dark Theme" class="p-2 rounded-lg bg-tradeDark border border-tradeBorder hover:border-bullGreen text-gray-300 hover:text-white text-xs font-bold transition flex items-center gap-1">
+            <span id="headerThemeIcon">🌙</span>
+          </button>
+
+          <!-- Admin Panel Button (Visible to Admin only) -->
+          <button id="btnAdminPanel" onclick="openAdminModal()" class="hidden px-3 py-1.5 rounded-lg bg-accentGold/20 hover:bg-accentGold/30 text-accentGold border border-accentGold/40 font-bold text-xs flex items-center gap-1.5 transition shadow">
+            <span>👑 Admin Panel</span>
+            <span id="pendingBadge" class="hidden bg-bearRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">0</span>
+          </button>
+
+          <!-- User Pill & Logout -->
+          <div id="userHeaderSection" class="flex items-center gap-2">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER (WITH DESKTOP LEFT PADDING) -->
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6 md:pl-64">
+
+    <!-- ACCESS PENDING ALERT (Shown when user is pending approval) -->
+    <div id="pendingAlert" class="hidden bg-accentGold/10 border-2 border-accentGold/60 rounded-2xl p-6 text-center space-y-3 shadow-xl">
+      <div class="w-12 h-12 bg-accentGold/20 rounded-full flex items-center justify-center mx-auto text-2xl text-accentGold">
+        ⏳
+      </div>
+      <h2 class="text-lg font-bold text-white">Access Pending Administrator Approval</h2>
+      <p class="text-xs text-gray-300 max-w-lg mx-auto leading-relaxed">
+        Your account has been registered! Because The Market Sniper Shooters is an exclusive private trading engine, 
+        <strong>the Administrator</strong> must approve your access before you can view live market signals.
+      </p>
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button onclick="checkAuthStatus(true)" class="px-4 py-2 bg-accentGold hover:bg-accentGold/90 text-black font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          <span>Check Approval Status</span>
+        </button>
+        <button onclick="handleLogout()" class="px-4 py-2 bg-tradeBorder hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-lg transition">
+          Log Out
+        </button>
+      </div>
+    </div>
+
+    <!-- TABS BAR -->
+    <div class="flex flex-wrap items-center justify-between border-b border-tradeBorder pb-2 gap-2">
+      <div class="flex flex-wrap gap-1.5">
+        <button id="tabExecutive" onclick="switchTab('executive')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-tradeCard text-white border border-tradeBorder shadow">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-accentGold"></i>
+          <span>🎯 Executive Hub</span>
+        </button>
+
+        <button id="tabBull" onclick="switchTab('bull')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-bullGreen">
+          <i data-lucide="trending-up" class="w-4 h-4 text-bullGreen"></i>
+          <span>🟢 Bull Desk (CE)</span>
+        </button>
+
+        <button id="tabBear" onclick="switchTab('bear')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-bearRed">
+          <i data-lucide="trending-down" class="w-4 h-4 text-bearRed"></i>
+          <span>🔴 Bear Desk (PE)</span>
+        </button>
+
+        <button id="tabAcademy" onclick="openAcademyDashboard()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-accentGold">
+          <i data-lucide="graduation-cap" class="w-4 h-4 text-accentGold"></i>
+          <span>🎓 Master Academy</span>
+        </button>
+
+        <button id="tabEqual" onclick="switchTab('equal')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
+          <i data-lucide="scale" class="w-4 h-4 text-accentGold"></i>
+          <span>⚖️ Equal Pairs</span>
+          <span class="text-[10px] bg-accentGold/20 text-accentGold px-1.5 py-0.5 rounded-full" id="equalPairsCount">--</span>
+        </button>
+
+        <button id="tabHero" onclick="switchTab('hero')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
+          <i data-lucide="zap" class="w-4 h-4 text-bullGreen"></i>
+          <span>⚡ Hero-Zero</span>
+          <span class="text-[10px] bg-bullGreen/20 text-bullGreen px-1.5 py-0.5 rounded-full" id="heroPicksCount">--</span>
+        </button>
+
+        <button id="tabNews" onclick="switchTab('news')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
+          <i data-lucide="newspaper" class="w-4 h-4 text-cyan-400"></i>
+          <span>📰 Live News</span>
+          <span class="text-[10px] bg-cyan-400/20 text-cyan-400 px-1.5 py-0.5 rounded-full animate-pulse">LIVE</span>
+        </button>
+
+        <button id="tabLadder" onclick="switchTab('ladder')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
+          <i data-lucide="list" class="w-4 h-4 text-indigo-400"></i>
+          <span>📊 Ladder</span>
+        </button>
+
+        <!-- Admin Desk Tab (Visible only to Admin) -->
+        <button id="tabAdmin" onclick="switchTab('admin')" class="hidden flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-accentGold hover:bg-accentGold/10">
+          <i data-lucide="crown" class="w-4 h-4 text-accentGold"></i>
+          <span>👑 Admin Desk</span>
+          <span id="tabAdminBadge" class="hidden bg-bearRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">0</span>
+        </button>
+      </div>
+
+      <!-- Quick Search / Filter -->
+      <div class="relative w-44">
+        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-500"></i>
+        <input type="text" id="strikeSearch" oninput="filterStrikes()" placeholder="Filter strike..." class="w-full bg-tradeCard border border-tradeBorder rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-bullGreen">
+      </div>
+    </div>
+
+    
+    <!-- ========================================== -->
+    <!-- 1. EXECUTIVE COMMAND CENTER (THE 3 PILLARS) -->
+    <!-- ========================================== -->
+    <section id="viewExecutive" class="space-y-6">
+
+      <!-- Executive Hero Banner -->
+      <div class="bg-gradient-to-r from-tradeCard via-[#11151f] to-tradeCard border-2 border-accentGold/50 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-56 h-56 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-bullGreen animate-ping"></span>
+              <span class="text-[10px] font-mono uppercase tracking-widest text-accentGold font-bold">DALAL STREET INSTITUTIONAL QUANT TERMINAL</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              EXECUTIVE TRADING COMMAND CENTER
+            </h1>
+            <p class="text-xs text-gray-300 max-w-2xl leading-relaxed">
+              Welcome to the institutional trading desk. Select any workspace below: analyze the <strong>Bull Diagram</strong> for Call (CE) execution, the <strong>Bear Diagram</strong> for Put (PE) breakdown, or enter the <strong>Master Learning Hub</strong> for deep algorithmic training.
+            </p>
+          </div>
+
+          <!-- Quick Index Switchers in Hero -->
+          <div class="flex items-center gap-2 bg-tradeDark p-1.5 rounded-xl border border-tradeBorder">
+            <button id="heroIdxNifty" onclick="switchIndex('nifty')" class="px-3.5 py-2 rounded-lg text-xs font-bold transition bg-bullGreen text-black shadow">
+              NIFTY 50
+            </button>
+            <button id="heroIdxSensex" onclick="switchIndex('sensex')" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
+              SENSEX
+            </button>
+            <button id="heroIdxBankNifty" onclick="switchIndex('banknifty')" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
+              BANK NIFTY
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- THE THREE PRIMARY WORKSPACE PILLARS -->
+      <!-- Compact Institutional Metrics Ribbon -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
+        <div class="bg-tradeCard p-3 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">ATM Strike Level</span>
+          <div class="flex items-baseline justify-between mt-0.5">
+            <strong class="text-lg font-bold text-accentGold" id="atmStrike">--</strong>
+            <span class="text-[10px] text-gray-400" id="atmStraddle">Straddle: ₹--</span>
+          </div>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Market Bias / PCR</span>
+          <div class="flex items-center justify-between mt-0.5">
+            <strong class="text-lg font-bold text-white" id="pcrValue">--</strong>
+            <span class="text-[10px] px-2 py-0.5 rounded font-bold uppercase" id="pcrBadge">NEUTRAL</span>
+          </div>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Active Expiry</span>
+          <div class="flex items-center justify-between mt-0.5">
+            <select id="expirySelect" onchange="onExpiryChange()" class="bg-tradeDark border border-tradeBorder text-white text-xs rounded px-1.5 py-0.5 focus:outline-none">
+              <option value="current">Current Week</option>
+              <option value="next">Next Week</option>
+            </select>
+            <span class="text-[10px] text-gray-400" id="expiryDateLabel">--</span>
+          </div>
+        </div>
+        <div class="bg-tradeCard p-3 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Lot Size / Risk</span>
+          <div class="flex items-baseline justify-between mt-0.5">
+            <strong class="text-base font-bold text-bullGreen" id="lotSizeDisplay">65 Qty/Lot</strong>
+            <span class="text-[10px] text-gray-400">Fixed Stop Protection</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- PILLAR 1: BULL DIAGRAM & CALL (CE) WORKSPACE -->
+        <div class="bg-tradeCard border-2 border-bullGreen/40 hover:border-bullGreen rounded-2xl p-5 space-y-4 shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-bullGreen/5 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono px-2.5 py-1 rounded-md uppercase font-bold bg-bullGreen/15 text-bullGreen border border-bullGreen/30 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-bullGreen animate-pulse"></span>
+                PILLAR 01 • BULL DESK
+              </span>
+              <span class="text-xs font-mono text-bullGreen font-bold" id="execBullSentiment">PCR: 1.22 (BULLISH)</span>
+            </div>
+
+            <div>
+              <h2 class="text-lg font-black text-white group-hover:text-bullGreen transition flex items-center gap-2">
+                🟢 BULL DIAGRAM & CE WORKSPACE
+              </h2>
+              <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+                Institutional long expansion engine. Captures demand absorption sweeps, iFVG inversions, and high-conviction Call options with exact reasons and macro news effect.
+              </p>
+            </div>
+
+            <!-- Embedded Interactive Bull Diagram Preview -->
+            <div class="rounded-xl overflow-hidden border border-tradeBorder shadow-inner cursor-pointer" onclick="switchTab('bull')" title="Click to open Full Bull Workspace">
+              <div id="execBullChartContainer">
+                <!-- Bull SVG rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Live CE Trade Summary Pill -->
+            <div class="bg-tradeDark/90 p-3 rounded-xl border border-bullGreen/20 space-y-1.5 text-xs">
+              <div class="flex items-center justify-between text-gray-300">
+                <span class="text-gray-400 font-mono text-[11px]">Primary Call Recommendation:</span>
+                <strong class="text-bullGreen font-mono font-bold" id="execBullStrike">NIFTY 23200 CE</strong>
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-mono">
+                <span class="text-gray-400">Entry Trigger:</span>
+                <span class="text-white font-bold" id="execBullEntry">Spot &gt; 23,165</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-mono text-gray-400">
+                <span>Targets: <strong class="text-bullGreen" id="execBullT1">₹182.0</strong> | <strong class="text-cyan-400" id="execBullT2">₹236.0</strong></span>
+                <span>SL: <strong class="text-bearRed" id="execBullSL">₹105.0</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="switchTab('bull')" class="w-full py-3 rounded-xl bg-bullGreen hover:bg-bullGreen/90 text-black font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-bullGreen/20 mt-2">
+            <span>Enter Bull Workspace (CE Execution)</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- PILLAR 2: BEAR DIAGRAM & PUT (PE) WORKSPACE -->
+        <div class="bg-tradeCard border-2 border-bearRed/40 hover:border-bearRed rounded-2xl p-5 space-y-4 shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-bearRed/5 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono px-2.5 py-1 rounded-md uppercase font-bold bg-bearRed/15 text-bearRed border border-bearRed/30 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-bearRed animate-pulse"></span>
+                PILLAR 02 • BEAR DESK
+              </span>
+              <span class="text-xs font-mono text-bearRed font-bold" id="execBearSentiment">CE OI RESISTANCE WALL</span>
+            </div>
+
+            <div>
+              <h2 class="text-lg font-black text-white group-hover:text-bearRed transition flex items-center gap-2">
+                🔴 BEAR DIAGRAM & PE WORKSPACE
+              </h2>
+              <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+                Institutional short breakdown engine. Executes Malaysian QMR retests, PDH liquidity hunts, and high-conviction Put options with exact reasons and macro news effect.
+              </p>
+            </div>
+
+            <!-- Embedded Interactive Bear Diagram Preview -->
+            <div class="rounded-xl overflow-hidden border border-tradeBorder shadow-inner cursor-pointer" onclick="switchTab('bear')" title="Click to open Full Bear Workspace">
+              <div id="execBearChartContainer">
+                <!-- Bear SVG rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Live PE Trade Summary Pill -->
+            <div class="bg-tradeDark/90 p-3 rounded-xl border border-bearRed/20 space-y-1.5 text-xs">
+              <div class="flex items-center justify-between text-gray-300">
+                <span class="text-gray-400 font-mono text-[11px]">Primary Put Recommendation:</span>
+                <strong class="text-bearRed font-mono font-bold" id="execBearStrike">BANKNIFTY 51100 PE</strong>
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-mono">
+                <span class="text-gray-400">Entry Trigger:</span>
+                <span class="text-white font-bold" id="execBearEntry">Spot &lt; 51,280</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-mono text-gray-400">
+                <span>Targets: <strong class="text-bullGreen" id="execBearT1">₹310.0</strong> | <strong class="text-cyan-400" id="execBearT2">₹400.0</strong></span>
+                <span>SL: <strong class="text-bearRed" id="execBearSL">₹180.0</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="switchTab('bear')" class="w-full py-3 rounded-xl bg-bearRed hover:bg-bearRed/90 text-white font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-bearRed/20 mt-2">
+            <span>Enter Bear Workspace (PE Execution)</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- PILLAR 3: LEARNING HUB & INSTITUTIONAL ACADEMY -->
+        <div class="bg-tradeCard border-2 border-accentGold/40 hover:border-accentGold rounded-2xl p-5 space-y-4 shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-accentGold/5 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono px-2.5 py-1 rounded-md uppercase font-bold bg-accentGold/15 text-accentGold border border-accentGold/30 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-accentGold animate-pulse"></span>
+                PILLAR 03 • ACADEMY
+              </span>
+              <span class="text-xs font-mono text-accentGold font-bold">8 MODULES • 22 TOPICS</span>
+            </div>
+
+            <div>
+              <h2 class="text-lg font-black text-white group-hover:text-accentGold transition flex items-center gap-2">
+                🎓 LEARNING HUB
+              </h2>
+              <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+                Master proprietary trading desk curriculum. Malaysian SNR/QMR, DodgysDD iFVG, Atlas AMT, and animated candlestick blueprints with zero raw code.
+              </p>
+            </div>
+
+            <!-- Academy Showcase Panel -->
+            <div class="bg-tradeDark/90 rounded-xl p-4 border border-accentGold/20 space-y-2.5 cursor-pointer" onclick="openAcademyDashboard()">
+              <div class="flex items-center justify-between text-xs font-bold text-white">
+                <span class="flex items-center gap-1.5"><i data-lucide="book-open" class="w-4 h-4 text-accentGold"></i> Curriculum Highlights</span>
+                <span class="text-[10px] font-mono text-bullGreen font-bold">100% CANDLESTICK REPLAYS</span>
+              </div>
+              <div class="space-y-1.5 text-xs text-gray-300">
+                <div class="p-2 rounded-lg bg-tradeCard/80 border border-tradeBorder flex items-center justify-between">
+                  <span class="truncate">01. Malaysian QMR & Umar 40% Wick</span>
+                  <span class="text-[10px] text-accentGold font-mono">13 min</span>
+                </div>
+                <div class="p-2 rounded-lg bg-tradeCard/80 border border-tradeBorder flex items-center justify-between">
+                  <span class="truncate">02. DodgysDD Inversion FVG (iFVG)</span>
+                  <span class="text-[10px] text-cyan-400 font-mono">14 min</span>
+                </div>
+                <div class="p-2 rounded-lg bg-tradeCard/80 border border-tradeBorder flex items-center justify-between">
+                  <span class="truncate">03. Atlas AMT PDH/PDL Sweeps</span>
+                  <span class="text-[10px] text-indigo-400 font-mono">15 min</span>
+                </div>
+              </div>
+              <div class="text-[10px] text-gray-400 font-mono text-center pt-1">
+                ⚡ Zero Raw Code • Pure Indian Market Implementation
+              </div>
+            </div>
+          </div>
+
+          <button onclick="openAcademyDashboard()" class="w-full py-3 rounded-xl bg-accentGold hover:bg-accentGold/90 text-black font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-accentGold/20 mt-2">
+            <span>Enter Learning Hub (Deep Academy)</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 2. BULL WORKSPACE (CALL / CE EXECUTION DESK) -->
+    <!-- ========================================== -->
+    <section id="viewBullDesk" class="space-y-6 hidden">
+      <!-- Desk Header with Back Button -->
+      <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-bullGreen/40 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <button onclick="switchTab('executive')" class="px-3.5 py-2 rounded-xl bg-tradeDark border border-bullGreen/50 hover:border-bullGreen text-bullGreen hover:bg-bullGreen hover:text-black text-xs font-extrabold transition flex items-center gap-2 shadow">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>⬅️ Back to Main Workstations (Bull, Bear, Learning Hub)</span>
+          </button>
+          <div>
+            <h2 class="text-lg font-black text-white flex items-center gap-2">
+              🟢 INSTITUTIONAL BULL WORKSPACE • CALL (CE) DESK
+            </h2>
+            <p class="text-xs text-gray-400">High-Probability Long Trade Setups with Exact Entry, Stop Loss, Targets, Institutional Reason, and Live News Impact</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 font-mono text-xs">
+          <span class="px-3 py-1 rounded-lg bg-bullGreen/15 text-bullGreen font-bold border border-bullGreen/30">
+            BULLISH MOMENTUM ACTIVE
+          </span>
+        </div>
+      </div>
+
+      <!-- Full-Width Interactive Bull Candlestick Diagram -->
+      <div class="bg-tradeCard border border-tradeBorder rounded-2xl p-4 shadow-2xl">
+        <div class="flex items-center justify-between mb-3 px-2">
+          <span class="text-xs font-mono font-bold text-bullGreen flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-bullGreen animate-ping"></span>
+            LIVE BULLISH CANDLESTICK REPLAY & POSITION TOOL
+          </span>
+          <span class="text-[11px] font-mono text-gray-400">Demand Sweep & iFVG Inversion Replay</span>
+        </div>
+        <div id="bullDeskChartWrapper" class="rounded-xl overflow-hidden border border-tradeBorder">
+          <!-- Bull Chart Injected Here -->
+        </div>
+      </div>
+
+      <!-- Curated CE Trades Container -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <h3 class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="crosshair" class="w-4 h-4 text-bullGreen"></i>
+            Curated Institutional Call (CE) Recommendations
+          </h3>
+          <span class="text-xs text-gray-400 font-mono">Includes Entry, SL, TP, Reason & News Effect</span>
+        </div>
+
+        <!-- Trades Grid -->
+        <div id="bullTradesContainer" class="grid grid-cols-1 gap-5">
+          <!-- Dynamically Rendered CE Trades with Reason & News Effect -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 3. BEAR WORKSPACE (PUT / PE EXECUTION DESK) -->
+    <!-- ========================================== -->
+    <section id="viewBearDesk" class="space-y-6 hidden">
+      <!-- Desk Header with Back Button -->
+      <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-bearRed/40 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <button onclick="switchTab('executive')" class="px-3.5 py-2 rounded-xl bg-tradeDark border border-bearRed/50 hover:border-bearRed text-bearRed hover:bg-bearRed hover:text-white text-xs font-extrabold transition flex items-center gap-2 shadow">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>⬅️ Back to Main Workstations (Bull, Bear, Learning Hub)</span>
+          </button>
+          <div>
+            <h2 class="text-lg font-black text-white flex items-center gap-2">
+              🔴 INSTITUTIONAL BEAR WORKSPACE • PUT (PE) DESK
+            </h2>
+            <p class="text-xs text-gray-400">High-Probability Short Trade Setups with Exact Entry, Stop Loss, Targets, Institutional Reason, and Live News Impact</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 font-mono text-xs">
+          <span class="px-3 py-1 rounded-lg bg-bearRed/15 text-bearRed font-bold border border-bearRed/30">
+            BEARISH PRESSURE ACTIVE
+          </span>
+        </div>
+      </div>
+
+      <!-- Full-Width Interactive Bear Candlestick Diagram -->
+      <div class="bg-tradeCard border border-tradeBorder rounded-2xl p-4 shadow-2xl">
+        <div class="flex items-center justify-between mb-3 px-2">
+          <span class="text-xs font-mono font-bold text-bearRed flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-bearRed animate-ping"></span>
+            LIVE BEARISH CANDLESTICK REPLAY & POSITION TOOL
+          </span>
+          <span class="text-[11px] font-mono text-gray-400">Malaysian QMR & PDH Hunt Replay</span>
+        </div>
+        <div id="bearDeskChartWrapper" class="rounded-xl overflow-hidden border border-tradeBorder">
+          <!-- Bear Chart Injected Here -->
+        </div>
+      </div>
+
+      <!-- Curated PE Trades Container -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <h3 class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="crosshair" class="w-4 h-4 text-bearRed"></i>
+            Curated Institutional Put (PE) Recommendations
+          </h3>
+          <span class="text-xs text-gray-400 font-mono">Includes Entry, SL, TP, Reason & News Effect</span>
+        </div>
+
+        <!-- Trades Grid -->
+        <div id="bearTradesContainer" class="grid grid-cols-1 gap-5">
+          <!-- Dynamically Rendered PE Trades with Reason & News Effect -->
+        </div>
+      </div>
+    </section>
+
+
+    <!-- VIEW 1: EQUAL CE & PE PAIRS (MATCHED STRADDLES / STRANGLES) -->
+    <section id="viewEqual" class="space-y-4 hidden">
+      <div class="bg-tradeCard/50 border border-tradeBorder/60 rounded-xl p-3 flex items-start gap-3 text-xs text-gray-300">
+        <i data-lucide="info" class="w-5 h-5 text-accentGold shrink-0 mt-0.5"></i>
+        <div>
+          <strong class="text-white font-medium">How Equal CE & PE Pairs Work:</strong> 
+          These strikes have approximately matching premiums on both Call and Put sides. When the market breaks out from a TradingView level, the winning side explodes (e.g. 2x - 3x) while the losing side's max loss is capped at the premium paid. Click any card to see the exact trade reason!
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="equalPairsContainer">
+        <!-- Rendered dynamically -->
+        <div class="col-span-full py-12 text-center text-gray-500">Loading equal CE and PE pairs...</div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: HERO-ZERO HOTLIST -->
+    <section id="viewHero" class="space-y-4 hidden">
+      <div class="bg-tradeCard/50 border border-bullGreen/30 rounded-xl p-3 flex items-start gap-3 text-xs text-gray-300">
+        <i data-lucide="zap" class="w-5 h-5 text-bullGreen shrink-0 mt-0.5"></i>
+        <div>
+          <strong class="text-bullGreen font-medium">Hero-Zero Strategy Rules:</strong> 
+          Target entries are in the ₹15 - ₹35 sweet spot after 1:15 PM. Do not guess direction: wait for TradingView to break the 12:00-1:15 PM consolidation range high (for CE) or low (for PE). Sell half quantity at 2x (+100%) to secure your money!
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="heroContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- VIEW 3: FULL OPTION LADDER -->
+    <section id="viewLadder" class="hidden">
+      <div class="bg-tradeCard border border-tradeBorder rounded-xl overflow-hidden shadow">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-tradeDark/80 border-b border-tradeBorder text-gray-400 font-mono uppercase tracking-wider">
+                <th class="py-3 px-4 text-bullGreen">CALL (CE) BUY REASON</th>
+                <th class="py-3 px-4 text-right text-bullGreen">CE LTP</th>
+                <th class="py-3 px-4 text-center font-bold text-white bg-tradeBorder/30">STRIKE</th>
+                <th class="py-3 px-4 text-left text-bearRed">PE LTP</th>
+                <th class="py-3 px-4 text-bearRed">PUT (PE) BUY REASON</th>
+              </tr>
+            </thead>
+            <tbody id="ladderBody" class="divide-y divide-tradeBorder/50 font-mono">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: LIVE MARKET NEWS & IMPACT FEED -->
+    <section id="viewNews" class="space-y-4 hidden">
+      <div class="bg-tradeCard border border-tradeBorder rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 shadow">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-cyan-400/20 text-cyan-400 border border-cyan-400/30 flex items-center justify-center font-bold text-lg">
+            📰
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              REAL-TIME MARKET NEWS & CHART IMPACT STREAM
+              <span id="newsLiveBadge" class="text-[10px] bg-bullGreen/20 text-bullGreen font-mono px-2 py-0.5 rounded border border-bullGreen/30 animate-pulse">LIVE</span>
+            </h3>
+            <p class="text-xs text-gray-400">Headlines auto-scored with estimated point impact on Nifty/Sensex charts</p>
+          </div>
+        </div>
+
+        <button onclick="loadLiveNews(true)" class="px-3.5 py-1.5 bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 font-medium rounded-lg transition flex items-center gap-1.5 shadow">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>Refresh News</span>
+        </button>
+      </div>
+
+      <!-- News Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newsCardsContainer">
+        <!-- Rendered dynamically -->
+        <div class="col-span-full py-12 text-center text-gray-500">Loading live market headlines...</div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: MASTER TRADING ACADEMY (LEARNING OBJECTS) -->
+    <section id="viewAcademy" class="space-y-6 hidden">
+      
+      <!-- SUB-VIEW 1: ACADEMY DASHBOARD (COURSE HUB) -->
+      <div id="academyHubView" class="space-y-6">
+        
+        <!-- Sticky Hub Navigation Bar with Back Button to Workstations -->
+        <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-accentGold/60 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4">
+          <button onclick="switchTab('executive')" class="px-3.5 py-2 rounded-xl bg-tradeDark border border-accentGold/50 hover:border-accentGold text-accentGold hover:bg-accentGold hover:text-black text-xs font-extrabold transition flex items-center gap-2 shadow">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>⬅️ Back to Main Workstations (Bull, Bear, Learning Hub)</span>
+          </button>
+          <div class="text-xs font-mono text-gray-300 flex items-center gap-2">
+            <span>Workstation 03:</span>
+            <span class="text-accentGold font-bold px-2 py-0.5 rounded bg-accentGold/10 border border-accentGold/30">MASTER LEARNING HUB</span>
+          </div>
+        </div>
+
+        <!-- Academy Hero Header -->
+        <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-accentGold/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+          <div class="absolute -right-16 -top-16 w-60 h-60 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-2xl text-black shadow-lg shadow-accentGold/20">
+                🎓
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-xl font-extrabold text-white tracking-tight">MASTER TRADING ACADEMY</h2>
+                  <span class="text-xs bg-bullGreen/20 text-bullGreen font-mono px-2 py-0.5 rounded border border-bullGreen/30 font-bold uppercase">PRO ANALYST EDITION</span>
+                </div>
+                <p class="text-xs text-gray-300 mt-1 max-w-2xl leading-relaxed">
+                  Deep-learning institutional curriculum covering every concept from atomic Candlesticks to Geometric Chart Patterns, Fibonacci Golden Pockets, Smart Money Concepts (SMC), VWAP Benchmarks, and Option Greeks. Click any topic to study its full deep masterclass and visual trade blueprint.
+                </p>
+              </div>
+            </div>
+
+            <!-- Progress Widget -->
+            <div class="bg-tradeDark/90 border border-tradeBorder px-4 py-3 rounded-xl flex items-center gap-4 shadow-sm">
+              <div>
+                <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Your Curriculum Progress</span>
+                <div class="text-lg font-mono font-bold text-accentGold" id="academyProgressLabel">0 / 20 Topics Mastered</div>
+              </div>
+              <div class="w-12 h-12 relative flex items-center justify-center">
+                <svg class="w-12 h-12 transform -rotate-90">
+                  <circle cx="24" cy="24" r="18" stroke="#1d2432" stroke-width="4" fill="none" />
+                  <circle id="academyProgressCircle" cx="24" cy="24" r="18" stroke="#00c076" stroke-width="4" fill="none" stroke-dasharray="113" stroke-dashoffset="113" stroke-linecap="round" class="transition-all duration-500" />
+                </svg>
+                <span id="academyProgressPercent" class="absolute text-[11px] font-mono font-bold text-white">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter & Search Controls -->
+          <div class="mt-6 pt-4 border-t border-tradeBorder/70 flex flex-wrap items-center justify-between gap-3">
+            <!-- Category Pills -->
+            <div class="flex flex-wrap gap-1.5" id="academyCategoryPills">
+              <button onclick="filterAcademyCategory('all')" id="cat-all" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition bg-bullGreen text-black shadow-lg shadow-bullGreen/20">All Modules (8)</button>
+              <button onclick="filterAcademyCategory('candlesticks')" id="cat-candlesticks" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Candlesticks</button>
+              <button onclick="filterAcademyCategory('patterns')" id="cat-patterns" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Chart Patterns</button>
+              <button onclick="filterAcademyCategory('malaysian')" id="cat-malaysian" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-tradeDark text-cyan-400 hover:text-white border border-cyan-400/40">Malaysian Setup</button>
+              <button onclick="filterAcademyCategory('fvg-ifvg')" id="cat-fvg-ifvg" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-tradeDark text-bearRed hover:text-white border border-bearRed/40">FVG & iFVG (DodgysDD)</button>
+              <button onclick="filterAcademyCategory('liquidity-amt')" id="cat-liquidity-amt" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-tradeDark text-indigo-400 hover:text-white border border-indigo-400/40">Liquidity & Atlas AMT</button>
+              <button onclick="filterAcademyCategory('fibonacci')" id="cat-fibonacci" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Fibonacci</button>
+              <button onclick="filterAcademyCategory('indicators')" id="cat-indicators" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">VWAP & RSI</button>
+              <button onclick="filterAcademyCategory('options')" id="cat-options" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-tradeDark text-gray-400 hover:text-white border border-tradeBorder">Options & Risk</button>
+            </div>
+
+            <!-- Lesson Search Bar -->
+            <div class="relative w-64">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-500"></i>
+              <input type="text" id="academySearchInput" oninput="searchAcademyLessons()" placeholder="Search pattern, setup, fib..." class="w-full bg-tradeDark border border-tradeBorder rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-bullGreen">
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULES & TOPICS CATALOG GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="academyModulesGrid">
+          <!-- Rendered dynamically -->
+        </div>
+
+      </div>
+
+      <!-- SUB-VIEW 2: DEDICATED TOPIC READER (DEEP LEARNING WITH TOP BACK BUTTON) -->
+      <div id="academyReaderView" class="space-y-6 hidden">
+        
+        <!-- Sticky Top Navigation Bar with Back Button -->
+        <div class="bg-tradeCard border-2 border-accentGold/60 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4 sticky top-16 z-20 backdrop-blur bg-tradeCard/95">
+          <div class="flex items-center gap-3">
+            <!-- THE BACK BUTTON REQUESTED BY USER -->
+            <button onclick="backToAcademyDashboard()" class="px-4 py-2 bg-accentGold hover:bg-accentGold/90 text-black font-extrabold text-xs rounded-xl transition flex items-center gap-2 shadow-lg shadow-accentGold/20">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Back to Academy Hub</span>
+            </button>
+            <button onclick="switchTab('executive')" class="px-3 py-2 bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-gray-300 hover:text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+              <span>🏠 Main Workstations</span>
+            </button>
+
+            <!-- Breadcrumbs -->
+            <div class="hidden sm:flex items-center gap-2 text-xs text-gray-400 font-mono">
+              <span class="cursor-pointer hover:text-accentGold" onclick="backToAcademyDashboard()">Academy Hub</span>
+              <span>/</span>
+              <span id="readerBreadcrumbModule" class="text-gray-300">Module</span>
+              <span>/</span>
+              <span id="readerBreadcrumbTitle" class="text-white font-bold truncate max-w-xs">Topic Title</span>
+            </div>
+          </div>
+
+          <!-- Quick Navigation & Completion -->
+          <div class="flex items-center gap-2">
+            <button id="readerBtnPrev" onclick="navigateReader(-1)" class="px-3 py-1.5 rounded-lg bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 font-medium transition flex items-center gap-1">
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+              <span class="hidden md:inline">Previous Topic</span>
+            </button>
+            <button id="readerBtnNext" onclick="navigateReader(1)" class="px-3 py-1.5 rounded-lg bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 font-medium transition flex items-center gap-1">
+              <span class="hidden md:inline">Next Topic</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+            <button id="readerBtnComplete" onclick="toggleCurrentTopicComplete()" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow bg-bullGreen text-black">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              <span>Mark Mastered</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Two-Column Deep Learning Reader -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Left Table of Contents & Sub-topics navigation (4 cols) -->
+          <div class="lg:col-span-4 space-y-4">
+            <div class="bg-tradeCard border border-tradeBorder rounded-2xl p-5 space-y-3 sticky top-36">
+              <div class="flex items-center justify-between border-b border-tradeBorder pb-2 text-xs font-bold text-gray-300">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="list-checks" class="w-4 h-4 text-accentGold"></i>
+                  TABLE OF CONTENTS
+                </span>
+                <span id="readerTocCount" class="text-[10px] text-gray-500 font-mono">Sub-topics</span>
+              </div>
+              <div class="space-y-1 text-xs" id="readerTocList">
+                <!-- Rendered dynamically -->
+              </div>
+              
+              <!-- Back to Dashboard Shortcut -->
+              <div class="pt-3 border-t border-tradeBorder">
+                <button onclick="backToAcademyDashboard()" class="w-full py-2 px-3 rounded-lg bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-xs text-gray-300 font-medium transition flex items-center justify-center gap-2">
+                  <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-accentGold"></i>
+                  <span>Browse All 7 Modules</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Comprehensive Deep Topic Canvas (8 cols) -->
+          <div class="lg:col-span-8 bg-tradeCard border border-tradeBorder rounded-2xl p-6 md:p-8 space-y-8 shadow-2xl" id="readerCanvas">
+            <!-- Rendered dynamically -->
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 8. ADMIN COMMAND CENTER & USER APPROVALS -->
+    <!-- ========================================== -->
+    <section id="viewAdmin" class="space-y-6 hidden">
+      <!-- Admin Hero Header -->
+      <div class="bg-gradient-to-r from-tradeCard via-[#181510] to-tradeCard border-2 border-accentGold/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-56 h-56 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-accentGold animate-ping"></span>
+              <span class="text-[10px] font-mono uppercase tracking-widest text-accentGold font-bold">ADMINISTRATION & USER CLEARANCE</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              👑 USER MANAGEMENT & APPROVAL DESK
+            </h1>
+            <p class="text-xs text-gray-300 max-w-2xl leading-relaxed">
+              Review incoming customer signups, authorize private access to Dalal Street trading algorithms, or revoke permissions.
+            </p>
+          </div>
+
+          <button onclick="loadAdminUsers()" class="px-4 py-2 bg-accentGold/20 hover:bg-accentGold/30 text-accentGold border border-accentGold/40 text-xs font-bold rounded-lg transition flex items-center gap-2 shadow">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Refresh Registry</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
+        <div class="bg-tradeCard p-4 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Total Registered</span>
+          <strong class="text-xl font-bold text-white mt-1 block" id="adminStatTotal">--</strong>
+        </div>
+        <div class="bg-tradeCard p-4 rounded-xl border border-accentGold/40 bg-accentGold/5">
+          <span class="text-[10px] text-accentGold uppercase block font-bold">Pending Approvals</span>
+          <div class="flex items-baseline justify-between mt-1">
+            <strong class="text-xl font-bold text-accentGold" id="adminStatPending">0</strong>
+            <span class="text-[10px] text-bearRed font-bold animate-pulse" id="adminStatPendingBadge">ACTION REQ</span>
+          </div>
+        </div>
+        <div class="bg-tradeCard p-4 rounded-xl border border-bullGreen/40 bg-bullGreen/5">
+          <span class="text-[10px] text-bullGreen uppercase block font-bold">Active Traders</span>
+          <strong class="text-xl font-bold text-bullGreen mt-1 block" id="adminStatApproved">--</strong>
+        </div>
+        <div class="bg-tradeCard p-4 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Current Admin</span>
+          <strong class="text-xs font-bold text-gray-200 mt-1 block truncate" id="adminStatCurrentEmail">Admin</strong>
+        </div>
+      </div>
+
+      <!-- User Directory Table -->
+      <div class="bg-tradeCard border border-tradeBorder rounded-2xl p-5 space-y-4 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-tradeBorder/60 pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="users" class="w-4 h-4 text-accentGold"></i>
+            <h3 class="text-sm font-bold text-white">Customer Registry & Security Roles</h3>
+          </div>
+          <div class="text-xs text-gray-400">
+            Unapproved users are completely blocked from viewing live market signals.
+          </div>
+        </div>
+
+        <div class="border border-tradeBorder rounded-xl overflow-hidden bg-tradeDark overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-tradeCard border-b border-tradeBorder text-gray-400 font-mono uppercase text-[10px] tracking-wider">
+                <th class="py-3 px-4">Customer Name & Email</th>
+                <th class="py-3 px-4">Security Role</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Registered On</th>
+                <th class="py-3 px-4 text-right">Instant Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminPageUsersBody" class="divide-y divide-tradeBorder/60 font-mono">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TRADE REASON MODAL (THE "WHY TO TAKE CE OR PE" ENGINE) -->
+  <div id="tradeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-tradeCard border border-tradeBorder rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-tradeBorder flex items-start justify-between bg-tradeDark/60 rounded-t-2xl">
+        <div class="flex items-center gap-3">
+          <div id="modalTypeBadge" class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg bg-bullGreen text-black shadow-lg">
+            CE
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="modalStrikeTitle" class="text-lg font-bold text-white font-mono">NIFTY 23350 CE</h2>
+              <span id="modalCategoryBadge" class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-accentGold/20 text-accentGold border border-accentGold/30">
+                HERO-ZERO
+              </span>
+            </div>
+            <p id="modalExpirySub" class="text-xs text-gray-400">Current Expiry | 03 Nov 2026</p>
+          </div>
+        </div>
+
+        <button onclick="closeModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-tradeBorder transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-6">
+        
+        <!-- Live Price & Target Strip -->
+        <div class="grid grid-cols-4 gap-2 bg-tradeDark p-3 rounded-xl border border-tradeBorder text-center font-mono">
+          <div>
+            <span class="text-[10px] text-gray-500 block uppercase">Entry Price</span>
+            <span id="modalEntryPrice" class="text-base font-bold text-white">₹--</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-gray-500 block uppercase">Target 1 (2x)</span>
+            <span id="modalTarget1" class="text-base font-bold text-bullGreen">₹--</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-gray-500 block uppercase">Target 2 (3x)</span>
+            <span id="modalTarget2" class="text-base font-bold text-cyan-400">₹--</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-gray-500 block uppercase">Stop Loss</span>
+            <span id="modalSL" class="text-base font-bold text-bearRed">₹--</span>
+          </div>
+        </div>
+
+        <!-- THE "WHY" SECTION -->
+        <div class="space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-accentGold flex items-center gap-1.5">
+            <i data-lucide="brain" class="w-4 h-4"></i>
+            Trade Rationale (Why You Take This Trade)
+          </h3>
+          
+          <div class="bg-tradeDark/90 rounded-xl p-4 border border-tradeBorder space-y-3 text-sm">
+            
+            <!-- Breakout Condition on TradingView -->
+            <div class="flex items-start gap-2.5">
+              <i data-lucide="trending-up" id="modalTrendIcon" class="w-4 h-4 text-bullGreen shrink-0 mt-0.5"></i>
+              <div>
+                <strong class="text-white block font-medium">TradingView Trigger Level:</strong>
+                <span id="modalTriggerReason" class="text-gray-300 text-xs">
+                  Wait for Spot to break above level on 5-min candle.
+                </span>
+              </div>
+            </div>
+
+            <!-- Gamma Blast & Greeks Analysis -->
+            <div class="flex items-start gap-2.5">
+              <i data-lucide="zap" class="w-4 h-4 text-accentGold shrink-0 mt-0.5"></i>
+              <div>
+                <strong class="text-white block font-medium">Delta & Gamma Explosion:</strong>
+                <span id="modalGreekReason" class="text-gray-300 text-xs">
+                  Rapid delta expansion when price approaches this strike.
+                </span>
+              </div>
+            </div>
+
+            <!-- Risk to Reward Analysis -->
+            <div class="flex items-start gap-2.5">
+              <i data-lucide="shield-alert" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+              <div>
+                <strong class="text-white block font-medium">Risk & Capital Allocation:</strong>
+                <span id="modalRiskReason" class="text-gray-300 text-xs">
+                  Limited strictly to premium paid with 1:2 to 1:3 reward ratio.
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- QUANTITY & CAPITAL CALCULATOR -->
+        <div class="bg-tradeDark/60 p-4 rounded-xl border border-tradeBorder space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-gray-400">Number of Lots: <strong class="text-white" id="calcLots">1 Lot</strong> (<span id="calcQty">65</span> Qty)</span>
+            <input type="range" id="lotsSlider" min="1" max="10" value="1" oninput="updateLotCalc()" class="w-32 accent-bullGreen">
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-tradeBorder text-xs font-mono">
+            <span class="text-gray-400">Total Capital Needed: <strong class="text-white" id="calcCapital">₹0</strong></span>
+            <span class="text-gray-400">Potential 2x Profit: <strong class="text-bullGreen" id="calcProfit">₹0</strong></span>
+          </div>
+        </div>
+
+        <!-- UPSTOX EXECUTION STRING -->
+        <div class="space-y-2">
+          <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+            Search String for Upstox / Broker Watchlist
+          </label>
+          <div class="flex items-center gap-2">
+            <input type="text" id="upstoxCopyInput" readonly class="flex-1 bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-xs font-mono text-gray-200 select-all focus:outline-none">
+            <button onclick="copyUpstoxString()" id="btnCopy" class="px-4 py-2 bg-upstoxPurple hover:bg-upstoxPurple/80 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 bg-tradeDark/80 border-t border-tradeBorder rounded-b-2xl flex items-center justify-between text-xs text-gray-500">
+        <span>Press <kbd class="px-1.5 py-0.5 bg-tradeCard rounded border border-tradeBorder text-gray-300">ESC</kbd> to close</span>
+        <button onclick="closeModal()" class="px-4 py-1.5 rounded-lg bg-tradeBorder hover:bg-gray-700 text-gray-200 font-medium transition">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL (OPTIONAL UPSTOX TOKEN) -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-tradeCard border border-tradeBorder rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-tradeBorder pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="settings" class="w-4 h-4 text-accentGold"></i>
+          Settings & Workstation Appearance
+        </h3>
+        <button onclick="toggleSettingsModal()" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3.5 text-xs text-gray-300">
+        <!-- Panel Theme: Dark or Light -->
+        <div class="p-3.5 rounded-xl bg-tradeDark border border-tradeBorder space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="palette" class="w-4 h-4 text-accentGold"></i>
+              Panel Color (Theme)
+            </span>
+            <span id="themeActiveBadge" class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-bullGreen/20 text-bullGreen border border-bullGreen/40">🌙 DARK MODE</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-0.5">
+            <button type="button" id="btnThemeDark" onclick="applyPanelTheme('dark')" class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-bullGreen bg-bullGreen/15 text-bullGreen font-bold text-xs transition shadow-sm">
+              <span>🌙 Dark Panel</span>
+            </button>
+            <button type="button" id="btnThemeLight" onclick="applyPanelTheme('light')" class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-tradeBorder bg-tradeCard text-gray-400 hover:text-white font-medium text-xs transition">
+              <span>☀️ Light Panel</span>
+            </button>
+          </div>
+          <span class="text-[10px] text-gray-500 block">Switch between Obsidian Dark and Clean Daytime Light modes.</span>
+        </div>
+
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Upstox Access Token (Optional)</label>
+          <input type="text" id="upstoxTokenInput" placeholder="Paste Upstox Access Token..." class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-bullGreen">
+          <span class="text-[10px] text-gray-500 mt-1 block">Optional: Enables direct broker execution if you have an active token.</span>
+        </div>
+
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Auto-Refresh Interval</label>
+          <select id="refreshInterval" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-xs text-white">
+            <option value="2000">2 Seconds (Ultra Fast)</option>
+            <option value="3000" selected>3 Seconds (Recommended)</option>
+            <option value="5000">5 Seconds (Battery Saver)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-tradeBorder flex justify-end gap-2">
+        <button onclick="toggleSettingsModal()" class="px-3 py-1.5 rounded-lg bg-tradeBorder text-gray-300 text-xs">Cancel</button>
+        <button onclick="saveSettings()" class="px-4 py-1.5 rounded-lg bg-bullGreen text-black font-bold text-xs">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH MODAL (LOGIN & SIGN UP) -->
+  <div id="authModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-tradeCard border border-tradeBorder rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl relative">
+      
+      <!-- Brand in Modal -->
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-2xl text-black shadow-lg shadow-accentGold/20 mx-auto">
+          🎯
+        </div>
+        <h2 class="text-lg font-bold text-white tracking-wide">THE MARKET SNIPER SHOOTERS</h2>
+        <p class="text-xs text-gray-400">Exclusive Institutional Workstations & Market Signals</p>
+      </div>
+
+      <!-- Auth Tabs -->
+      <div class="flex bg-tradeDark p-1 rounded-xl border border-tradeBorder text-xs font-bold">
+        <button id="authTabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-lg bg-bullGreen text-black transition shadow">
+          Sign In
+        </button>
+        <button id="authTabSignup" onclick="switchAuthTab('signup')" class="flex-1 py-2 rounded-lg text-gray-400 hover:text-white transition">
+          Request Access
+        </button>
+      </div>
+
+      <!-- Error / Success Alert -->
+      <div id="authAlert" class="hidden p-3 rounded-lg text-xs leading-relaxed"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Email Address</label>
+          <input type="email" id="loginEmail" required placeholder="name@example.com" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
+        </div>
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
+        </div>
+        <button type="submit" id="btnLoginSubmit" class="w-full py-2.5 bg-bullGreen hover:bg-bullGreen/90 text-black font-extrabold text-sm rounded-lg transition shadow-lg shadow-bullGreen/20">
+          Sign In to Dashboard
+        </button>
+      </form>
+
+      <!-- SIGN UP FORM -->
+      <form id="signupForm" onsubmit="handleSignupSubmit(event)" class="space-y-3 text-xs hidden">
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Full Name</label>
+          <input type="text" id="signupName" required placeholder="" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
+        </div>
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Email Address</label>
+          <input type="email" id="signupEmail" required placeholder="name@gmail.com" oninput="checkSignupEmailInput(this)" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen transition">
+          <p id="signupEmailCaution" class="hidden text-[11px] text-amber-400 font-medium mt-1 flex items-center gap-1.5">
+            <span>⚠️ Caution: Please enter a correct Gmail address (e.g. name@gmail.com)</span>
+          </p>
+        </div>
+        <div>
+          <label class="block text-gray-400 mb-1 font-medium">Choose Password</label>
+          <input type="password" id="signupPassword" required placeholder="Minimum 6 characters" class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-bullGreen">
+        </div>
+        <div class="p-2.5 rounded-lg bg-accentGold/10 border border-accentGold/30 text-accentGold text-[11px] font-medium flex items-center gap-2">
+          <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-accentGold"></i>
+          <span><strong>Admin Approval Required:</strong> Administrator will review and approve your registration before live market access activates.</span>
+        </div>
+        <button type="submit" id="btnSignupSubmit" class="w-full py-2.5 bg-accentGold hover:bg-accentGold/90 text-black font-extrabold text-sm rounded-lg transition shadow-lg shadow-accentGold/20 flex items-center justify-center gap-2">
+          <span>📝 Request Clearance from Admin</span>
+        </button>
+      </form>
+
+      <div class="pt-2 border-t border-tradeBorder flex items-center justify-center text-[11px] text-gray-400 gap-1.5">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-bullGreen"></i>
+        <span>Private Trading Network &bull; Administrator Approval Required</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ADMIN MANAGEMENT MODAL -->
+  <div id="adminModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-tradeCard border border-accentGold/60 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl relative">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-tradeBorder flex items-center justify-between bg-tradeDark/70 rounded-t-2xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-accentGold/20 text-accentGold border border-accentGold/30 flex items-center justify-center font-bold text-xl">
+            👑
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-white">Admin Access & User Approvals</h2>
+            <p class="text-xs text-gray-400">Manage user signups, approve trading access, or revoke permissions</p>
+          </div>
+        </div>
+
+        <button onclick="closeAdminModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-tradeBorder">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Users Table -->
+      <div class="p-5 overflow-y-auto flex-1 space-y-4">
+        <div class="flex items-center justify-between text-xs text-gray-400">
+          <span>Registered Users List</span>
+          <button onclick="loadAdminUsers()" class="text-accentGold hover:underline flex items-center gap-1 font-semibold">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh List
+          </button>
+        </div>
+
+        <div class="border border-tradeBorder rounded-xl overflow-hidden bg-tradeDark">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-tradeCard border-b border-tradeBorder text-gray-400 font-mono uppercase text-[10px] tracking-wider">
+                <th class="py-3 px-4">User</th>
+                <th class="py-3 px-4">Role</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Registered</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersBody" class="divide-y divide-tradeBorder/60 font-mono">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 bg-tradeDark border-t border-tradeBorder rounded-b-2xl flex items-center justify-between text-xs text-gray-500">
+        <span>Logged in as: <strong id="adminFooterEmail" class="text-accentGold">Admin</strong></span>
+        <button onclick="closeAdminModal()" class="px-4 py-1.5 rounded-lg bg-tradeBorder hover:bg-gray-700 text-gray-200 font-medium">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LOGOUT CONFIRMATION MODAL -->
+  <div id="logoutConfirmModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-tradeCard border border-tradeBorder rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
+      <div class="w-12 h-12 bg-bearRed/20 text-bearRed border border-bearRed/30 rounded-full flex items-center justify-center mx-auto text-2xl">
+        🚪
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-white">Log Out Confirmation</h3>
+        <p class="text-xs text-gray-400 mt-1">Are you sure you want to end your session?</p>
+      </div>
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button onclick="closeLogoutModal()" class="px-4 py-2 bg-tradeBorder hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-lg transition">
+          Cancel
+        </button>
+        <button onclick="handleLogout()" class="px-5 py-2 bg-bearRed hover:bg-bearRed/90 text-white text-xs font-extrabold rounded-lg transition shadow-lg shadow-bearRed/20">
+          Yes, Log Out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="executive-charts.js?v=22.0"></script>
+  <script src="academy-data.js?v=22.0"></script>
+  <script src="app.js?v=22.0"></script>
+</body>
+</html>

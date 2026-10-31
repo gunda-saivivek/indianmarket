@@ -1,0 +1,225 @@
+/* Custom Trading UI Styles */
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.flash-green {
+  animation: flashGreen 0.6s ease-out;
+}
+
+.flash-red {
+  animation: flashRed 0.6s ease-out;
+}
+
+@keyframes flashGreen {
+  0% { background-color: rgba(0, 192, 118, 0.35); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flashRed {
+  0% { background-color: rgba(255, 59, 87, 0.35); }
+  100% { background-color: transparent; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b0e14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #232936;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b4354;
+}
+
+/* Equal pair card hover effect */
+.pair-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pair-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(247, 166, 0, 0.5);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+}
+
+.strike-row:hover {
+  background-color: rgba(35, 41, 54, 0.6);
+}
+
+/* Institutional Trading UI Button & Card Enhancements */
+html {
+  scroll-behavior: smooth;
+}
+
+.tv-btn {
+  background: linear-gradient(180deg, #1e222d 0%, #151922 100%);
+  border: 1px solid #2a2e39;
+  transition: all 0.2s ease-in-out;
+}
+
+.tv-btn:hover {
+  border-color: #089981;
+  box-shadow: 0 0 12px rgba(8, 153, 129, 0.25);
+  transform: translateY(-1px);
+}
+
+.glass-panel {
+  background: rgba(21, 25, 34, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(42, 46, 57, 0.7);
+}
+
+.subtopic-chip {
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.subtopic-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes goldGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(247, 166, 0, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(247, 166, 0, 0); }
+}
+
+.highlight-gold {
+  animation: goldGlow 1.5s 2;
+}
+
+/* ==========================================
+   LIGHT MODE THEME SYSTEM
+   ========================================== */
+html.theme-light,
+body.theme-light {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+body.theme-light header {
+  background-color: #ffffff !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-light aside#mainSidebar {
+  background-color: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+}
+
+body.theme-light aside#mainSidebar > div:first-child {
+  background-color: #f8fafc !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-light .bg-tradeDark {
+  background-color: #f8fafc !important;
+}
+
+body.theme-light .bg-tradeDark\/60 {
+  background-color: rgba(248, 250, 252, 0.8) !important;
+}
+
+body.theme-light .bg-tradeCard {
+  background-color: #ffffff !important;
+}
+
+body.theme-light .border-tradeBorder {
+  border-color: #e2e8f0 !important;
+}
+
+body.theme-light .text-white {
+  color: #0f172a !important;
+}
+
+body.theme-light .text-gray-200 {
+  color: #1e293b !important;
+}
+
+body.theme-light .text-gray-300 {
+  color: #334155 !important;
+}
+
+body.theme-light .text-gray-400 {
+  color: #64748b !important;
+}
+
+body.theme-light .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+body.theme-light input,
+body.theme-light select,
+body.theme-light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light input::placeholder {
+  color: #94a3b8 !important;
+}
+
+body.theme-light .pair-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.theme-light .pair-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+body.theme-light .glass-panel {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.theme-light .strike-row:hover {
+  background-color: #f1f5f9 !important;
+}
+
+body.theme-light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+body.theme-light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+body.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+body.theme-light .bg-tradeBorder {
+  background-color: #e2e8f0 !important;
+}
+
+body.theme-light .tv-btn {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+body.theme-light .tv-btn:hover {
+  border-color: #00c076 !important;
+}
+
+body.theme-light #adminModal .bg-tradeCard,
+body.theme-light #settingsModal .bg-tradeCard,
+body.theme-light #authModal .bg-tradeCard {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
