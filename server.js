@@ -834,6 +834,12 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      if (user.status === 'rejected') {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Access Revoked: Your account access has been revoked by the Administrator.' }));
+        return;
+      }
+
       const token = crypto.randomBytes(32).toString('hex');
       const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status };
       activeSessions.set(token, sessionUser);
@@ -998,7 +1004,7 @@ const server = http.createServer(async (req, res) => {
       // Update active sessions in memory
       for (const [t, s] of activeSessions.entries()) {
         if (s.email.toLowerCase() === cleanEmail) {
-          if (action === 'delete') {
+          if (action === 'delete' || action === 'reject') {
             activeSessions.delete(t);
           } else {
             s.status = targetUser.status;
@@ -1007,7 +1013,10 @@ const server = http.createServer(async (req, res) => {
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, message: `User ${action}d successfully` }));
+      res.end(JSON.stringify({ 
+        success: true, 
+        message: action === 'reject' ? 'User access revoked successfully' : `User ${action}d successfully` 
+      }));
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: err.message }));

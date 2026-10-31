@@ -79,8 +79,21 @@ async function checkAuthStatus(manual = false) {
       hideAuthModal();
       document.getElementById('pendingAlert').classList.add('hidden');
       startPolling();
+    } else if (data.user.status === 'rejected') {
+      if (state.refreshTimer) clearInterval(state.refreshTimer);
+      localStorage.removeItem('sniper_token');
+      state.token = null;
+      state.currentUser = null;
+      updateAuthUI();
+      showAuthModal('login');
+      const alertEl = document.getElementById('authAlert');
+      if (alertEl) {
+        alertEl.textContent = 'Access Revoked: Your account access has been revoked by the Administrator.';
+        alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bearRed/20 text-bearRed border border-bearRed/40 text-center font-bold block';
+        alertEl.classList.remove('hidden');
+      }
     } else {
-      // Pending or Rejected
+      // Pending
       if (state.refreshTimer) clearInterval(state.refreshTimer);
       document.getElementById('pendingAlert').classList.remove('hidden');
       hideAuthModal();
