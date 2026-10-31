@@ -169,6 +169,26 @@ async function updateUserStatus(email, status) {
   }
 }
 
+async function updateUserPassword(email, newPassword) {
+  const clean = (email || '').toLowerCase().trim();
+  const newHash = hashPassword(newPassword);
+  if (pgPool) {
+    try {
+      await pgPool.query('UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2', [newHash, clean]);
+    } catch (e) {
+      console.error('Error updating password in pgPool:', e.message);
+    }
+  }
+  const users = loadUsers();
+  const u = users.find(x => x.email.toLowerCase() === clean);
+  if (u) {
+    u.passwordHash = newHash;
+    saveUsers(users);
+    syncUsersToGitAndCiCd(`reset password for ${clean}`);
+  }
+  return u;
+}
+
 async function deleteUserByEmail(email) {
   const clean = (email || '').toLowerCase().trim();
   if (pgPool) {
@@ -212,6 +232,7 @@ module.exports = {
   findUserByEmail,
   createUser,
   updateUserStatus,
+  updateUserPassword,
   deleteUserByEmail,
   activeSessions,
   getAuthUser,

@@ -1,5 +1,17 @@
 [
   {
+    "id": "log-1793449315762-wljy8",
+    "action": "LOGIN",
+    "email": "gsv.200000@gmail.com",
+    "name": "Sai Vivek (Admin)",
+    "role": "admin",
+    "ip": "::1",
+    "userAgent": "Unknown Client",
+    "details": "User successfully signed in",
+    "status": "SUCCESS",
+    "timestamp": "2026-10-31T12:21:55.759Z"
+  },
+  {
     "id": "log-1793448509286-6c1qz",
     "action": "LOGIN",
     "email": "gsv.200000@gmail.com",

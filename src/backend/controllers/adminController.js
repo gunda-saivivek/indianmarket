@@ -3,6 +3,7 @@ const {
   getAllUsers,
   findUserByEmail,
   updateUserStatus,
+  updateUserPassword,
   deleteUserByEmail,
   getAuthUser,
   activeSessions
@@ -35,7 +36,7 @@ async function handleAdminAction(req, res, parsedUrl) {
   }
 
   try {
-    const { email, action } = await parseJsonBody(req);
+    const { email, action, newPassword } = await parseJsonBody(req);
     const cleanEmail = (email || '').toLowerCase().trim();
     const targetUser = await findUserByEmail(cleanEmail);
 
@@ -59,6 +60,10 @@ async function handleAdminAction(req, res, parsedUrl) {
     } else if (action === 'reject') {
       await updateUserStatus(cleanEmail, 'rejected');
       await logFootprint({ action: 'ADMIN_REJECT', email: user.email, name: user.name, role: user.role, req, details: `Revoked trading access from: ${cleanEmail}`, status: 'SUCCESS' });
+    } else if (action === 'reset_password') {
+      const pwdToSet = newPassword || 'Money@2027#';
+      await updateUserPassword(cleanEmail, pwdToSet);
+      await logFootprint({ action: 'ADMIN_RESET_PASSWORD', email: user.email, name: user.name, role: user.role, req, details: `Reset password for: ${cleanEmail}`, status: 'SUCCESS' });
     }
 
     for (const [t, s] of activeSessions.entries()) {
