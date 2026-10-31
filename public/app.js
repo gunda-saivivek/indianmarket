@@ -218,46 +218,51 @@ function switchAuthTab(tab) {
     tabLogin.className = 'flex-1 py-2 rounded-lg text-gray-400 hover:text-white transition';
     formSignup.classList.remove('hidden');
     formLogin.classList.add('hidden');
-    backToSignupStep1();
   }
 }
 
-function backToSignupStep1() {
-  const step1 = document.getElementById('signupStep1');
-  const step2 = document.getElementById('signupStep2');
-  if (step1) step1.classList.remove('hidden');
-  if (step2) step2.classList.add('hidden');
-}
+async function handleLoginSubmit(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('btnLoginSubmit');
+  const alertEl = document.getElementById('authAlert');
 
-let resendTimerInterval = null;
-function startResendCooldown() {
-  const btn = document.getElementById('btnResendCode');
-  if (!btn) return;
-  let remaining = 60;
   btn.disabled = true;
-  btn.className = 'text-gray-500 text-[11px] font-mono cursor-not-allowed';
-  btn.textContent = `Resend in ${remaining}s`;
+  btn.textContent = 'Verifying...';
+  alertEl.classList.add('hidden');
 
-  if (resendTimerInterval) clearInterval(resendTimerInterval);
-  resendTimerInterval = setInterval(() => {
-    remaining--;
-    if (remaining <= 0) {
-      clearInterval(resendTimerInterval);
-      btn.disabled = false;
-      btn.className = 'text-accentGold hover:text-accentGold/80 font-medium text-[11px] cursor-pointer';
-      btn.textContent = 'Resend Code';
-    } else {
-      btn.textContent = `Resend in ${remaining}s`;
-    }
-  }, 1000);
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    state.token = data.token;
+    localStorage.setItem('sniper_token', data.token);
+    state.currentUser = data.user;
+
+    checkAuthStatus();
+  } catch (err) {
+    alertEl.textContent = err.message;
+    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bearRed/20 text-bearRed border border-bearRed/30';
+    alertEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In to Dashboard';
+  }
 }
 
-async function handleSendGmailCode(e) {
-  if (e && e.preventDefault) e.preventDefault();
+async function handleSignupSubmit(e) {
+  e.preventDefault();
   const name = document.getElementById('signupName').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPassword').value;
-  const btn = document.getElementById('btnSendCode');
+  const btn = document.getElementById('btnSignupSubmit');
   const alertEl = document.getElementById('authAlert');
 
   if (!name) {
@@ -282,120 +287,47 @@ async function handleSendGmailCode(e) {
     return;
   }
 
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<span>⏳ Sending Code to ${email}...</span>`;
-  }
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳ Submitting Clearance Request...</span>';
   alertEl.classList.add('hidden');
 
   try {
-    const res = await fetch('/api/auth/send-code', {
+    const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
       body: JSON.stringify({ name, email, password })
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to send verification code');
-
-    // Switch to Step 2
-    document.getElementById('signupStep1').classList.add('hidden');
-    document.getElementById('signupStep2').classList.remove('hidden');
-    document.getElementById('displayTargetGmail').textContent = email;
-    const codeInput = document.getElementById('signupCode');
-    if (codeInput) {
-      codeInput.value = '';
-      codeInput.focus();
-    }
-
-    alertEl.innerHTML = `
-      <div class="space-y-0.5">
-        <div class="font-bold text-bullGreen flex items-center gap-1.5">
-          <span>📬 Code Sent to Your Gmail!</span>
-        </div>
-        <p class="text-[11px] text-gray-300">${data.message}</p>
-      </div>
-    `;
-    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bullGreen/20 text-bullGreen border border-bullGreen/40';
-    alertEl.classList.remove('hidden');
-
-    startResendCooldown();
-  } catch (err) {
-    alertEl.textContent = err.message;
-    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bearRed/20 text-bearRed border border-bearRed/30';
-    alertEl.classList.remove('hidden');
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = `<span>📧 Send Gmail Verification Code</span>`;
-    }
-  }
-}
-
-async function handleVerifyGmailAndSubmit(e) {
-  if (e && e.preventDefault) e.preventDefault();
-  const email = document.getElementById('signupEmail').value.trim();
-  const code = document.getElementById('signupCode').value.trim();
-  const btn = document.getElementById('btnVerifyAndSubmit');
-  const alertEl = document.getElementById('authAlert');
-
-  if (!code || code.length < 6) {
-    alertEl.textContent = 'Please enter the complete 6-digit code sent to your Gmail.';
-    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bearRed/20 text-bearRed border border-bearRed/30';
-    alertEl.classList.remove('hidden');
-    return;
-  }
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<span>⏳ Verifying Code...</span>`;
-  }
-  alertEl.classList.add('hidden');
-
-  try {
-    const res = await fetch('/api/auth/verify-and-signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
-      body: JSON.stringify({ email, code })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Verification failed');
+    if (!res.ok) throw new Error(data.error || 'Signup request failed');
 
     alertEl.innerHTML = `
       <div class="space-y-1">
-        <div class="font-bold text-bullGreen flex items-center gap-1.5 text-sm">
-          <span>✅ Gmail Verified Successfully!</span>
+        <div class="font-bold text-accentGold flex items-center gap-1.5 text-sm">
+          <span>⏳ Request Submitted to Administrator!</span>
         </div>
         <p class="text-[11px] text-gray-300">
-          Your legitimate Gmail has been confirmed and submitted to Administrator (Sai Vivek) for clearance. You can log in once approved.
+          Your Gmail registration has been received. Administrator will approve your account on the Admin Dashboard before live signals activate.
         </p>
       </div>
     `;
-    alertEl.className = 'p-3.5 rounded-xl text-xs leading-relaxed bg-bullGreen/20 text-bullGreen border border-bullGreen/40 font-medium';
+    alertEl.className = 'p-3.5 rounded-xl text-xs leading-relaxed bg-accentGold/20 text-accentGold border border-accentGold/40 font-medium';
     alertEl.classList.remove('hidden');
 
     setTimeout(() => {
       switchAuthTab('login');
       document.getElementById('loginEmail').value = email;
       document.getElementById('loginPassword').value = '';
-    }, 4000);
+    }, 3500);
 
   } catch (err) {
     alertEl.textContent = err.message;
     alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bearRed/20 text-bearRed border border-bearRed/30';
     alertEl.classList.remove('hidden');
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = `<span>✅ Verify Gmail & Request Admin Approval</span>`;
-    }
+    btn.disabled = false;
+    btn.innerHTML = '<span>📝 Request Clearance from Admin</span>';
   }
-}
-
-async function handleSignupSubmit(e) {
-  // Legacy fallback redirects to 2-step verification
-  handleSendGmailCode(e);
 }
 
 function openLogoutModal() {

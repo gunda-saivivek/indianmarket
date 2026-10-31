@@ -8,7 +8,6 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 const PORT = process.env.PORT || 7171;
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -816,218 +815,11 @@ const server = http.createServer(async (req, res) => {
   // AUTH API ENDPOINTS
   // ==========================================
 
-  // Map of pending Gmail verifications: email -> { code, name, passwordHash, expiresAt, attempts }
-  if (!global.pendingVerifications) {
-    global.pendingVerifications = new Map();
-  }
-  const pendingVerifications = global.pendingVerifications;
-
   function isLegitGmail(email) {
     if (!email || typeof email !== 'string') return false;
     const clean = email.trim().toLowerCase();
     // Validate that the email is a legitimate Gmail format
     return /^[a-zA-Z0-9._%+-]+@(?:gmail\.com|googlemail\.com)$/i.test(clean);
-  }
-
-  async function sendVerificationEmail(toEmail, code, name) {
-    const user = process.env.GMAIL_USER || 'gsv.200000@gmail.com';
-    const pass = process.env.GMAIL_APP_PASSWORD;
-
-    if (!pass) {
-      console.log(`\n=============================================================`);
-      console.log(`📧 GMAIL VERIFICATION CODE GENERATED:`);
-      console.log(`Recipient: ${toEmail} (${name})`);
-      console.log(`Code:      ${code} (Valid for 10 minutes)`);
-      console.log(`Notice:    Set GMAIL_APP_PASSWORD in Render to send live emails!`);
-      console.log(`=============================================================\n`);
-      return { sent: false, devMode: true };
-    }
-
-    try {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user, pass }
-      });
-
-      const html = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; background: #0c1017; border: 1px solid #1e293b; border-radius: 14px; color: #e2e8f0;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #00E676; font-size: 22px; margin: 0 0 6px 0; letter-spacing: 0.5px;">THE MARKET SNIPER SHOOTERS</h1>
-            <p style="color: #94a3b8; font-size: 13px; margin: 0;">Institutional Options Trading Desk</p>
-          </div>
-
-          <div style="background: #151d2c; border: 1px solid #233148; border-radius: 10px; padding: 22px; text-align: center; margin-bottom: 24px;">
-            <p style="color: #cbd5e1; font-size: 14px; margin: 0 0 14px 0;">Hello <strong>${name || 'Trader'}</strong>,</p>
-            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 18px 0;">Here is your 6-digit clearance code to verify your Gmail address:</p>
-            
-            <div style="background: #080d14; border: 2px dashed #00E676; border-radius: 8px; padding: 14px 28px; display: inline-block; margin-bottom: 16px;">
-              <span style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #00E676;">${code}</span>
-            </div>
-            
-            <p style="color: #64748b; font-size: 12px; margin: 0;">This code will expire in <strong>10 minutes</strong>. Do not share it with anyone.</p>
-          </div>
-
-          <div style="border-top: 1px solid #1e293b; padding-top: 16px; font-size: 11px; color: #64748b; text-align: center;">
-            <p style="margin: 0 0 6px 0;">Once verified, Administrator (Sai Vivek) will review your clearance request.</p>
-            <p style="margin: 0;">© ${new Date().getFullYear()} The Market Sniper Shooters.</p>
-          </div>
-        </div>
-      `;
-
-      await transporter.sendMail({
-        from: `"The Market Sniper" <${user}>`,
-        to: toEmail,
-        subject: `Your Market Sniper Clearance Code: ${code}`,
-        html
-      });
-
-      return { sent: true };
-    } catch (mailErr) {
-      console.error('Mail delivery error:', mailErr.message);
-      return { sent: false, error: mailErr.message };
-    }
-  }
-
-  // POST /api/auth/send-code
-  if (pathname === '/api/auth/send-code' && req.method === 'POST') {
-    try {
-      const { name, email, password } = await parseJsonBody(req);
-      if (!name || !email || !password) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Full name, Gmail address, and password are required' }));
-        return;
-      }
-
-      const cleanEmail = email.toLowerCase().trim();
-      if (!isLegitGmail(cleanEmail)) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Only legitimate @gmail.com addresses are permitted for registration.' }));
-        return;
-      }
-
-      if (password.length < 6) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Password must be at least 6 characters long' }));
-        return;
-      }
-
-      const users = loadUsers();
-      if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
-        res.writeHead(409, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'An account with this Gmail address already exists' }));
-        return;
-      }
-
-      // Generate 6-digit verification code
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      pendingVerifications.set(cleanEmail, {
-        code,
-        name: name.trim(),
-        passwordHash: hashPassword(password),
-        expiresAt: Date.now() + 10 * 60 * 1000,
-        attempts: 0
-      });
-
-      const mailResult = await sendVerificationEmail(cleanEmail, code, name.trim());
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        message: mailResult.sent 
-          ? `6-digit verification code sent to ${cleanEmail}. Check your inbox!`
-          : `Clearance code generated for ${cleanEmail}!`,
-        devMode: !mailResult.sent,
-        email: cleanEmail
-      }));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
-  }
-
-  // POST /api/auth/verify-and-signup
-  if (pathname === '/api/auth/verify-and-signup' && req.method === 'POST') {
-    try {
-      const { email, code } = await parseJsonBody(req);
-      if (!email || !code) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Gmail address and 6-digit verification code are required' }));
-        return;
-      }
-
-      const cleanEmail = email.toLowerCase().trim();
-      const pending = pendingVerifications.get(cleanEmail);
-
-      if (!pending) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'No active verification code found for this Gmail. Please request a new code.' }));
-        return;
-      }
-
-      if (Date.now() > pending.expiresAt) {
-        pendingVerifications.delete(cleanEmail);
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Verification code has expired (10 min limit). Please request a new code.' }));
-        return;
-      }
-
-      if (pending.attempts >= 5) {
-        pendingVerifications.delete(cleanEmail);
-        res.writeHead(429, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Too many incorrect attempts. Please request a new code.' }));
-        return;
-      }
-
-      if (pending.code !== code.trim()) {
-        pending.attempts++;
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid 6-digit code. Please check your Gmail and try again.' }));
-        return;
-      }
-
-      // Code matches! Create user
-      const users = loadUsers();
-      if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
-        res.writeHead(409, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'An account with this Gmail address already exists' }));
-        return;
-      }
-
-      const newUser = {
-        id: 'user-' + Date.now(),
-        name: pending.name,
-        email: cleanEmail,
-        passwordHash: pending.passwordHash,
-        role: 'user',
-        status: 'pending', // Strictly requires Admin (Sai Vivek) approval before access
-        emailVerified: true,
-        verifiedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      };
-
-      users.push(newUser);
-      saveUsers(users);
-      pendingVerifications.delete(cleanEmail);
-
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        message: 'Gmail successfully verified! Your registration has been submitted to Administrator (Sai Vivek) for final clearance.',
-        user: {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-          status: 'pending',
-          emailVerified: true
-        }
-      }));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
   }
 
   // POST /api/auth/login
@@ -1074,16 +866,27 @@ const server = http.createServer(async (req, res) => {
       const { name, email, password } = await parseJsonBody(req);
       if (!name || !email || !password) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Name, email, and password are required' }));
+        res.end(JSON.stringify({ error: 'Name, Gmail address, and password are required' }));
         return;
       }
 
       const cleanEmail = email.toLowerCase().trim();
-      const users = loadUsers();
+      if (!isLegitGmail(cleanEmail)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Only legitimate @gmail.com addresses are permitted for registration.' }));
+        return;
+      }
 
+      if (password.length < 6) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Password must be at least 6 characters long' }));
+        return;
+      }
+
+      const users = loadUsers();
       if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
         res.writeHead(409, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'An account with this email already exists' }));
+        res.end(JSON.stringify({ error: 'An account with this Gmail address already exists' }));
         return;
       }
 
@@ -1093,7 +896,7 @@ const server = http.createServer(async (req, res) => {
         email: cleanEmail,
         passwordHash: hashPassword(password),
         role: 'user',
-        status: 'pending', // Strictly requires Admin (Sai Vivek) approval before access
+        status: 'pending', // Strictly requires Admin (gsv.200000@gmail.com) approval before access
         createdAt: new Date().toISOString()
       };
 
@@ -1103,7 +906,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(201, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         success: true,
-        message: 'Registration submitted successfully! Your account is awaiting approval by Administrator (Sai Vivek).',
+        message: 'Registration submitted successfully! Your account is awaiting approval by Administrator on the Admin Dashboard.',
         user: {
           id: newUser.id,
           name: newUser.name,
