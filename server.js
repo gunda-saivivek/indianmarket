@@ -794,8 +794,11 @@ function parseJsonBody(req) {
 
 // HTTP Server
 const server = http.createServer(async (req, res) => {
-  const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
+  const host = req.headers.host || 'localhost';
+  const myUrl = new URL(req.url, `http://${host}`);
+  const pathname = myUrl.pathname;
+  const query = Object.fromEntries(myUrl.searchParams.entries());
+  const parsedUrl = { pathname, query };
 
   // CORS and Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
