@@ -25,5 +25,14 @@
     "role": "user",
     "status": "approved",
     "createdAt": "2026-10-31T11:44:00.000Z"
+  },
+  {
+    "id": "user-1793448436545",
+    "name": "Raghava",
+    "email": "raghavendrasai379@gmail.com",
+    "passwordHash": "be6614f7096f2985048a18ed99ff281e772bcbae5b30c4c624c2eee7c3de16c0",
+    "role": "user",
+    "status": "approved",
+    "createdAt": "2026-10-31T12:07:48.620Z"
   }
 ]
