@@ -6,3 +6,5 @@ scratch/
 lhr_key*
 *-ip.txt
 public-url.txt
+backend-spring/target/
+*.class
