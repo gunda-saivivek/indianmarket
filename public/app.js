@@ -118,18 +118,28 @@ function updateAuthUI() {
     }
     if (adminBtn) adminBtn.classList.add('hidden');
     if (sideAdminBtn) sideAdminBtn.classList.add('hidden');
+    const tabAdmin = document.getElementById('tabAdmin');
+    const sideTabAdmin = document.getElementById('sideTabAdmin');
+    if (tabAdmin) tabAdmin.classList.add('hidden');
+    if (sideTabAdmin) sideTabAdmin.classList.add('hidden');
     if (window.lucide) lucide.createIcons();
     return;
   }
 
   const isAdmin = state.currentUser.role === 'admin';
+  const tabAdmin = document.getElementById('tabAdmin');
+  const sideTabAdmin = document.getElementById('sideTabAdmin');
   if (isAdmin) {
     if (adminBtn) adminBtn.classList.remove('hidden');
     if (sideAdminBtn) sideAdminBtn.classList.remove('hidden');
+    if (tabAdmin) tabAdmin.classList.remove('hidden');
+    if (sideTabAdmin) sideTabAdmin.classList.remove('hidden');
     checkPendingAdminUsers();
   } else {
     if (adminBtn) adminBtn.classList.add('hidden');
     if (sideAdminBtn) sideAdminBtn.classList.add('hidden');
+    if (tabAdmin) tabAdmin.classList.add('hidden');
+    if (sideTabAdmin) sideTabAdmin.classList.add('hidden');
   }
 
   if (userSection) {
@@ -351,19 +361,27 @@ async function checkPendingAdminUsers() {
     const badge = document.getElementById('pendingBadge');
     const sideBadge = document.getElementById('sidePendingBadge');
 
+    const tabAdminBadge = document.getElementById('tabAdminBadge');
+    const sideAdminTabBadge = document.getElementById('sideAdminTabBadge');
     if (pendingCount > 0) {
       if (badge) { badge.textContent = `${pendingCount}`; badge.classList.remove('hidden'); }
       if (sideBadge) { sideBadge.textContent = `${pendingCount}`; sideBadge.classList.remove('hidden'); }
+      if (tabAdminBadge) { tabAdminBadge.textContent = `${pendingCount}`; tabAdminBadge.classList.remove('hidden'); }
+      if (sideAdminTabBadge) { sideAdminTabBadge.textContent = `${pendingCount}`; sideAdminTabBadge.classList.remove('hidden'); }
     } else {
       if (badge) badge.classList.add('hidden');
       if (sideBadge) sideBadge.classList.add('hidden');
+      if (tabAdminBadge) tabAdminBadge.classList.add('hidden');
+      if (sideAdminTabBadge) sideAdminTabBadge.classList.add('hidden');
     }
   } catch (e) {}
 }
 
 async function loadAdminUsers() {
   const tbody = document.getElementById('adminUsersBody');
-  tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Loading user registry...</td></tr>`;
+  const pageTbody = document.getElementById('adminPageUsersBody');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Loading user registry...</td></tr>`;
+  if (pageTbody) pageTbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Loading user registry...</td></tr>`;
 
   try {
     const res = await fetch('/api/admin/users', {
@@ -385,12 +403,30 @@ async function loadAdminUsers() {
       if (sideBadge) sideBadge.classList.add('hidden');
     }
 
+    // Update admin page statistics
+    const statTotal = document.getElementById('adminStatTotal');
+    const statPending = document.getElementById('adminStatPending');
+    const statPendingBadge = document.getElementById('adminStatPendingBadge');
+    const statApproved = document.getElementById('adminStatApproved');
+    const statCurrentEmail = document.getElementById('adminStatCurrentEmail');
+    const tabAdminBadge = document.getElementById('tabAdminBadge');
+    const sideAdminTabBadge = document.getElementById('sideAdminTabBadge');
+
+    if (statTotal) statTotal.textContent = users.length;
+    if (statPending) statPending.textContent = pendingCount;
+    if (statPendingBadge) statPendingBadge.classList.toggle('hidden', pendingCount === 0);
+    if (statApproved) statApproved.textContent = users.filter(u => u.status === 'approved').length;
+    if (statCurrentEmail) statCurrentEmail.textContent = state.currentUser?.email || 'Sai Vivek (Admin)';
+    if (tabAdminBadge) { tabAdminBadge.textContent = pendingCount; tabAdminBadge.classList.toggle('hidden', pendingCount === 0); }
+    if (sideAdminTabBadge) { sideAdminTabBadge.textContent = pendingCount; sideAdminTabBadge.classList.toggle('hidden', pendingCount === 0); }
+
     if (users.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">No registered users yet.</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">No registered users yet.</td></tr>`;
+      if (pageTbody) pageTbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">No registered users yet.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = users.map(u => {
+    const usersHtml = users.map(u => {
       const isSelf = u.email.toLowerCase() === state.currentUser?.email.toLowerCase();
       const dateStr = new Date(u.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
@@ -438,10 +474,14 @@ async function loadAdminUsers() {
       `;
     }).join('');
 
+    if (tbody) tbody.innerHTML = usersHtml;
+    if (pageTbody) pageTbody.innerHTML = usersHtml;
+
     if (window.lucide) lucide.createIcons();
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-bearRed">${err.message}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-bearRed">${err.message}</td></tr>`;
+    if (pageTbody) pageTbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-bearRed">${err.message}</td></tr>`;
   }
 }
 
@@ -550,7 +590,8 @@ function switchTab(tab) {
     { id: 'tabEqual', activeClass: 'text-white bg-tradeCard border border-tradeBorder shadow' },
     { id: 'tabHero', activeClass: 'text-bullGreen bg-bullGreen/20 border border-bullGreen/60 shadow' },
     { id: 'tabNews', activeClass: 'text-cyan-400 bg-cyan-400/20 border border-cyan-400/60 shadow' },
-    { id: 'tabLadder', activeClass: 'text-white bg-tradeCard border border-tradeBorder shadow' }
+    { id: 'tabLadder', activeClass: 'text-white bg-tradeCard border border-tradeBorder shadow' },
+    { id: 'tabAdmin', activeClass: 'text-accentGold bg-accentGold/20 border border-accentGold/60 shadow' }
   ];
 
   topTabs.forEach(t => {
@@ -573,7 +614,8 @@ function switchTab(tab) {
     { id: 'sideTabEqual', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' },
     { id: 'sideTabHero', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' },
     { id: 'sideTabNews', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' },
-    { id: 'sideTabLadder', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' }
+    { id: 'sideTabLadder', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' },
+    { id: 'sideTabAdmin', activeClass: 'bg-accentGold/20 text-accentGold border-2 border-accentGold shadow-md' }
   ];
 
   sideTabs.forEach(t => {
@@ -595,7 +637,8 @@ function switchTab(tab) {
     equal: document.getElementById('viewEqual'),
     hero: document.getElementById('viewHero'),
     news: document.getElementById('viewNews'),
-    ladder: document.getElementById('viewLadder')
+    ladder: document.getElementById('viewLadder'),
+    admin: document.getElementById('viewAdmin')
   };
 
   Object.entries(views).forEach(([vKey, el]) => {
@@ -606,6 +649,8 @@ function switchTab(tab) {
     loadLiveNews();
   } else if (tab === 'academy') {
     initAcademy();
+  } else if (tab === 'admin') {
+    loadAdminUsers();
   } else if (tab === 'bull' || tab === 'bear' || tab === 'executive') {
     if (state.lastData) {
       renderExecutiveHub(state.lastData);

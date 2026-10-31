@@ -166,6 +166,13 @@
           <i data-lucide="list" class="w-4 h-4 text-indigo-400"></i>
           <span class="flex-1">Full Option Ladder</span>
         </button>
+
+        <!-- Admin Desk Sidebar Item (Visible only to Admin) -->
+        <button id="sideTabAdmin" onclick="switchTab('admin')" class="hidden w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-accentGold hover:text-white hover:bg-tradeDark">
+          <i data-lucide="crown" class="w-4 h-4 text-accentGold"></i>
+          <span class="flex-1">👑 Admin Desk</span>
+          <span id="sideAdminTabBadge" class="hidden bg-bearRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">0</span>
+        </button>
       </div>
 
       <!-- Quick syllabus jumps -->
@@ -359,6 +366,13 @@
         <button id="tabLadder" onclick="switchTab('ladder')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
           <i data-lucide="list" class="w-4 h-4 text-indigo-400"></i>
           <span>📊 Ladder</span>
+        </button>
+
+        <!-- Admin Desk Tab (Visible only to Admin) -->
+        <button id="tabAdmin" onclick="switchTab('admin')" class="hidden flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition text-accentGold hover:bg-accentGold/10">
+          <i data-lucide="crown" class="w-4 h-4 text-accentGold"></i>
+          <span>👑 Admin Desk</span>
+          <span id="tabAdminBadge" class="hidden bg-bearRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">0</span>
         </button>
       </div>
 
@@ -965,6 +979,88 @@
 
     </section>
 
+    <!-- ========================================== -->
+    <!-- 8. ADMIN COMMAND CENTER & USER APPROVALS -->
+    <!-- ========================================== -->
+    <section id="viewAdmin" class="space-y-6 hidden">
+      <!-- Admin Hero Header -->
+      <div class="bg-gradient-to-r from-tradeCard via-[#181510] to-tradeCard border-2 border-accentGold/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-56 h-56 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-accentGold animate-ping"></span>
+              <span class="text-[10px] font-mono uppercase tracking-widest text-accentGold font-bold">ADMINISTRATION & USER CLEARANCE</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              👑 USER MANAGEMENT & APPROVAL DESK
+            </h1>
+            <p class="text-xs text-gray-300 max-w-2xl leading-relaxed">
+              Review incoming customer signups, authorize private access to Dalal Street trading algorithms, or revoke permissions.
+            </p>
+          </div>
+
+          <button onclick="loadAdminUsers()" class="px-4 py-2 bg-accentGold/20 hover:bg-accentGold/30 text-accentGold border border-accentGold/40 text-xs font-bold rounded-lg transition flex items-center gap-2 shadow">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Refresh Registry</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
+        <div class="bg-tradeCard p-4 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Total Registered</span>
+          <strong class="text-xl font-bold text-white mt-1 block" id="adminStatTotal">--</strong>
+        </div>
+        <div class="bg-tradeCard p-4 rounded-xl border border-accentGold/40 bg-accentGold/5">
+          <span class="text-[10px] text-accentGold uppercase block font-bold">Pending Approvals</span>
+          <div class="flex items-baseline justify-between mt-1">
+            <strong class="text-xl font-bold text-accentGold" id="adminStatPending">0</strong>
+            <span class="text-[10px] text-bearRed font-bold animate-pulse" id="adminStatPendingBadge">ACTION REQ</span>
+          </div>
+        </div>
+        <div class="bg-tradeCard p-4 rounded-xl border border-bullGreen/40 bg-bullGreen/5">
+          <span class="text-[10px] text-bullGreen uppercase block font-bold">Active Traders</span>
+          <strong class="text-xl font-bold text-bullGreen mt-1 block" id="adminStatApproved">--</strong>
+        </div>
+        <div class="bg-tradeCard p-4 rounded-xl border border-tradeBorder">
+          <span class="text-[10px] text-gray-500 uppercase block">Current Admin</span>
+          <strong class="text-xs font-bold text-gray-200 mt-1 block truncate" id="adminStatCurrentEmail">Admin</strong>
+        </div>
+      </div>
+
+      <!-- User Directory Table -->
+      <div class="bg-tradeCard border border-tradeBorder rounded-2xl p-5 space-y-4 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-tradeBorder/60 pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="users" class="w-4 h-4 text-accentGold"></i>
+            <h3 class="text-sm font-bold text-white">Customer Registry & Security Roles</h3>
+          </div>
+          <div class="text-xs text-gray-400">
+            Unapproved users are completely blocked from viewing live market signals.
+          </div>
+        </div>
+
+        <div class="border border-tradeBorder rounded-xl overflow-hidden bg-tradeDark overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-tradeCard border-b border-tradeBorder text-gray-400 font-mono uppercase text-[10px] tracking-wider">
+                <th class="py-3 px-4">Customer Name & Email</th>
+                <th class="py-3 px-4">Security Role</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Registered On</th>
+                <th class="py-3 px-4 text-right">Instant Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminPageUsersBody" class="divide-y divide-tradeBorder/60 font-mono">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- TRADE REASON MODAL (THE "WHY TO TAKE CE OR PE" ENGINE) -->
@@ -1291,8 +1387,8 @@
     </div>
   </div>
 
-  <script src="executive-charts.js?v=10.0"></script>
-  <script src="academy-data.js?v=10.0"></script>
-  <script src="app.js?v=10.0"></script>
+  <script src="executive-charts.js?v=11.0"></script>
+  <script src="academy-data.js?v=11.0"></script>
+  <script src="app.js?v=11.0"></script>
 </body>
 </html>
