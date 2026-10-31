@@ -293,9 +293,6 @@ async function handleSignupSubmit(e) {
     btn.disabled = false;
     btn.textContent = '📝 Request Access from Admin';
   }
-    btn.disabled = false;
-    btn.textContent = '🚀 Create Free Account & Enter Terminal';
-  }
 }
 
 function openLogoutModal() {
