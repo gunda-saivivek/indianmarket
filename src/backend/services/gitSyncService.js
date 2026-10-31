@@ -50,8 +50,8 @@ function runGitSync(reason) {
   }
   isSyncing = true;
 
-  const commitMsg = `sync(database): auto-sync user changes [${reason || 'user update'}]`;
-  const cmd = `git add users.json src/backend/data/users.json && git commit -m "${commitMsg.replace(/"/g, '\\"')}" && git push origin main`;
+  const commitMsg = `sync(database): auto-sync user & audit log changes [${reason || 'update'}]`;
+  const cmd = `git add users.json src/backend/data/users.json audit_logs.json src/backend/data/audit_logs.json && git commit -m "${commitMsg.replace(/"/g, '\\"')}" && git push origin main`;
 
   console.log(`[AUTO-SYNC] Initiating background Git & CI/CD synchronization: "${reason}"...`);
 
