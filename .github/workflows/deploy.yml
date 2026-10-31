@@ -1,0 +1,45 @@
+name: Continuous Deployment to Render
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify Code Syntax & Zero Vulnerabilities
+        run: |
+          node -c server.js
+          node -c public/app.js
+          npm audit
+
+      - name: Trigger Render Deploy Hook
+        run: |
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
+            echo "🚀 Triggering Render auto-deployment via Deploy Hook..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            echo "Render Response Code: $HTTP_CODE"
+            echo "Render Response: $BODY"
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+              echo "🎉 Successfully triggered Render deployment!"
+            else
+              echo "❌ Render deploy hook returned error code: $HTTP_CODE"
+              exit 1
+            fi
+          else
+            echo "ℹ️ RENDER_DEPLOY_HOOK secret is not yet set in GitHub repository settings."
+            echo "To enable 1-click webhook deployment, add RENDER_DEPLOY_HOOK in GitHub Repo -> Settings -> Secrets."
+          fi
