@@ -26,7 +26,20 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="style.css">
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('market_sniper_theme');
+        if (savedTheme === 'light') {
+          document.documentElement.classList.add('theme-light');
+          document.addEventListener('DOMContentLoaded', function() {
+            if (document.body) document.body.classList.add('theme-light');
+          });
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css?v=21.0">
 </head>
 <body class="bg-tradeDark text-gray-200 min-h-screen font-sans antialiased selection:bg-bullGreen selection:text-black">
 
@@ -278,8 +291,13 @@
           </span>
           <span class="text-xs font-mono text-gray-400 hidden sm:inline" id="liveTimer">LIVE FEED</span>
           
-          <button onclick="toggleSettingsModal()" title="Settings" class="p-2 rounded-lg bg-tradeDark border border-tradeBorder hover:border-gray-500 text-gray-400 hover:text-white transition">
+          <button onclick="toggleSettingsModal()" title="Settings & Appearance" class="p-2 rounded-lg bg-tradeDark border border-tradeBorder hover:border-gray-500 text-gray-400 hover:text-white transition">
             <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Quick Theme Toggle Button (Dark / Light) -->
+          <button id="headerThemeBtn" onclick="toggleThemeQuick()" title="Switch Light / Dark Theme" class="p-2 rounded-lg bg-tradeDark border border-tradeBorder hover:border-bullGreen text-gray-300 hover:text-white text-xs font-bold transition flex items-center gap-1">
+            <span id="headerThemeIcon">🌙</span>
           </button>
 
           <!-- Admin Panel Button (Visible to Admin only) -->
@@ -1202,16 +1220,34 @@
       <div class="flex items-center justify-between border-b border-tradeBorder pb-3">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
           <i data-lucide="settings" class="w-4 h-4 text-accentGold"></i>
-          Feed & Broker Settings
+          Settings & Workstation Appearance
         </h3>
         <button onclick="toggleSettingsModal()" class="text-gray-400 hover:text-white">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <div class="space-y-3 text-xs text-gray-300">
-        <p>This application is currently streaming live market data automatically without needing login.</p>
-        
+      <div class="space-y-3.5 text-xs text-gray-300">
+        <!-- Panel Theme: Dark or Light -->
+        <div class="p-3.5 rounded-xl bg-tradeDark border border-tradeBorder space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="palette" class="w-4 h-4 text-accentGold"></i>
+              Panel Color (Theme)
+            </span>
+            <span id="themeActiveBadge" class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-bullGreen/20 text-bullGreen border border-bullGreen/40">🌙 DARK MODE</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-0.5">
+            <button type="button" id="btnThemeDark" onclick="applyPanelTheme('dark')" class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-bullGreen bg-bullGreen/15 text-bullGreen font-bold text-xs transition shadow-sm">
+              <span>🌙 Dark Panel</span>
+            </button>
+            <button type="button" id="btnThemeLight" onclick="applyPanelTheme('light')" class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-tradeBorder bg-tradeCard text-gray-400 hover:text-white font-medium text-xs transition">
+              <span>☀️ Light Panel</span>
+            </button>
+          </div>
+          <span class="text-[10px] text-gray-500 block">Switch between Obsidian Dark and Clean Daytime Light modes.</span>
+        </div>
+
         <div>
           <label class="block text-gray-400 mb-1 font-medium">Upstox Access Token (Optional)</label>
           <input type="text" id="upstoxTokenInput" placeholder="Paste Upstox Access Token..." class="w-full bg-tradeDark border border-tradeBorder rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-bullGreen">
@@ -1390,8 +1426,8 @@
     </div>
   </div>
 
-  <script src="executive-charts.js?v=15.0"></script>
-  <script src="academy-data.js?v=15.0"></script>
-  <script src="app.js?v=20.0"></script>
+  <script src="executive-charts.js?v=21.0"></script>
+  <script src="academy-data.js?v=21.0"></script>
+  <script src="app.js?v=21.0"></script>
 </body>
 </html>

@@ -98,3 +98,128 @@ html {
 .highlight-gold {
   animation: goldGlow 1.5s 2;
 }
+
+/* ==========================================
+   LIGHT MODE THEME SYSTEM
+   ========================================== */
+html.theme-light,
+body.theme-light {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+body.theme-light header {
+  background-color: #ffffff !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-light aside#mainSidebar {
+  background-color: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+}
+
+body.theme-light aside#mainSidebar > div:first-child {
+  background-color: #f8fafc !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-light .bg-tradeDark {
+  background-color: #f8fafc !important;
+}
+
+body.theme-light .bg-tradeDark\/60 {
+  background-color: rgba(248, 250, 252, 0.8) !important;
+}
+
+body.theme-light .bg-tradeCard {
+  background-color: #ffffff !important;
+}
+
+body.theme-light .border-tradeBorder {
+  border-color: #e2e8f0 !important;
+}
+
+body.theme-light .text-white {
+  color: #0f172a !important;
+}
+
+body.theme-light .text-gray-200 {
+  color: #1e293b !important;
+}
+
+body.theme-light .text-gray-300 {
+  color: #334155 !important;
+}
+
+body.theme-light .text-gray-400 {
+  color: #64748b !important;
+}
+
+body.theme-light .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+body.theme-light input,
+body.theme-light select,
+body.theme-light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light input::placeholder {
+  color: #94a3b8 !important;
+}
+
+body.theme-light .pair-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.theme-light .pair-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+body.theme-light .glass-panel {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.theme-light .strike-row:hover {
+  background-color: #f1f5f9 !important;
+}
+
+body.theme-light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+body.theme-light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+body.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+body.theme-light .bg-tradeBorder {
+  background-color: #e2e8f0 !important;
+}
+
+body.theme-light .tv-btn {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+body.theme-light .tv-btn:hover {
+  border-color: #00c076 !important;
+}
+
+body.theme-light #adminModal .bg-tradeCard,
+body.theme-light #settingsModal .bg-tradeCard,
+body.theme-light #authModal .bg-tradeCard {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}

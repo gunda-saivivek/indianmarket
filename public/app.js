@@ -20,6 +20,7 @@ let state = {
 
 // Initial startup
 document.addEventListener('DOMContentLoaded', () => {
+  initThemeSystem();
   if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
   initWorkstationCharts();
   switchTab('executive');
@@ -1690,9 +1691,78 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ==========================================
+// WORKSTATION THEME SYSTEM (Dark / Light Panel Color)
+// ==========================================
+function getStoredTheme() {
+  return localStorage.getItem('market_sniper_theme') || 'dark';
+}
+
+function applyPanelTheme(theme) {
+  const isLight = theme === 'light';
+  if (isLight) {
+    document.body.classList.add('theme-light');
+    document.documentElement.classList.add('theme-light');
+    localStorage.setItem('market_sniper_theme', 'light');
+  } else {
+    document.body.classList.remove('theme-light');
+    document.documentElement.classList.remove('theme-light');
+    localStorage.setItem('market_sniper_theme', 'dark');
+  }
+  updateThemeUI(theme);
+}
+
+function toggleThemeQuick() {
+  const current = getStoredTheme();
+  const next = current === 'light' ? 'dark' : 'light';
+  applyPanelTheme(next);
+}
+
+function updateThemeUI(theme) {
+  const isLight = theme === 'light';
+  const badge = document.getElementById('themeActiveBadge');
+  const btnDark = document.getElementById('btnThemeDark');
+  const btnLight = document.getElementById('btnThemeLight');
+  const headerIcon = document.getElementById('headerThemeIcon');
+
+  if (headerIcon) {
+    headerIcon.textContent = isLight ? '☀️' : '🌙';
+  }
+
+  if (badge) {
+    badge.textContent = isLight ? '☀️ LIGHT MODE' : '🌙 DARK MODE';
+    badge.className = isLight 
+      ? 'text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-amber-500/20 text-amber-500 border border-amber-500/40'
+      : 'text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-bullGreen/20 text-bullGreen border border-bullGreen/40';
+  }
+
+  if (btnDark && btnLight) {
+    if (isLight) {
+      btnDark.className = "flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-tradeBorder bg-tradeCard text-gray-400 hover:text-white font-medium text-xs transition";
+      btnLight.className = "flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-amber-500 bg-amber-500/15 text-amber-500 font-bold text-xs transition shadow-sm";
+    } else {
+      btnDark.className = "flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-bullGreen bg-bullGreen/15 text-bullGreen font-bold text-xs transition shadow-sm";
+      btnLight.className = "flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-tradeBorder bg-tradeCard text-gray-400 hover:text-white font-medium text-xs transition";
+    }
+  }
+}
+
+function initThemeSystem() {
+  const saved = getStoredTheme();
+  applyPanelTheme(saved);
+}
+
 function toggleSettingsModal() {
   const modal = document.getElementById('settingsModal');
-  modal.classList.toggle('hidden');
+  if (modal) {
+    modal.classList.toggle('hidden');
+    if (!modal.classList.contains('hidden')) {
+      updateThemeUI(getStoredTheme());
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+  }
 }
 
 function saveSettings() {
