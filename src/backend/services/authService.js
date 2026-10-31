@@ -6,6 +6,35 @@ const { syncUsersToGitAndCiCd } = require('./gitSyncService');
 const ROOT_DIR = path.resolve(__dirname, '..', '..', '..');
 const USERS_FILE = path.join(__dirname, '..', 'data', 'users.json');
 const ROOT_USERS_FILE = path.join(ROOT_DIR, 'users.json');
+const JWT_SECRET = process.env.JWT_SECRET || 'sniper-institutional-jwt-secret-key-2027';
+
+function base64url(str) {
+  return Buffer.from(str).toString('base64url');
+}
+
+function signJWT(payload) {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const h64 = base64url(JSON.stringify(header));
+  const p64 = base64url(JSON.stringify(payload));
+  const sig = crypto.createHmac('sha256', JWT_SECRET).update(h64 + '.' + p64).digest('base64url');
+  return `${h64}.${p64}.${sig}`;
+}
+
+function verifyJWT(token) {
+  try {
+    if (!token || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const [h64, p64, sig] = parts;
+    const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(h64 + '.' + p64).digest('base64url');
+    if (sig !== expectedSig) return null;
+    const payload = JSON.parse(Buffer.from(p64, 'base64url').toString('utf8'));
+    if (payload.exp && Date.now() / 1000 > payload.exp) return null;
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
 
 function hashPassword(pwd) {
   return crypto.createHash('sha256').update(pwd).digest('hex');
@@ -206,6 +235,22 @@ async function deleteUserByEmail(email) {
 
 const activeSessions = new Map();
 
+function createSessionToken(user) {
+  // Generate a persistent cryptographic JWT token valid for 30 days
+  const exp = Math.floor(Date.now() / 1000) + (86400 * 30);
+  const token = signJWT({
+    id: user.id,
+    name: user.name,
+    email: user.email.toLowerCase().trim(),
+    role: user.role,
+    status: user.status,
+    exp
+  });
+  // Also keep in activeSessions cache for fast in-memory resolution
+  activeSessions.set(token, user);
+  return token;
+}
+
 function getAuthUser(req, parsedUrl) {
   const authHeader = req.headers['authorization'];
   let token = null;
@@ -215,7 +260,27 @@ function getAuthUser(req, parsedUrl) {
     token = parsedUrl.query.token;
   }
   if (!token) return null;
-  return activeSessions.get(token) || null;
+
+  // 1. Check in-memory session cache
+  if (activeSessions.has(token)) {
+    return activeSessions.get(token);
+  }
+
+  // 2. Validate stateless cryptographic JWT token (persists across server restarts & cloud redeploys)
+  const jwtPayload = verifyJWT(token);
+  if (jwtPayload && jwtPayload.email) {
+    const sessionUser = {
+      id: jwtPayload.id,
+      name: jwtPayload.name,
+      email: jwtPayload.email,
+      role: jwtPayload.role,
+      status: jwtPayload.status
+    };
+    activeSessions.set(token, sessionUser);
+    return sessionUser;
+  }
+
+  return null;
 }
 
 function isLegitGmail(email) {
@@ -235,6 +300,7 @@ module.exports = {
   updateUserPassword,
   deleteUserByEmail,
   activeSessions,
+  createSessionToken,
   getAuthUser,
   isLegitGmail
 };

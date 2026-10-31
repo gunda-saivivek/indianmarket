@@ -4,6 +4,7 @@ const {
   findUserByEmail,
   createUser,
   activeSessions,
+  createSessionToken,
   getAuthUser,
   isLegitGmail
 } = require('../services/authService');
@@ -57,9 +58,8 @@ async function handleLogin(req, res) {
       await logFootprint({ action: 'LOGIN', email: cleanEmail, name: user.name, role: user.role, req, details: 'User successfully signed in', status: 'SUCCESS' });
     }
 
-    const token = crypto.randomBytes(32).toString('hex');
     const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status };
-    activeSessions.set(token, sessionUser);
+    const token = createSessionToken(sessionUser);
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, token, user: sessionUser }));
