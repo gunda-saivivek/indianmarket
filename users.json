@@ -9,15 +9,6 @@
     "createdAt": "2026-10-30T15:00:00.000Z"
   },
   {
-    "id": "user-1793381922045",
-    "name": "Srujanvarma",
-    "email": "srujanvarmapinnamaraju@gmail.com",
-    "passwordHash": "e91f0050766c24114e8d3fd3dbb2592aa39c6322d865fe36546c0aeb205d532c",
-    "role": "user",
-    "status": "rejected",
-    "createdAt": "2026-10-30T17:38:42.045Z"
-  },
-  {
     "id": "user-1793447695713",
     "name": "Gurunivas Mudiraj",
     "email": "gurunivas999@gmail.com",
