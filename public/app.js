@@ -643,11 +643,17 @@ function switchTab(tab) {
   });
 
   if (tab === 'news') {
-    loadLiveNews();
+    loadLiveNews(true);
   } else if (tab === 'academy') {
     initAcademy();
   } else if (tab === 'admin') {
     loadAdminUsers();
+  } else if (tab === 'equal') {
+    if (state.lastData) renderEqualPairs(state.lastData.equalPairs || []);
+  } else if (tab === 'hero') {
+    if (state.lastData) renderHeroZero(state.lastData.heroPicks || { ce: [], pe: [] }, state.lastData.lotSize);
+  } else if (tab === 'ladder') {
+    if (state.lastData) renderLadder(state.lastData.chain || [], state.lastData.atmStrike);
   } else if (tab === 'bull' || tab === 'bear' || tab === 'executive') {
     if (state.lastData) {
       renderExecutiveHub(state.lastData);
@@ -926,7 +932,9 @@ async function loadLiveNews(force = false) {
   if (!container) return;
 
   if (force || !state.newsData) {
-    container.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400"><span class="animate-spin inline-block mr-2">⏳</span> Loading real-time market news headlines...</div>`;
+    if (!state.newsData) {
+      container.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400"><span class="animate-spin inline-block mr-2">⏳</span> Loading real-time market news headlines...</div>`;
+    }
     try {
       const res = await fetch('/api/live-news', {
         headers: {
@@ -937,8 +945,16 @@ async function loadLiveNews(force = false) {
       if (!res.ok) throw new Error("Could not fetch news");
       const data = await res.json();
       state.newsData = data.news || [];
+      
+      const badge = document.getElementById('newsLiveBadge');
+      if (badge) {
+        const timeStr = new Date().toLocaleTimeString('en-IN', { hour12: false });
+        badge.textContent = `LIVE • ${timeStr}`;
+      }
     } catch (e) {
-      container.innerHTML = `<div class="col-span-full py-8 text-center text-bearRed">${e.message}</div>`;
+      if (!state.newsData) {
+        container.innerHTML = `<div class="col-span-full py-8 text-center text-bearRed">${e.message}</div>`;
+      }
       return;
     }
   }
@@ -1040,6 +1056,12 @@ async function fetchLiveData() {
     if (timerEl) {
       timerEl.textContent = `LIVE • ${timeStr}`;
     }
+
+    // Continuously stream real-time news in background every 20 seconds
+    if (!state.lastNewsFetch || Date.now() - state.lastNewsFetch > 20000) {
+      state.lastNewsFetch = Date.now();
+      loadLiveNews(true);
+    }
   } catch (err) {
     console.error('Fetch error:', err);
   }
@@ -1133,6 +1155,8 @@ function renderStrategySection(strat, lotSize) {
   if (!strat) return;
 
   const actionBadge = document.getElementById('strategyActionBadge');
+  if (!actionBadge) return; // Safely exit if strategy section was replaced by Executive Command Center
+
   const timeNote = document.getElementById('strategyTimeNote');
 
   actionBadge.textContent = strat.action;
