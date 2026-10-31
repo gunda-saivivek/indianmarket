@@ -21,6 +21,7 @@ let state = {
 // Initial startup
 document.addEventListener('DOMContentLoaded', () => {
   initThemeSystem();
+  initSidebarState();
   if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
   initWorkstationCharts();
   switchTab('executive');
@@ -222,6 +223,21 @@ function switchAuthTab(tab) {
   }
 }
 
+async function parseJsonResponse(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    if (text.includes('No matching tunnel') || text.includes('tunnel')) {
+      throw new Error('Localtunnel session expired or disconnected. Please access via the live Render URL (https://market-sniper-atsx.onrender.com) or local workstation (http://localhost:7171).');
+    }
+    if (!res.ok) {
+      throw new Error(`Server returned error (${res.status}): ${text.substring(0, 120) || res.statusText}`);
+    }
+    throw new Error('Server returned an invalid non-JSON response. Please refresh or retry.');
+  }
+}
+
 async function handleLoginSubmit(e) {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value.trim();
@@ -240,7 +256,7 @@ async function handleLoginSubmit(e) {
       body: JSON.stringify({ email, password })
     });
 
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok) throw new Error(data.error || 'Login failed');
 
     state.token = data.token;
@@ -330,7 +346,7 @@ async function handleSignupSubmit(e) {
       body: JSON.stringify({ name, email, password })
     });
 
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok) throw new Error(data.error || 'Signup request failed');
 
     alertEl.innerHTML = `
@@ -577,18 +593,68 @@ async function handleAdminUserAction(email, action) {
   }
 }
 
-function toggleMobileSidebar() {
+function toggleSidebarMenu(forceState) {
   const sidebar = document.getElementById('mainSidebar');
   const backdrop = document.getElementById('mobileSidebarBackdrop');
+  const header = document.getElementById('topHeader');
+  const main = document.getElementById('mainContentArea');
   if (!sidebar) return;
 
-  const isClosed = sidebar.classList.contains('-translate-x-full');
-  if (isClosed) {
-    sidebar.classList.remove('-translate-x-full');
-    if (backdrop) backdrop.classList.remove('hidden');
+  const isDesktop = window.innerWidth >= 768; // md breakpoint
+
+  let shouldOpen;
+  if (typeof forceState === 'boolean') {
+    shouldOpen = forceState;
   } else {
+    // If closed or has -translate-x-full, open it; if open, close it
+    const isClosed = sidebar.classList.contains('-translate-x-full');
+    shouldOpen = isClosed;
+  }
+
+  if (shouldOpen) {
+    // OPEN SIDEBAR
+    sidebar.classList.remove('-translate-x-full');
+    sidebar.classList.add('translate-x-0');
+    if (isDesktop) {
+      if (header) header.classList.add('md:pl-64');
+      if (main) main.classList.add('md:pl-64');
+    } else {
+      if (backdrop) backdrop.classList.remove('hidden');
+    }
+    localStorage.setItem('sniper_sidebar_open', 'true');
+  } else {
+    // CLOSE SIDEBAR
     sidebar.classList.add('-translate-x-full');
+    sidebar.classList.remove('translate-x-0', 'md:translate-x-0');
+    if (isDesktop) {
+      if (header) header.classList.remove('md:pl-64');
+      if (main) main.classList.remove('md:pl-64');
+    }
     if (backdrop) backdrop.classList.add('hidden');
+    localStorage.setItem('sniper_sidebar_open', 'false');
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    lucide.createIcons();
+  }
+}
+
+function toggleMobileSidebar() {
+  toggleSidebarMenu();
+}
+
+function initSidebarState() {
+  const savedState = localStorage.getItem('sniper_sidebar_open');
+  const isDesktop = window.innerWidth >= 768;
+
+  if (isDesktop) {
+    if (savedState === 'false') {
+      toggleSidebarMenu(false);
+    } else {
+      toggleSidebarMenu(true);
+    }
+  } else {
+    toggleSidebarMenu(false);
   }
 }
 
