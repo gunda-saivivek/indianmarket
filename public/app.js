@@ -257,6 +257,24 @@ async function handleLoginSubmit(e) {
   }
 }
 
+function checkSignupEmailInput(el) {
+  const email = (el.value || '').trim();
+  const cautionEl = document.getElementById('signupEmailCaution');
+  if (!email) {
+    if (cautionEl) cautionEl.classList.add('hidden');
+    el.classList.remove('border-amber-400');
+    return;
+  }
+  const isGmail = /^[a-zA-Z0-9._%+-]+@(?:gmail\.com|googlemail\.com)$/i.test(email);
+  if (!isGmail && email.includes('@')) {
+    if (cautionEl) cautionEl.classList.remove('hidden');
+    el.classList.add('border-amber-400');
+  } else {
+    if (cautionEl) cautionEl.classList.add('hidden');
+    el.classList.remove('border-amber-400');
+  }
+}
+
 async function handleSignupSubmit(e) {
   e.preventDefault();
   const name = document.getElementById('signupName').value.trim();
@@ -274,8 +292,21 @@ async function handleSignupSubmit(e) {
 
   const isGmail = /^[a-zA-Z0-9._%+-]+@(?:gmail\.com|googlemail\.com)$/i.test(email);
   if (!isGmail) {
-    alertEl.textContent = 'Only legitimate @gmail.com addresses are permitted for registration.';
-    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-bearRed/20 text-bearRed border border-bearRed/30';
+    const cautionEl = document.getElementById('signupEmailCaution');
+    if (cautionEl) cautionEl.classList.remove('hidden');
+    const emailInput = document.getElementById('signupEmail');
+    if (emailInput) emailInput.classList.add('border-amber-400');
+
+    alertEl.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="text-base">⚠️</span>
+        <div>
+          <strong class="text-amber-400 font-bold block">Caution: Enter Correct Email</strong>
+          <span class="text-gray-300 text-[11px]">Please enter a valid Gmail address (ending with @gmail.com) to continue.</span>
+        </div>
+      </div>
+    `;
+    alertEl.className = 'p-3 rounded-lg text-xs leading-relaxed bg-amber-500/20 text-amber-300 border border-amber-500/40 block';
     alertEl.classList.remove('hidden');
     return;
   }
@@ -307,7 +338,7 @@ async function handleSignupSubmit(e) {
           <span>⏳ Request Submitted to Administrator!</span>
         </div>
         <p class="text-[11px] text-gray-300">
-          Your Gmail registration has been received. Administrator will approve your account on the Admin Dashboard before live signals activate.
+          Your Gmail registration has been received. Administrator will review and approve your account before live signals activate.
         </p>
       </div>
     `;

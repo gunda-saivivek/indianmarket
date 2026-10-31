@@ -873,7 +873,7 @@ const server = http.createServer(async (req, res) => {
       const cleanEmail = email.toLowerCase().trim();
       if (!isLegitGmail(cleanEmail)) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Only legitimate @gmail.com addresses are permitted for registration.' }));
+        res.end(JSON.stringify({ error: 'Caution: Please enter a correct Gmail address (ending with @gmail.com)' }));
         return;
       }
 
@@ -906,7 +906,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(201, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         success: true,
-        message: 'Registration submitted successfully! Your account is awaiting approval by Administrator on the Admin Dashboard.',
+        message: 'Registration submitted successfully! Your account is awaiting approval by Administrator before access.',
         user: {
           id: newUser.id,
           name: newUser.name,
