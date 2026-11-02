@@ -2525,6 +2525,7 @@ function updateAcademyProgress() {
 // TRADE LEDGER & WIN RATE ENGINE
 // ==========================================
 let currentLedgerFilter = 'ALL';
+let currentLedgerCache = null;
 
 async function loadLedgerData(filter = currentLedgerFilter) {
   currentLedgerFilter = filter;
@@ -2543,11 +2544,216 @@ async function loadLedgerData(filter = currentLedgerFilter) {
 
     if (!res.ok) throw new Error('Failed to load ledger data');
     const data = await res.json();
+    currentLedgerCache = data;
     renderLedgerUI(data);
   } catch (err) {
     console.error('Ledger load error:', err);
     if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="py-6 text-center text-bearRed font-mono">${err.message}</td></tr>`;
   }
+}
+
+function downloadLedgerCSV() {
+  if (!currentLedgerCache || !currentLedgerCache.ledger || currentLedgerCache.ledger.length === 0) {
+    alert("No trade records available to download yet.");
+    return;
+  }
+
+  const items = currentLedgerCache.ledger;
+  const metrics = currentLedgerCache.metrics || {};
+  const filter = currentLedgerFilter || 'ALL';
+
+  const headers = [
+    "Index",
+    "Option Strike",
+    "Setup Name",
+    "Type",
+    "Entry Price",
+    "Stop Loss (SL)",
+    "Target 1 (TP1)",
+    "Target 2 (TP2)",
+    "Exit Price",
+    "Outcome Status",
+    "PnL Points",
+    "PnL %",
+    "Lot Size",
+    "PnL (INR)",
+    "Entry Time",
+    "Exit Time"
+  ];
+
+  const rows = items.map(t => [
+    `"${t.index || ''}"`,
+    `"${t.name || ''}"`,
+    `"${t.setupName || ''}"`,
+    `"${t.type || ''}"`,
+    t.entryPrice || 0,
+    t.sl || 0,
+    t.tp1 || 0,
+    t.tp2 || 0,
+    t.exitPrice || t.entryPrice || 0,
+    `"${t.status || ''}"`,
+    t.pnlPts || 0,
+    `${t.pnlPct || 0}%`,
+    t.lotSize || 0,
+    t.pnlInr || 0,
+    `"${t.createdAt || ''}"`,
+    `"${t.closedAt || ''}"`
+  ]);
+
+  // Prepend Summary metrics header
+  let csvContent = `THE MARKET SNIPER SHOOTERS - TRADE EXECUTION LEDGER & WIN RATE REPORT\n`;
+  csvContent += `Generated On:,"${new Date().toLocaleString('en-IN')}"\n`;
+  csvContent += `Filter Applied:,${filter}\n`;
+  csvContent += `Win Rate:,${metrics.winRate || '0%'}\n`;
+  csvContent += `Total Trades:,${metrics.totalTrades || 0}\n`;
+  csvContent += `TP2 Runner Wins:,${metrics.tp2Wins || 0}\n`;
+  csvContent += `TP1 Conservative Wins:,${metrics.tp1Wins || 0}\n`;
+  csvContent += `Stop Loss Hits:,${metrics.slLosses || 0}\n`;
+  csvContent += `Profit Factor:,${metrics.profitFactor || '0.0'}\n\n`;
+
+  csvContent += headers.join(",") + "\n";
+  csvContent += rows.map(r => r.join(",")).join("\n");
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  const dateStr = new Date().toISOString().split('T')[0];
+  link.setAttribute("download", `MarketSniper_TradeLedger_${filter}_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function downloadLedgerPDF() {
+  if (!currentLedgerCache || !currentLedgerCache.ledger || currentLedgerCache.ledger.length === 0) {
+    alert("No trade records available to export.");
+    return;
+  }
+
+  const items = currentLedgerCache.ledger;
+  const metrics = currentLedgerCache.metrics || {};
+  const summary = currentLedgerCache.summary || {};
+  const filter = currentLedgerFilter || 'ALL';
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert('Please allow popups to generate and print the PDF report.');
+    return;
+  }
+
+  const rowsHtml = items.map((t, idx) => {
+    const isWin = (t.status || '').includes('TARGET');
+    const badgeColor = t.status === 'TARGET2_HIT' ? '#089981' : isWin ? '#26a69a' : '#f23645';
+    const pnlColor = (t.pnlPts || 0) >= 0 ? '#089981' : '#f23645';
+    const sign = (t.pnlPts || 0) >= 0 ? '+' : '';
+
+    return `
+      <tr style="border-bottom: 1px solid #233148; font-size: 11px;">
+        <td style="padding: 8px 6px;"><strong>${t.index}</strong></td>
+        <td style="padding: 8px 6px;">${t.name}</td>
+        <td style="padding: 8px 6px;">${t.setupName}</td>
+        <td style="padding: 8px 6px; text-align: center; color: #f7a600; font-weight: bold;">₹${t.entryPrice}</td>
+        <td style="padding: 8px 6px; text-align: center; color: #f23645;">₹${t.sl}</td>
+        <td style="padding: 8px 6px; text-align: center; color: #089981;">₹${t.tp1}</td>
+        <td style="padding: 8px 6px; text-align: center; color: #00bcd4;">₹${t.tp2}</td>
+        <td style="padding: 8px 6px; text-align: center;">₹${t.exitPrice || t.entryPrice}</td>
+        <td style="padding: 8px 6px; text-align: center; font-weight: bold; color: ${badgeColor};">${t.status}</td>
+        <td style="padding: 8px 6px; text-align: right; font-weight: bold; color: ${pnlColor};">${sign}₹${t.pnlPts} pts<br><small style="color: #94a3b8;">${sign}₹${t.pnlInr ? t.pnlInr.toLocaleString('en-IN') : '--'}</small></td>
+        <td style="padding: 8px 6px; text-align: right; color: #94a3b8; font-size: 10px;">${new Date(t.closedAt || t.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
+      </tr>
+    `;
+  }).join('');
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Trade Ledger & Win Rate Report - The Market Sniper Shooters</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0c1017; color: #e2e8f0; margin: 0; padding: 24px; }
+        .header { border-bottom: 2px solid #233148; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .title { color: #f7a600; font-size: 20px; font-weight: 800; margin: 0; }
+        .subtitle { color: #94a3b8; font-size: 12px; margin-top: 4px; }
+        .scorecard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .card { background: #151d2c; border: 1px solid #233148; border-radius: 8px; padding: 12px; text-align: center; }
+        .card-label { font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: 600; }
+        .card-val { font-size: 18px; font-weight: 800; font-family: monospace; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; font-family: monospace; margin-top: 10px; }
+        th { background: #151d2c; border-bottom: 2px solid #233148; padding: 10px 6px; text-align: left; font-size: 10px; color: #94a3b8; text-transform: uppercase; }
+        @media print {
+          body { background: #ffffff !important; color: #000000 !important; }
+          .card { background: #f8fafc !important; border: 1px solid #cbd5e1 !important; }
+          .card-label { color: #64748b !important; }
+          .card-val { color: #0f172a !important; }
+          th { background: #f1f5f9 !important; color: #475569 !important; border-bottom: 2px solid #cbd5e1 !important; }
+          tr { border-bottom: 1px solid #e2e8f0 !important; }
+          .title { color: #b45309 !important; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <h1 class="title">🎯 THE MARKET SNIPER SHOOTERS</h1>
+          <div class="subtitle">Institutional Options Desk • Execution Ledger & Win Rate Audit Report (${filter})</div>
+        </div>
+        <div style="text-align: right; font-size: 11px; color: #94a3b8; font-family: monospace;">
+          Date: ${new Date().toLocaleString('en-IN')}<br>
+          Admin Verification: Sai Vivek
+        </div>
+      </div>
+
+      <div class="scorecard-grid">
+        <div class="card">
+          <div class="card-label">Win Rate</div>
+          <div class="card-val" style="color: #089981;">${metrics.winRate || '0%'}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Trades</div>
+          <div class="card-val" style="color: #38bdf8;">${metrics.totalTrades || 0}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Target 2 / TP1 Wins</div>
+          <div class="card-val" style="color: #089981;">${metrics.tp2Wins || 0} / ${metrics.tp1Wins || 0}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Stop Loss Hits</div>
+          <div class="card-val" style="color: #f23645;">${metrics.slLosses || 0}</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>Option Strike</th>
+            <th>Setup</th>
+            <th style="text-align: center;">Entry</th>
+            <th style="text-align: center;">SL</th>
+            <th style="text-align: center;">TP1</th>
+            <th style="text-align: center;">TP2</th>
+            <th style="text-align: center;">Exit</th>
+            <th style="text-align: center;">Outcome</th>
+            <th style="text-align: right;">Points / PnL</th>
+            <th style="text-align: right;">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <script>
+        window.onload = function() {
+          setTimeout(function() { window.print(); }, 400);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 function filterLedgerIndex(indexName) {
