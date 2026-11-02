@@ -132,6 +132,7 @@ function processAndStabilizeTrades(index, spot, trades, optionType, chains) {
         currentLtp,
         highLtp: currentLtp,
         lowLtp: currentLtp,
+        isTriggered: currentLtp >= fixedEntry,
         status: 'ACTIVE', // ACTIVE, TARGET1_HIT, TARGET2_HIT, SL_HIT
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -147,18 +148,23 @@ function processAndStabilizeTrades(index, spot, trades, optionType, chains) {
       if (currentLtp < tracked.lowLtp) tracked.lowLtp = currentLtp;
       tracked.updatedAt = new Date().toISOString();
 
+      // Activate trigger once market price reaches or crosses entry price
+      if (!tracked.isTriggered && currentLtp >= tracked.fixedEntryPrice) {
+        tracked.isTriggered = true;
+      }
+
       // Check Target 2
-      if (currentLtp >= tracked.tp2 && tracked.status !== 'TARGET2_HIT') {
+      if (tracked.isTriggered && currentLtp >= tracked.tp2 && tracked.status !== 'TARGET2_HIT') {
         tracked.status = 'TARGET2_HIT';
         recordLedgerOutcome(tracked, tracked.tp2, 'TARGET2_HIT');
       }
       // Check Target 1
-      else if (currentLtp >= tracked.tp1 && tracked.status === 'ACTIVE') {
+      else if (tracked.isTriggered && currentLtp >= tracked.tp1 && tracked.status === 'ACTIVE') {
         tracked.status = 'TARGET1_HIT';
         recordLedgerOutcome(tracked, tracked.tp1, 'TARGET1_HIT');
       }
-      // Check Stop Loss
-      else if (currentLtp <= tracked.sl && tracked.status === 'ACTIVE') {
+      // Check Stop Loss (only if trade was officially triggered)
+      else if (tracked.isTriggered && currentLtp <= tracked.sl && tracked.status === 'ACTIVE') {
         tracked.status = 'SL_HIT';
         recordLedgerOutcome(tracked, tracked.sl, 'SL_HIT');
       }

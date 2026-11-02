@@ -167,6 +167,7 @@ async function broadcastTradeCall(trade) {
       strike: trade.strike,
       type: trade.type,
       entryPrice: entryText,
+      isTriggered: false, // Trade must cross ABOVE entry price before it is considered active!
       highestAchieved: entryText, // Strict watermark tracker: only alerts when price exceeds this!
       tp1: tp1Text,
       tp2: tp2Text,
@@ -197,7 +198,19 @@ async function broadcastPriceTick(trade, currentLtp) {
   const channelTitle = telegramConfig.channelName || 'The Market Sniper Shooters';
   const replyToId = tracked.messageId;
 
-  // 1. Check Stop Loss Hit
+  // Activate trigger once market price reaches or crosses ABOVE entry price
+  if (!tracked.isTriggered) {
+    if (roundedLtp >= entry) {
+      tracked.isTriggered = true;
+      tracked.highestAchieved = roundedLtp;
+    } else {
+      // Trade has NOT triggered yet (price is still below entry price).
+      // Do NOT check SL or send any alerts until the entry price has actually been crossed!
+      return;
+    }
+  }
+
+  // 1. Check Stop Loss Hit (only applies AFTER trade has been officially triggered)
   if (roundedLtp <= sl && !tracked.slSent) {
     tracked.slSent = true;
     const lossPts = entry - roundedLtp;
