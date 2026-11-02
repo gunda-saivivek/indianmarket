@@ -869,6 +869,7 @@ function switchTab(tab) {
     { id: 'tabBull', activeClass: 'text-bullGreen bg-bullGreen/20 border border-bullGreen/60 shadow' },
     { id: 'tabBear', activeClass: 'text-bearRed bg-bearRed/20 border border-bearRed/60 shadow' },
     { id: 'tabAcademy', activeClass: 'text-accentGold bg-accentGold/20 border border-accentGold/60 shadow' },
+    { id: 'tabInvestments', activeClass: 'text-emerald-400 bg-emerald-500/20 border border-emerald-500/60 shadow' },
     { id: 'tabEqual', activeClass: 'text-white bg-tradeCard border border-tradeBorder shadow' },
     { id: 'tabHero', activeClass: 'text-bullGreen bg-bullGreen/20 border border-bullGreen/60 shadow' },
     { id: 'tabNews', activeClass: 'text-cyan-400 bg-cyan-400/20 border border-cyan-400/60 shadow' },
