@@ -1076,12 +1076,22 @@ function renderBearDesk(data) {
   }
 }
 
+// User lot selections memory so sliders don't reset when live polling updates
+let userLotSelections = {};
+
 function renderMillionaireTradeCard(trade) {
   const isCE = trade.type === 'CE';
   const themeBorder = isCE ? 'border-bullGreen/40 hover:border-bullGreen' : 'border-bearRed/40 hover:border-bearRed';
   const badgeStyle = isCE ? 'bg-bullGreen/15 text-bullGreen border-bullGreen/30' : 'bg-bearRed/15 text-bearRed border-bearRed/30';
   const ltpColor = isCE ? 'text-bullGreen' : 'text-bearRed';
   const lotSize = trade.lotSize || 65;
+
+  // Preserve user-selected lot count across 3-second live data polls
+  const currentLots = userLotSelections[trade.id] || 1;
+  const currentQty = currentLots * lotSize;
+  const currentCap = Math.round(trade.ltp * currentQty);
+  const currentP1 = Math.round(trade.tp1Pts * currentQty);
+  const currentP2 = Math.round(trade.tp2Pts * currentQty);
 
   return `
     <div class="bg-tradeCard border-2 ${themeBorder} rounded-2xl p-6 space-y-4 shadow-2xl transition group relative overflow-hidden">
@@ -1165,20 +1175,20 @@ function renderMillionaireTradeCard(trade) {
       <!-- 3. INTERACTIVE LOTS SLIDER & LIVE CALCULATOR -->
       <div class="p-4 rounded-xl bg-tradeDark border border-tradeBorder space-y-3">
         <div class="flex items-center justify-between text-xs font-mono">
-          <span class="text-gray-300">Quantity Allocation: <strong id="calcLotLabel_${trade.id}" class="text-white">1 Lot (${lotSize} Qty)</strong></span>
-          <span class="text-gray-300">Capital Required: <strong id="calcCap_${trade.id}" class="text-accentGold">₹${Math.round(trade.ltp * lotSize).toLocaleString('en-IN')}</strong></span>
+          <span class="text-gray-300">Quantity Allocation: <strong id="calcLotLabel_${trade.id}" class="text-white">${currentLots} Lot${currentLots > 1 ? 's' : ''} (${currentQty} Qty)</strong></span>
+          <span class="text-gray-300">Capital Required: <strong id="calcCap_${trade.id}" class="text-accentGold">₹${currentCap.toLocaleString('en-IN')}</strong></span>
         </div>
-        <input type="range" min="1" max="15" value="1" 
+        <input type="range" id="slider_${trade.id}" min="1" max="15" value="${currentLots}" 
           oninput="updateTradeCalc('${trade.id}', this.value, ${trade.ltp}, ${lotSize}, ${trade.tp1Pts}, ${trade.tp2Pts})" 
           class="w-full accent-bullGreen h-1.5 bg-tradeCard rounded-lg cursor-pointer">
         <div class="grid grid-cols-2 gap-2 text-xs font-mono text-center">
           <div class="p-2 rounded bg-tradeCard/80 border border-tradeBorder">
             <span class="text-[10px] text-gray-400 block">Expected Profit @ Target 1</span>
-            <strong id="calcP1_${trade.id}" class="text-bullGreen font-bold">+₹${Math.round(trade.tp1Pts * lotSize).toLocaleString('en-IN')}</strong>
+            <strong id="calcP1_${trade.id}" class="text-bullGreen font-bold">+₹${currentP1.toLocaleString('en-IN')}</strong>
           </div>
           <div class="p-2 rounded bg-tradeCard/80 border border-tradeBorder">
             <span class="text-[10px] text-gray-400 block">Expected Profit @ Target 2</span>
-            <strong id="calcP2_${trade.id}" class="text-cyan-400 font-bold">+₹${Math.round(trade.tp2Pts * lotSize).toLocaleString('en-IN')}</strong>
+            <strong id="calcP2_${trade.id}" class="text-cyan-400 font-bold">+₹${currentP2.toLocaleString('en-IN')}</strong>
           </div>
         </div>
       </div>
@@ -1197,6 +1207,7 @@ function renderMillionaireTradeCard(trade) {
 
 function updateTradeCalc(tradeId, lots, ltp, lotSize, tp1Pts, tp2Pts) {
   const lotNum = parseInt(lots);
+  userLotSelections[tradeId] = lotNum;
   const totalQty = lotNum * lotSize;
   const capital = Math.round(ltp * totalQty);
   const profit1 = Math.round(tp1Pts * totalQty);
