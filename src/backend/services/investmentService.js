@@ -908,12 +908,40 @@ async function getInvestmentCompanies(filterSector = 'ALL', filterBucket = 'ALL'
     const marginOfSafetyPct = parseFloat((((c.fairValue - currentPrice) / c.fairValue) * 100).toFixed(1));
     const potentialUpside3Yr = parseFloat((((c.target3Yr - currentPrice) / currentPrice) * 100).toFixed(1));
 
+    // Multi-horizon targets (3, 6, 9, 12, 14, 18, 24, 36 months)
+    // CAGR growth path from currentPrice to target3Yr (36 months)
+    const totalGrowthRatio = c.target3Yr / currentPrice;
+    const monthlyRate = Math.pow(Math.max(1, totalGrowthRatio), 1 / 36);
+
+    const calcHorizon = (months) => {
+      const projectedPrice = Math.round(currentPrice * Math.pow(monthlyRate, months));
+      const targetGainPct = parseFloat((((projectedPrice - currentPrice) / currentPrice) * 100).toFixed(1));
+      return {
+        months,
+        label: `${months}M`,
+        targetPrice: projectedPrice,
+        gainPct: targetGainPct
+      };
+    };
+
+    const horizons = {
+      m3: calcHorizon(3),
+      m6: calcHorizon(6),
+      m9: calcHorizon(9),
+      m12: calcHorizon(12),
+      m14: calcHorizon(14),
+      m18: calcHorizon(18),
+      m24: calcHorizon(24),
+      m36: calcHorizon(36)
+    };
+
     return {
       ...c,
       currentPrice,
       changePct,
       marginOfSafetyPct,
-      potentialUpside3Yr
+      potentialUpside3Yr,
+      horizons
     };
   });
 

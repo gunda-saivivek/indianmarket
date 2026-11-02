@@ -2991,20 +2991,99 @@ function debounceInvestmentSearch() {
   }, 300);
 }
 
+// User portfolio holdings helper functions (stored locally & scoped per user)
+function getUserHoldingsKey() {
+  const email = (state.currentUser?.email || 'default_user').toLowerCase();
+  return `sniper_holdings_${email}`;
+}
+
+function getUserHoldings() {
+  try {
+    const raw = localStorage.getItem(getUserHoldingsKey());
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveUserHolding(ticker, entryPrice, quantity) {
+  const holdings = getUserHoldings();
+  const price = parseFloat(entryPrice);
+  const qty = parseFloat(quantity);
+
+  if (isNaN(price) || price <= 0 || isNaN(qty) || qty <= 0) {
+    // If empty or 0, delete holding
+    delete holdings[ticker];
+  } else {
+    holdings[ticker] = {
+      ticker,
+      entryPrice: price,
+      quantity: qty,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  localStorage.setItem(getUserHoldingsKey(), JSON.stringify(holdings));
+  if (investmentState.data) {
+    renderInvestmentsUI(investmentState.data);
+  }
+}
+
+function removeUserHolding(ticker) {
+  const holdings = getUserHoldings();
+  delete holdings[ticker];
+  localStorage.setItem(getUserHoldingsKey(), JSON.stringify(holdings));
+  if (investmentState.data) {
+    renderInvestmentsUI(investmentState.data);
+  }
+}
+
 function renderInvestmentsUI(data) {
   const container = document.getElementById('investmentsContainer');
-  if (!container) return;
+  if (!container || !data) return;
 
+  const holdings = getUserHoldings();
+  const companies = data.companies || [];
+
+  // Calculate User Portfolio Aggregate
+  let totalInvested = 0;
+  let totalCurrentVal = 0;
+  let activeHoldingsCount = 0;
+
+  companies.forEach(c => {
+    const h = holdings[c.ticker];
+    if (h && h.entryPrice > 0 && h.quantity > 0) {
+      activeHoldingsCount++;
+      const cost = h.entryPrice * h.quantity;
+      const currentVal = c.currentPrice * h.quantity;
+      totalInvested += cost;
+      totalCurrentVal += currentVal;
+    }
+  });
+
+  const totalPnl = totalCurrentVal - totalInvested;
+  const totalPnlPct = totalInvested > 0 ? ((totalPnl / totalInvested) * 100).toFixed(2) : 0;
+
+  // Update Summary Counters
   const trackedEl = document.getElementById('investTrackedCount');
   if (trackedEl) trackedEl.textContent = data.totalTracked || 0;
 
-  const strongBuyEl = document.getElementById('investStrongBuyCount');
-  if (strongBuyEl) strongBuyEl.textContent = data.strongBuys || 0;
+  const userHoldingCountEl = document.getElementById('investUserHoldingCount');
+  if (userHoldingCountEl) userHoldingCountEl.textContent = activeHoldingsCount;
 
-  const avgSafetyEl = document.getElementById('investAvgSafety');
-  if (avgSafetyEl) avgSafetyEl.textContent = `${data.avgMarginOfSafety || 0}%`;
-
-  const companies = data.companies || [];
+  const portfolioPnlEl = document.getElementById('investTotalPortfolioPnl');
+  const portfolioPnlPctEl = document.getElementById('investTotalPortfolioPnlPct');
+  if (portfolioPnlEl) {
+    const pnlSign = totalPnl >= 0 ? '+' : '';
+    const pnlColor = totalPnl >= 0 ? 'text-bullGreen' : 'text-bearRed';
+    portfolioPnlEl.innerHTML = `<span class="${pnlColor}">${pnlSign}₹${Math.round(totalPnl).toLocaleString('en-IN')}</span>`;
+  }
+  if (portfolioPnlPctEl) {
+    const pnlSign = totalPnl >= 0 ? '+' : '';
+    portfolioPnlPctEl.textContent = activeHoldingsCount > 0 
+      ? `${pnlSign}${totalPnlPct}% Total Return (Cost: ₹${Math.round(totalInvested).toLocaleString('en-IN')})` 
+      : 'Enter entry price & qty to track';
+  }
 
   if (companies.length === 0) {
     container.innerHTML = `
@@ -3015,6 +3094,10 @@ function renderInvestmentsUI(data) {
     return;
   }
 
+  // Active Horizon selection
+  const horizonSelect = document.getElementById('investHorizonSelect');
+  const activeHorizonKey = horizonSelect ? horizonSelect.value : 'm12';
+
   container.innerHTML = companies.map(c => {
     const isUndervalued = c.marginOfSafetyPct > 0;
     const safetyBadge = isUndervalued
@@ -3024,8 +3107,47 @@ function renderInvestmentsUI(data) {
     const changeClass = (c.changePct || 0) >= 0 ? 'text-bullGreen' : 'text-bearRed';
     const changeSign = (c.changePct || 0) >= 0 ? '+' : '';
 
+    // Multi-horizon targets
+    const horizons = c.horizons || {};
+    const selectedHorizon = horizons[activeHorizonKey] || horizons.m12 || { targetPrice: c.fairValue, gainPct: c.marginOfSafetyPct, label: '12M' };
+
+    // User position tracking
+    const userHolding = holdings[c.ticker] || null;
+    const userEntryPrice = userHolding ? userHolding.entryPrice : '';
+    const userQty = userHolding ? userHolding.quantity : '';
+
+    let userPnlHtml = '';
+    if (userHolding && userHolding.entryPrice > 0 && userHolding.quantity > 0) {
+      const invested = userHolding.entryPrice * userHolding.quantity;
+      const currentVal = c.currentPrice * userHolding.quantity;
+      const pnlAmt = currentVal - invested;
+      const pnlPct = ((pnlAmt / invested) * 100).toFixed(2);
+      const isProfit = pnlAmt >= 0;
+      const pnlColorClass = isProfit ? 'text-bullGreen' : 'text-bearRed';
+      const pnlBadgeClass = isProfit ? 'bg-bullGreen/15 border-bullGreen/30 text-bullGreen' : 'bg-bearRed/15 border-bearRed/30 text-bearRed';
+      const sign = isProfit ? '+' : '';
+
+      userPnlHtml = `
+        <div class="mt-3 p-3 rounded-xl border ${pnlBadgeClass} font-mono space-y-1.5 transition">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold flex items-center gap-1.5">
+              <span>💼 Your Live Position:</span>
+              <span class="text-white">${userHolding.quantity} Qty</span>
+            </span>
+            <span class="font-extrabold ${pnlColorClass} text-sm">
+              ${sign}₹${Math.round(pnlAmt).toLocaleString('en-IN')} (${sign}${pnlPct}%)
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] opacity-80 pt-1 border-t border-tradeBorder/40">
+            <span>Invested: ₹${Math.round(invested).toLocaleString('en-IN')} (Avg: ₹${userHolding.entryPrice})</span>
+            <span>Current: ₹${Math.round(currentVal).toLocaleString('en-IN')}</span>
+          </div>
+        </div>
+      `;
+    }
+
     return `
-      <div class="bg-tradeCard border border-tradeBorder rounded-2xl p-5 hover:border-emerald-500/50 transition-all shadow-lg flex flex-col justify-between group">
+      <div class="bg-tradeCard border ${userHolding ? 'border-emerald-500/60 shadow-emerald-950/30' : 'border-tradeBorder'} rounded-2xl p-5 hover:border-emerald-500/70 transition-all shadow-xl flex flex-col justify-between group">
         <div>
           <!-- Header: Ticker & Cap & Verdict -->
           <div class="flex items-start justify-between gap-2 pb-3 border-b border-tradeBorder/60">
@@ -3033,6 +3155,7 @@ function renderInvestmentsUI(data) {
               <div class="flex items-center gap-2">
                 <h3 class="text-base font-extrabold text-white font-mono group-hover:text-emerald-400 transition">${c.ticker}</h3>
                 <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-tradeDark text-gray-400 border border-tradeBorder font-mono">${c.cap}</span>
+                ${userHolding ? '<span class="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-1.5 py-0.2 rounded font-bold">PORTFOLIO</span>' : ''}
               </div>
               <p class="text-xs text-gray-300 font-medium truncate max-w-[210px]">${c.name}</p>
               <div class="flex items-center gap-1.5 mt-1">
@@ -3053,32 +3176,85 @@ function renderInvestmentsUI(data) {
           <!-- Price & Valuation Strip -->
           <div class="grid grid-cols-3 gap-2 py-3 border-b border-tradeBorder/60 text-center font-mono">
             <div class="bg-tradeDark/60 p-2 rounded-lg border border-tradeBorder/40">
-              <span class="text-[9px] text-gray-500 uppercase block">Market Price</span>
+              <span class="text-[9px] text-gray-500 uppercase block">Live Quote</span>
               <span class="text-sm font-bold text-white">₹${c.currentPrice.toLocaleString('en-IN')}</span>
-              <span class="text-[9px] ${changeClass} block">${changeSign}${c.changePct}%</span>
+              <span class="text-[9px] ${changeClass} block">${changeSign}${c.changePct}% Daily</span>
             </div>
 
             <div class="bg-tradeDark/60 p-2 rounded-lg border border-tradeBorder/40">
-              <span class="text-[9px] text-gray-500 uppercase block">Fair Value</span>
+              <span class="text-[9px] text-gray-500 uppercase block">Intrinsic Fair</span>
               <span class="text-sm font-bold text-accentGold">₹${c.fairValue.toLocaleString('en-IN')}</span>
-              <span class="text-[9px] text-gray-400 block">Intrinsic DCF</span>
+              <span class="text-[9px] text-gray-400 block">${c.marginOfSafetyPct >= 0 ? '+' : ''}${c.marginOfSafetyPct}% Buffer</span>
             </div>
 
             <div class="bg-tradeDark/60 p-2 rounded-lg border border-tradeBorder/40">
-              <span class="text-[9px] text-gray-500 uppercase block">3-Yr Target</span>
-              <span class="text-sm font-bold text-cyan-400">₹${c.target3Yr.toLocaleString('en-IN')}</span>
-              <span class="text-[9px] text-cyan-400/80 block">+${c.potentialUpside3Yr}%</span>
+              <span class="text-[9px] text-emerald-400 font-bold uppercase block">${selectedHorizon.label} Target</span>
+              <span class="text-sm font-bold text-cyan-400">₹${selectedHorizon.targetPrice.toLocaleString('en-IN')}</span>
+              <span class="text-[9px] text-cyan-400/80 block">+${selectedHorizon.gainPct}% Upside</span>
             </div>
           </div>
 
-          <!-- Margin of Safety Bar -->
-          <div class="py-2.5 flex items-center justify-between">
-            <span class="text-xs text-gray-400">Valuation Buffer:</span>
-            ${safetyBadge}
+          <!-- ALL HORIZON TARGETS PILLS (3M, 6M, 9M, 12M, 14M, 18M, 24M, 36M) -->
+          <div class="pt-2.5 pb-2">
+            <div class="text-[10px] text-gray-400 font-mono flex items-center justify-between mb-1.5">
+              <span>📅 Multi-Horizon Target Roadmap:</span>
+              <span class="text-accentGold font-bold">Compounded Targets</span>
+            </div>
+            <div class="grid grid-cols-4 sm:grid-cols-8 gap-1 font-mono text-center">
+              ${['m3', 'm6', 'm9', 'm12', 'm14', 'm18', 'm24', 'm36'].map(hKey => {
+                const h = horizons[hKey];
+                if (!h) return '';
+                const isSelected = activeHorizonKey === hKey;
+                return `
+                  <div class="p-1 rounded ${isSelected ? 'bg-emerald-600/30 border border-emerald-500 text-emerald-300 font-bold' : 'bg-tradeDark/60 border border-tradeBorder/60 text-gray-400'}">
+                    <span class="text-[9px] block text-gray-400 font-sans">${h.label}</span>
+                    <span class="text-[10px] block text-white font-bold">₹${h.targetPrice}</span>
+                    <span class="text-[8px] block ${h.gainPct >= 0 ? 'text-bullGreen' : 'text-bearRed'}">+${h.gainPct}%</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
           </div>
+
+          <!-- USER ENTRY PRICE & QUANTITY CALCULATOR (DAILY P&L ENGINE) -->
+          <div class="mt-2.5 p-3 rounded-xl bg-tradeDark/80 border border-tradeBorder/80 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-white flex items-center gap-1.5 font-mono">
+                <i data-lucide="calculator" class="w-3.5 h-3.5 text-accentGold"></i>
+                <span>Track Your Holding &amp; Daily P&amp;L</span>
+              </span>
+              ${userHolding ? `
+                <button onclick="removeUserHolding('${c.ticker}')" class="text-[10px] text-bearRed hover:underline flex items-center gap-1 font-mono">
+                  <span>Reset</span>
+                </button>
+              ` : ''}
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 font-mono">
+              <div>
+                <label class="text-[9px] text-gray-400 block mb-0.5">Your Entry Price (₹)</label>
+                <input type="number" step="0.05" id="entry_${c.ticker}" value="${userEntryPrice}" placeholder="e.g. ${c.currentPrice}" 
+                  class="w-full bg-tradeCard border border-tradeBorder rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono">
+              </div>
+              <div>
+                <label class="text-[9px] text-gray-400 block mb-0.5">Quantity (Shares)</label>
+                <input type="number" step="1" id="qty_${c.ticker}" value="${userQty}" placeholder="e.g. 100" 
+                  class="w-full bg-tradeCard border border-tradeBorder rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono">
+              </div>
+            </div>
+
+            <button onclick="saveUserHolding('${c.ticker}', document.getElementById('entry_${c.ticker}').value, document.getElementById('qty_${c.ticker}').value)" 
+              class="w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i>
+              <span>${userHolding ? 'Update Live P&L Position' : 'Save & Track Position Daily'}</span>
+            </button>
+          </div>
+
+          <!-- Live User P&L Result Box -->
+          ${userPnlHtml}
 
           <!-- Fundamental Quality Ratios Grid -->
-          <div class="grid grid-cols-4 gap-1.5 py-2.5 border-t border-b border-tradeBorder/60 text-center font-mono text-[11px]">
+          <div class="grid grid-cols-4 gap-1.5 mt-3 py-2 border-t border-b border-tradeBorder/60 text-center font-mono text-[11px]">
             <div class="bg-tradeDark/40 p-1.5 rounded">
               <span class="text-[9px] text-gray-500 block">P/E vs Med</span>
               <span class="font-bold ${c.pe <= c.medianPe5Yr ? 'text-bullGreen' : 'text-gray-300'}">${c.pe}</span>
@@ -3105,7 +3281,7 @@ function renderInvestmentsUI(data) {
           </div>
 
           <!-- Institutional Thesis & Catalyst -->
-          <div class="pt-3 space-y-1.5 text-xs">
+          <div class="pt-2.5 space-y-1.5 text-xs">
             <div class="text-gray-300 leading-snug">
               <strong class="text-white text-[11px]">Investment Thesis:</strong> ${c.thesis}
             </div>
@@ -3116,7 +3292,7 @@ function renderInvestmentsUI(data) {
         </div>
 
         <!-- Footer Action -->
-        <div class="pt-4 mt-3 border-t border-tradeBorder/40 flex items-center justify-between text-xs">
+        <div class="pt-3 mt-3 border-t border-tradeBorder/40 flex items-center justify-between text-xs">
           <span class="text-gray-500 text-[10px] font-mono">NSE: ${c.ticker}</span>
           <a href="https://in.tradingview.com/chart/?symbol=NSE%3A${c.ticker}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-tradeDark hover:bg-emerald-600 hover:text-white text-gray-300 font-bold rounded-lg border border-tradeBorder transition flex items-center gap-1.5 text-[11px]">
             <span>TradingView</span>

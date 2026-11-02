@@ -1379,21 +1379,21 @@
           </div>
 
           <div class="bg-tradeDark/80 p-3 rounded-xl border border-emerald-500/30">
-            <span class="text-[10px] text-emerald-400 font-mono block uppercase">Strong Buy Signals</span>
-            <span id="investStrongBuyCount" class="text-lg font-bold font-mono text-emerald-400">--</span>
-            <span class="text-[10px] text-emerald-500/80 block">Undervalued with Moat</span>
+            <span class="text-[10px] text-emerald-400 font-mono block uppercase">Active User Holdings</span>
+            <span id="investUserHoldingCount" class="text-lg font-bold font-mono text-emerald-400">0</span>
+            <span class="text-[10px] text-emerald-500/80 block">Portfolio Positions</span>
           </div>
 
           <div class="bg-tradeDark/80 p-3 rounded-xl border border-tradeBorder/80">
-            <span class="text-[10px] text-gray-400 font-mono block uppercase">Avg Margin of Safety</span>
-            <span id="investAvgSafety" class="text-lg font-bold font-mono text-accentGold">--%</span>
-            <span class="text-[10px] text-gray-500 block">Discount to Fair Intrinsic Value</span>
+            <span class="text-[10px] text-gray-400 font-mono block uppercase">Total Portfolio P&amp;L</span>
+            <span id="investTotalPortfolioPnl" class="text-lg font-bold font-mono text-gray-300">₹0.00</span>
+            <span id="investTotalPortfolioPnlPct" class="text-[10px] text-gray-500 block">Daily Live Mark-to-Market</span>
           </div>
 
           <div class="bg-tradeDark/80 p-3 rounded-xl border border-tradeBorder/80">
-            <span class="text-[10px] text-gray-400 font-mono block uppercase">Holding Horizon</span>
-            <span class="text-lg font-bold font-mono text-cyan-400">3 - 5 Years</span>
-            <span class="text-[10px] text-gray-500 block">Long-Term Compounding</span>
+            <span class="text-[10px] text-gray-400 font-mono block uppercase">Holding Horizon Targets</span>
+            <span class="text-lg font-bold font-mono text-cyan-400">3M to 36M</span>
+            <span class="text-[10px] text-gray-500 block">3, 6, 9, 12, 14, 18, 24, 36 Mo</span>
           </div>
         </div>
 
@@ -1420,6 +1420,18 @@
 
           <!-- Sector Selector & Search -->
           <div class="flex items-center gap-2">
+            <!-- Horizon Selector Filter -->
+            <select id="investHorizonSelect" onchange="renderInvestmentsUI(investmentState.data)" class="bg-tradeDark border border-tradeBorder rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-emerald-500 font-mono">
+              <option value="m3">Target: 3 Months</option>
+              <option value="m6">Target: 6 Months</option>
+              <option value="m9">Target: 9 Months</option>
+              <option value="m12" selected>Target: 12 Months (1 Yr)</option>
+              <option value="m14">Target: 14 Months</option>
+              <option value="m18">Target: 18 Months (1.5 Yr)</option>
+              <option value="m24">Target: 24 Months (2 Yr)</option>
+              <option value="m36">Target: 36 Months (3 Yr)</option>
+            </select>
+
             <select id="investSectorSelect" onchange="filterInvestments()" class="bg-tradeDark border border-tradeBorder rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-emerald-500">
               <option value="ALL">All Sectors</option>
               <option value="Banking">Banking & Finance</option>
