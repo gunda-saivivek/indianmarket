@@ -209,12 +209,33 @@ function pollTelegramUpdates() {
 setInterval(pollTelegramUpdates, 10000);
 pollTelegramUpdates();
 
+function isIndianMarketOpen() {
+  const now = new Date();
+  // Get time in IST (UTC+5:30)
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + istOffset);
+  const day = istDate.getDay(); // 0 = Sun, 6 = Sat
+  if (day === 0 || day === 6) return false;
+
+  const hours = istDate.getHours();
+  const minutes = istDate.getMinutes();
+  const timeInMinutes = hours * 60 + minutes;
+
+  // NSE Indian Market Hours: 9:15 AM (555 min) to 3:30 PM (930 min)
+  return timeInMinutes >= 555 && timeInMinutes <= 930;
+}
+
 /**
  * Broadcast initial trade call to ALL subscribers:
- * Rate-limited to at least 2 minutes between new calls
+ * Rate-limited to at least 2 minutes between new calls and STRICTLY during market hours!
  */
 async function broadcastTradeCall(trade) {
   if (!telegramConfig.enabled || !telegramConfig.botToken) return;
+
+  // Strict check: DO NOT broadcast trade calls once NSE market closes (after 3:30 PM IST or weekends)
+  if (!isIndianMarketOpen()) {
+    return;
+  }
 
   const tradeKey = `${trade.index}_${trade.id}`;
   if (activeTradesMap.has(tradeKey)) return;
@@ -308,6 +329,9 @@ async function broadcastTradeCall(trade) {
  */
 async function broadcastPriceTick(trade, currentLtp) {
   if (!telegramConfig.enabled || !telegramConfig.botToken) return;
+
+  // Stop broadcasting ticks once Indian market is closed
+  if (!isIndianMarketOpen()) return;
 
   const tradeKey = `${trade.index}_${trade.id}`;
   const tracked = activeTradesMap.get(tradeKey);
