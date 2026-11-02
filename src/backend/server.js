@@ -1057,6 +1057,54 @@ const server = http.createServer(async (req, res) => {
     return handleGetInvestments(req, res, parsedUrl);
   }
 
+  // Telegram Alerts Configuration Endpoints
+  if (pathname === '/api/telegram/config' && req.method === 'GET') {
+    const { telegramConfig } = require('./services/telegramService');
+    const safeConfig = {
+      botToken: telegramConfig.botToken ? `${telegramConfig.botToken.substring(0, 8)}...` : '',
+      chatId: telegramConfig.chatId || '',
+      channelName: telegramConfig.channelName || 'The Market Sniper Shooters',
+      enabled: telegramConfig.enabled
+    };
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, config: safeConfig }));
+    return;
+  }
+
+  if (pathname === '/api/telegram/config' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { saveTelegramConfig, sendTelegramMessage } = require('./services/telegramService');
+        const updated = saveTelegramConfig({
+          botToken: payload.botToken !== undefined && !payload.botToken.includes('...') ? payload.botToken : undefined,
+          chatId: payload.chatId,
+          channelName: payload.channelName || 'The Market Sniper Shooters',
+          enabled: payload.enabled === true
+        });
+
+        // If user clicked test, send an immediate test message
+        let testResult = null;
+        if (payload.test) {
+          testResult = await sendTelegramMessage(
+            `<b>🎯 ${updated.channelName || 'The Market Sniper Shooters'} 🎯</b>\n\n` +
+            `✅ <b>Telegram Auto-Alerts Connected Successfully!</b>\n` +
+            `All live index calls and target progression alerts will be broadcasted here automatically.`
+          );
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, config: updated, testResult }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
   // API endpoint: /api/settings
   if (pathname === '/api/settings' && req.method === 'POST') {
     let body = '';

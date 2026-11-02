@@ -1995,9 +1995,96 @@ function toggleSettingsModal() {
     modal.classList.toggle('hidden');
     if (!modal.classList.contains('hidden')) {
       updateThemeUI(getStoredTheme());
+      loadTelegramSettingsUI();
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
       }
+    }
+  }
+}
+
+async function loadTelegramSettingsUI() {
+  try {
+    const res = await fetch('/api/telegram/config', {
+      headers: {
+        'bypass-tunnel-reminder': 'true',
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+    const data = await parseJsonResponse(res);
+    if (data.success && data.config) {
+      const toggle = document.getElementById('telegramEnabledToggle');
+      const nameInput = document.getElementById('tgChannelNameInput');
+      const botInput = document.getElementById('tgBotTokenInput');
+      const chatInput = document.getElementById('tgChatIdInput');
+
+      if (toggle) toggle.checked = !!data.config.enabled;
+      if (nameInput && data.config.channelName) nameInput.value = data.config.channelName;
+      if (botInput && data.config.botToken) botInput.placeholder = data.config.botToken;
+      if (chatInput && data.config.chatId) chatInput.value = data.config.chatId;
+    }
+  } catch (e) {
+    console.error('Failed to load telegram settings:', e);
+  }
+}
+
+async function saveTelegramSettings(sendTest = false) {
+  const toggle = document.getElementById('telegramEnabledToggle');
+  const nameInput = document.getElementById('tgChannelNameInput');
+  const botInput = document.getElementById('tgBotTokenInput');
+  const chatInput = document.getElementById('tgChatIdInput');
+  const statusEl = document.getElementById('tgStatusMsg');
+
+  const enabled = toggle ? toggle.checked : false;
+  const channelName = nameInput ? nameInput.value.trim() : 'The Market Sniper Shooters';
+  const botToken = botInput ? botInput.value.trim() : '';
+  const chatId = chatInput ? chatInput.value.trim() : '';
+
+  if (statusEl) {
+    statusEl.classList.remove('hidden');
+    statusEl.className = 'text-[10px] p-2 rounded-lg font-mono bg-cyan-950/60 text-cyan-300 border border-cyan-500/40';
+    statusEl.textContent = sendTest ? 'Sending test message to Telegram...' : 'Saving Telegram configuration...';
+  }
+
+  try {
+    const res = await fetch('/api/telegram/config', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'bypass-tunnel-reminder': 'true',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({
+        enabled,
+        channelName,
+        botToken: botToken || undefined,
+        chatId,
+        test: sendTest
+      })
+    });
+
+    const data = await parseJsonResponse(res);
+    if (!res.ok) throw new Error(data.error || 'Failed to save Telegram config');
+
+    if (sendTest) {
+      if (data.testResult && data.testResult.success) {
+        if (statusEl) {
+          statusEl.className = 'text-[10px] p-2 rounded-lg font-mono bg-bullGreen/20 text-bullGreen border border-bullGreen/40';
+          statusEl.textContent = `✅ Test message delivered successfully to ${chatId}!`;
+        }
+      } else {
+        throw new Error(data.testResult?.error || 'Telegram returned an error');
+      }
+    } else {
+      if (statusEl) {
+        statusEl.className = 'text-[10px] p-2 rounded-lg font-mono bg-bullGreen/20 text-bullGreen border border-bullGreen/40';
+        statusEl.textContent = '✅ Telegram configuration saved! Alerts active.';
+      }
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.className = 'text-[10px] p-2 rounded-lg font-mono bg-bearRed/20 text-bearRed border border-bearRed/40';
+      statusEl.textContent = `❌ ${err.message}`;
     }
   }
 }

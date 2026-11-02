@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { broadcastTradeCall, broadcastPriceTick } = require('./telegramService');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..', '..');
 const LEDGER_FILE = path.join(__dirname, '..', 'data', 'trade_ledger.json');
@@ -136,6 +137,9 @@ function processAndStabilizeTrades(index, spot, trades, optionType, chains) {
         updatedAt: new Date().toISOString()
       };
       activeSignals.set(key, tracked);
+
+      // Auto-broadcast new trade call to Telegram
+      broadcastTradeCall(tracked).catch(() => {});
     } else {
       // Update running stats with frozen entry/sl/tp
       tracked.currentLtp = currentLtp;
@@ -158,6 +162,9 @@ function processAndStabilizeTrades(index, spot, trades, optionType, chains) {
         tracked.status = 'SL_HIT';
         recordLedgerOutcome(tracked, tracked.sl, 'SL_HIT');
       }
+
+      // Auto-broadcast point progression ticks (e.g. 34 ✅✅, 35 ✅✅, Target Hit)
+      broadcastPriceTick(tracked, currentLtp).catch(() => {});
     }
 
     // Return the stabilized trade object to the dashboard
