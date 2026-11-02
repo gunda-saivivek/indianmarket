@@ -1,6 +1,14 @@
 /**
  * Telegram Auto-Alerts Broadcasting Service
- * Broadcasts trade entry calls, points progression, and target milestones using our brand name.
+ * Strict ONE-TRADE-AT-A-TIME execution mode for Telegram:
+ * 1. Broadcasts ONLY ONE active trade call.
+ * 2. Streams real-time point progression ticks:
+ *    The Market Sniper Shooters:
+ *    34 ✅✅
+ *    ...
+ *    50 🎯 TARGET 1 HIT! BOOK 50% PROFIT
+ * 3. Once Target 1 / Target 2 or SL is hit, concludes the trade with total profit.
+ * 4. Only THEN unlocks and searches for the next best trade!
  */
 
 const https = require('https');
@@ -102,37 +110,58 @@ function sendTelegramMessage(text) {
   });
 }
 
-// Cache of milestones already broadcasted per signal to avoid spamming
-// key = `${index}_${tradeId}` -> Set of milestones ['ENTERED', 34, 35, 'TP1', 'TP2']
-const broadcastedMilestones = new Map();
+// ============================================================
+// STRICT SINGLE-TRADE-AT-A-TIME DISPATCHER
+// ============================================================
+// activeTelegramTrade holds the ONLY trade currently running on Telegram
+let activeTelegramTrade = null;
+const broadcastedPoints = new Set();
 
 /**
- * Broadcast initial trade call:
- * BUY NIFTY 50
- * 23400 CE
- * ABOVE 33
- * TARGET 50-65+++
- * SL 23
+ * Broadcast trade call:
+ * Only broadcasts IF there is NO currently active trade running!
  */
 async function broadcastTradeCall(trade) {
   if (!telegramConfig.enabled || !telegramConfig.botToken || !telegramConfig.chatId) return;
 
-  const key = `${trade.index}_${trade.id}`;
-  if (!broadcastedMilestones.has(key)) {
-    broadcastedMilestones.set(key, new Set());
+  // If another trade is already running, do NOT send a new trade until this one finishes
+  if (activeTelegramTrade !== null) {
+    return;
   }
-  const milestones = broadcastedMilestones.get(key);
 
-  if (milestones.has('ENTRY_CALLED')) return;
-  milestones.add('ENTRY_CALLED');
+  // Lock this trade as the active single trade
+  activeTelegramTrade = {
+    key: `${trade.index}_${trade.id}`,
+    index: trade.index,
+    id: trade.id,
+    type: trade.type,
+    strike: trade.strike,
+    name: trade.name,
+    entryPrice: Math.round(trade.fixedEntryPrice || trade.entryPrice),
+    tp1: Math.round(trade.tp1),
+    tp2: Math.round(trade.tp2),
+    sl: Math.round(trade.sl),
+    lotSize: trade.lotSize || 65,
+    status: 'ACTIVE',
+    tp1Sent: false,
+    tp2Sent: false,
+    slSent: false
+  };
+
+  broadcastedPoints.clear();
 
   const channelTitle = telegramConfig.channelName || 'The Market Sniper Shooters';
-  const indexTitle = trade.index === 'nifty' || trade.index === 'NIFTY' ? 'NIFTY 50' : trade.index === 'sensex' || trade.index === 'SENSEX' ? 'SENSEX' : 'BANK NIFTY';
+  const indexTitle = (trade.index || 'NIFTY').toUpperCase().includes('BANK') 
+    ? 'BANK NIFTY' 
+    : (trade.index || '').toUpperCase().includes('SENSEX') 
+    ? 'SENSEX' 
+    : 'NIFTY 50';
+
   const strikeText = `${trade.strike} ${trade.type}`;
-  const entryText = Math.round(trade.fixedEntryPrice || trade.entryPrice);
-  const tp1Text = Math.round(trade.tp1);
-  const tp2Text = Math.round(trade.tp2);
-  const slText = Math.round(trade.sl);
+  const entryText = activeTelegramTrade.entryPrice;
+  const tp1Text = activeTelegramTrade.tp1;
+  const tp2Text = activeTelegramTrade.tp2;
+  const slText = activeTelegramTrade.sl;
 
   const message = `<b>${channelTitle}</b>\n\n` +
     `<b>BUY ${indexTitle}</b>\n\n` +
@@ -145,45 +174,75 @@ async function broadcastTradeCall(trade) {
 }
 
 /**
- * Broadcast points progression ticks:
- * The Market Sniper Shooters:
- * 34 ✅✅
- * ...
- * The Market Sniper Shooters:
- * 50 🎯 TARGET 1 HIT! (+17 pts) ✅✅
+ * Broadcast point progression ticks & handle trade completion
  */
 async function broadcastPriceTick(trade, currentLtp) {
   if (!telegramConfig.enabled || !telegramConfig.botToken || !telegramConfig.chatId) return;
+  if (!activeTelegramTrade) return;
 
-  const key = `${trade.index}_${trade.id}`;
-  if (!broadcastedMilestones.has(key)) {
-    broadcastedMilestones.set(key, new Set());
-  }
-  const milestones = broadcastedMilestones.get(key);
+  // Ensure this tick belongs to the currently active single trade
+  const tradeKey = `${trade.index}_${trade.id}`;
+  if (activeTelegramTrade.key !== tradeKey) return;
 
   const roundedLtp = Math.floor(currentLtp);
-  const entry = Math.round(trade.fixedEntryPrice || trade.entryPrice);
+  const entry = activeTelegramTrade.entryPrice;
+  const tp1 = activeTelegramTrade.tp1;
+  const tp2 = activeTelegramTrade.tp2;
+  const sl = activeTelegramTrade.sl;
+  const channelTitle = telegramConfig.channelName || 'The Market Sniper Shooters';
 
-  // Broadcast each point move above entry price (e.g. 34, 35, 36...)
-  if (roundedLtp > entry && roundedLtp <= Math.round(trade.tp2) + 5) {
-    if (!milestones.has(roundedLtp)) {
-      milestones.add(roundedLtp);
+  // 1. Check Stop Loss Hit
+  if (roundedLtp <= sl && !activeTelegramTrade.slSent) {
+    activeTelegramTrade.slSent = true;
+    const lossPts = entry - roundedLtp;
+    await sendTelegramMessage(
+      `<b>${channelTitle}:</b>\n` +
+      `🛑 <b>STOP LOSS HIT @ ${roundedLtp}</b> (-${lossPts} pts)\n` +
+      `Trade closed safely. Scanning market for the next high-probability setup...`
+    );
+    // Release lock so system looks for another trade
+    activeTelegramTrade = null;
+    broadcastedPoints.clear();
+    return;
+  }
 
-      const channelTitle = telegramConfig.channelName || 'The Market Sniper Shooters';
-      const ptsGain = roundedLtp - entry;
+  // 2. Check Target 2 Hit (Final Victory)
+  if (roundedLtp >= tp2 && !activeTelegramTrade.tp2Sent) {
+    activeTelegramTrade.tp2Sent = true;
+    const profitPts = roundedLtp - entry;
+    const lotSize = activeTelegramTrade.lotSize || 65;
+    const totalProfit = profitPts * lotSize;
 
-      let msg = `<b>${channelTitle}:</b>\n` +
+    await sendTelegramMessage(
+      `<b>${channelTitle}:</b>\n` +
+      `<b>${roundedLtp} 🚀🚀 TARGET 2 RUNNER HIT!</b>\n\n` +
+      `🏆 <b>PROFIT BOOKED: +${profitPts} PTS (+₹${totalProfit.toLocaleString('en-IN')}/lot)</b>\n` +
+      `✅ Trade successfully completed with massive profit! Looking for the next opportunity...`
+    );
+    // Release lock so system looks for another trade
+    activeTelegramTrade = null;
+    broadcastedPoints.clear();
+    return;
+  }
+
+  // 3. Check Target 1 Hit
+  if (roundedLtp >= tp1 && !activeTelegramTrade.tp1Sent) {
+    activeTelegramTrade.tp1Sent = true;
+    const profitPts = tp1 - entry;
+    await sendTelegramMessage(
+      `<b>${channelTitle}:</b>\n` +
+      `<b>${roundedLtp} 🎯🎯 TARGET 1 HIT! (+${profitPts} pts)</b>\n` +
+      `Book 50% profit now & trail Stop Loss to cost! Running towards Target 2...`
+    );
+  }
+
+  // 4. Point-by-point tick updates (e.g. 34 ✅✅, 35 ✅✅, 36 ✅✅...)
+  if (roundedLtp > entry && roundedLtp <= tp2) {
+    if (!broadcastedPoints.has(roundedLtp)) {
+      broadcastedPoints.add(roundedLtp);
+
+      const msg = `<b>${channelTitle}:</b>\n` +
         `<b>${roundedLtp} ✅✅</b>`;
-
-      if (roundedLtp >= Math.round(trade.tp1) && !milestones.has('TP1_ANNOUNCED')) {
-        milestones.add('TP1_ANNOUNCED');
-        msg = `<b>${channelTitle}:</b>\n` +
-          `<b>${roundedLtp} 🎯 TARGET 1 HIT! (+${ptsGain} pts) ✅✅</b>`;
-      } else if (roundedLtp >= Math.round(trade.tp2) && !milestones.has('TP2_ANNOUNCED')) {
-        milestones.add('TP2_ANNOUNCED');
-        msg = `<b>${channelTitle}:</b>\n` +
-          `<b>${roundedLtp} 🚀 TARGET 2 RUNNER HIT! (+${ptsGain} pts) 🏆🔥</b>`;
-      }
 
       await sendTelegramMessage(msg);
     }
