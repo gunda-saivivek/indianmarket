@@ -1030,16 +1030,29 @@
       <!-- MAIN LEDGER TABLE: Entries, SL, TP1, TP2, Outcome -->
       <div class="bg-tradeCard border border-tradeBorder rounded-2xl overflow-hidden shadow-2xl">
         <div class="p-4 bg-tradeDark border-b border-tradeBorder flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <i data-lucide="table" class="w-4 h-4 text-accentGold"></i>
-            <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono">Execution Log: Fixed Entry, SL, TP1 &amp; TP2</h3>
+          <!-- Title on Left with Prominent Download Buttons Right Beside It -->
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="table" class="w-4 h-4 text-accentGold"></i>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono">Execution Log: Fixed Entry, SL, TP1 &amp; TP2</h3>
+            </div>
+            
+            <!-- Download Buttons directly beside the title -->
+            <div class="flex items-center gap-2 ml-1 sm:ml-3">
+              <button onclick="downloadLedgerCSV()" class="px-3 py-1.5 rounded-lg bg-bullGreen hover:bg-bullGreen/90 text-black text-xs font-extrabold transition flex items-center gap-1.5 shadow-md shadow-bullGreen/20">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Download Table (CSV)</span>
+              </button>
+              <button onclick="downloadLedgerPDF()" class="px-3 py-1.5 rounded-lg bg-tradeCard hover:bg-tradeBorder border border-cyan-400/50 hover:border-cyan-400 text-cyan-400 text-xs font-bold transition flex items-center gap-1.5 shadow">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>Print / PDF</span>
+              </button>
+            </div>
           </div>
-          <div class="flex items-center gap-3">
-            <button onclick="downloadLedgerCSV()" class="text-bullGreen hover:underline text-xs flex items-center gap-1 font-bold">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Table (CSV)
-            </button>
-            <span class="text-xs text-gray-500 font-mono">|</span>
-            <span class="text-xs text-gray-400 font-mono">Verified institutional records</span>
+
+          <div class="flex items-center gap-2 text-xs text-gray-400 font-mono">
+            <span class="w-2 h-2 rounded-full bg-bullGreen animate-ping"></span>
+            <span>Live Verified Signals</span>
           </div>
         </div>
 
