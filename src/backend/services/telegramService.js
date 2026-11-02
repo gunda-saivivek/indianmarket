@@ -1,12 +1,14 @@
 /**
  * Telegram Auto-Alerts Broadcasting Service
- * Enhanced 2-Minute Trade Cadence + Threaded Reply-To-Message Architecture:
+ * High-Watermark Progressions + Dedicated Reply Threads
  * 
- * 1. Automatically dispatches the next fresh trade 2 minutes after a previous call.
- * 2. Remembers the exact message_id of the initial trade call.
- * 3. All point updates (34 ✅✅, 35 ✅✅), Target 1 hits, and Target 2 profits
- *    are sent as DIRECT REPLIES (reply_to_message_id) to that specific trade!
- * 4. Each trade has its own completely separate reply thread!
+ * Rules:
+ * 1. Broadcasts trade call (e.g. BUY NIFTY 50 23250 CE ABOVE 75 TARGET 102-132 SL 59).
+ * 2. ONLY broadcasts HIGHER HIGH PROGRESSIONS strictly moving forward:
+ *    Entry: 75 -> 76 ✅✅ -> 78 ✅✅ -> 80 ✅✅ -> 85 ✅✅ -> 87 ✅✅ (Strictly increasing: never sends declining/retrace prices like 86, 85, 84).
+ * 3. Every update is sent as a direct reply to the trade call so it stays grouped.
+ * 4. Target 1 & Target 2 completion alerts with profit.
+ * 5. Dispatches fresh trades after 2 minutes.
  */
 
 const https = require('https');
@@ -114,29 +116,21 @@ function sendTelegramMessage(text, replyToMessageId = null) {
   });
 }
 
-// ============================================================
-// 2-MINUTE CADENCE & SEPARATE REPLY-THREAD TRACKER
-// ============================================================
-// activeTradesMap: tradeKey -> { key, messageId, index, strike, type, entryPrice, tp1, tp2, sl, lotSize, broadcastedPoints: Set, tp1Sent, tp2Sent, slSent }
+// Active Trades Registry
 const activeTradesMap = new Map();
 let lastTradeBroadcastTime = 0;
-const TWO_MINUTES_MS = 2 * 60 * 1000; // 2 minutes
+const TWO_MINUTES_MS = 2 * 60 * 1000;
 
 /**
- * Broadcast trade call:
- * Checks if 2 minutes have elapsed since the last broadcast trade.
- * Stores the messageId returned by Telegram so all subsequent point updates
- * reply directly to THIS specific trade!
+ * Broadcast initial trade call:
+ * Rate-limited to at least 2 minutes between new calls
  */
 async function broadcastTradeCall(trade) {
   if (!telegramConfig.enabled || !telegramConfig.botToken || !telegramConfig.chatId) return;
 
   const tradeKey = `${trade.index}_${trade.id}`;
-
-  // If this trade was already broadcasted, do not re-broadcast as a new call
   if (activeTradesMap.has(tradeKey)) return;
 
-  // Rate-limit new trade dispatches to every 2 minutes
   const now = Date.now();
   if (now - lastTradeBroadcastTime < TWO_MINUTES_MS) {
     return;
@@ -167,7 +161,6 @@ async function broadcastTradeCall(trade) {
   if (resp.success && resp.result?.message_id) {
     lastTradeBroadcastTime = now;
 
-    // Track this trade with its exact Telegram Message ID so all replies go to it
     activeTradesMap.set(tradeKey, {
       key: tradeKey,
       messageId: resp.result.message_id,
@@ -177,11 +170,11 @@ async function broadcastTradeCall(trade) {
       strike: trade.strike,
       type: trade.type,
       entryPrice: entryText,
+      highestAchieved: entryText, // Strict watermark tracker: only alerts when price exceeds this!
       tp1: tp1Text,
       tp2: tp2Text,
       sl: slText,
       lotSize: trade.lotSize || 65,
-      broadcastedPoints: new Set(),
       tp1Sent: false,
       tp2Sent: false,
       slSent: false
@@ -190,8 +183,7 @@ async function broadcastTradeCall(trade) {
 }
 
 /**
- * Broadcast point progression ticks & target updates:
- * Sent as a SEPARATE REPLY directly to the original trade message!
+ * Broadcast price ticks strictly on NEW HIGHS (never on declines or retracements)
  */
 async function broadcastPriceTick(trade, currentLtp) {
   if (!telegramConfig.enabled || !telegramConfig.botToken || !telegramConfig.chatId) return;
@@ -208,21 +200,21 @@ async function broadcastPriceTick(trade, currentLtp) {
   const channelTitle = telegramConfig.channelName || 'The Market Sniper Shooters';
   const replyToId = tracked.messageId;
 
-  // 1. Check Stop Loss Hit (Separate Reply)
+  // 1. Check Stop Loss Hit
   if (roundedLtp <= sl && !tracked.slSent) {
     tracked.slSent = true;
     const lossPts = entry - roundedLtp;
     await sendTelegramMessage(
       `<b>${channelTitle}:</b>\n` +
       `🛑 <b>STOP LOSS HIT @ ${roundedLtp}</b> (-${lossPts} pts)\n` +
-      `Exit position. Next setup coming up in 2 mins...`,
+      `Exit position. Next setup scanning...`,
       replyToId
     );
     activeTradesMap.delete(tradeKey);
     return;
   }
 
-  // 2. Check Target 2 Hit (Separate Reply)
+  // 2. Check Target 2 Runner Hit
   if (roundedLtp >= tp2 && !tracked.tp2Sent) {
     tracked.tp2Sent = true;
     const profitPts = roundedLtp - entry;
@@ -240,7 +232,7 @@ async function broadcastPriceTick(trade, currentLtp) {
     return;
   }
 
-  // 3. Check Target 1 Hit (Separate Reply)
+  // 3. Check Target 1 Milestone Hit
   if (roundedLtp >= tp1 && !tracked.tp1Sent) {
     tracked.tp1Sent = true;
     const profitPts = tp1 - entry;
@@ -252,16 +244,16 @@ async function broadcastPriceTick(trade, currentLtp) {
     );
   }
 
-  // 4. Point-by-point tick updates (Separate Reply: 34 ✅✅, 35 ✅✅...)
-  if (roundedLtp > entry && roundedLtp <= tp2) {
-    if (!tracked.broadcastedPoints.has(roundedLtp)) {
-      tracked.broadcastedPoints.add(roundedLtp);
+  // 4. STRICT HIGH-WATERMARK PROGRESSION (Only send if price makes a NEW HIGH above entry!)
+  // If price hit 86, and then falls to 85, 84, 83... DO NOT SEND ANYTHING!
+  // Only send when price breaks higher than 86 (e.g. 87 ✅✅, 88 ✅✅...)
+  if (roundedLtp > tracked.highestAchieved && roundedLtp <= tp2) {
+    tracked.highestAchieved = roundedLtp;
 
-      const msg = `<b>${channelTitle}:</b>\n` +
-        `<b>${roundedLtp} ✅✅</b>`;
+    const msg = `<b>${channelTitle}:</b>\n` +
+      `<b>${roundedLtp} ✅✅</b>`;
 
-      await sendTelegramMessage(msg, replyToId);
-    }
+    await sendTelegramMessage(msg, replyToId);
   }
 }
 
