@@ -1,14 +1,11 @@
 /**
  * Telegram Auto-Alerts Broadcasting Service
- * High-Watermark Progressions + Dedicated Reply Threads
+ * Strict Official Exchange LTP Verification Engine
  * 
  * Rules:
- * 1. Broadcasts trade call (e.g. BUY NIFTY 50 23250 CE ABOVE 75 TARGET 102-132 SL 59).
- * 2. ONLY broadcasts HIGHER HIGH PROGRESSIONS strictly moving forward:
- *    Entry: 75 -> 76 ✅✅ -> 78 ✅✅ -> 80 ✅✅ -> 85 ✅✅ -> 87 ✅✅ (Strictly increasing: never sends declining/retrace prices like 86, 85, 84).
- * 3. Every update is sent as a direct reply to the trade call so it stays grouped.
- * 4. Target 1 & Target 2 completion alerts with profit.
- * 5. Dispatches fresh trades after 2 minutes.
+ * 1. ONLY real trades triggered strictly by actual NSE exchange prices.
+ * 2. Point updates (✅✅) are ONLY broadcast if the real-time LTP from NSE officially crosses new higher milestones.
+ * 3. 2-minute cadence between calls, and each trade has its own dedicated reply thread.
  */
 
 const https = require('https');
@@ -183,7 +180,7 @@ async function broadcastTradeCall(trade) {
 }
 
 /**
- * Broadcast price ticks strictly on NEW HIGHS (never on declines or retracements)
+ * Broadcast price ticks strictly on verified NEW HIGHS (never on declines or retracements)
  */
 async function broadcastPriceTick(trade, currentLtp) {
   if (!telegramConfig.enabled || !telegramConfig.botToken || !telegramConfig.chatId) return;
@@ -244,9 +241,7 @@ async function broadcastPriceTick(trade, currentLtp) {
     );
   }
 
-  // 4. STRICT HIGH-WATERMARK PROGRESSION (Only send if price makes a NEW HIGH above entry!)
-  // If price hit 86, and then falls to 85, 84, 83... DO NOT SEND ANYTHING!
-  // Only send when price breaks higher than 86 (e.g. 87 ✅✅, 88 ✅✅...)
+  // 4. Strict watermark progression: Only send if price makes an actual NEW HIGH above entry!
   if (roundedLtp > tracked.highestAchieved && roundedLtp <= tp2) {
     tracked.highestAchieved = roundedLtp;
 
