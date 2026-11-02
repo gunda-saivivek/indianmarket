@@ -15,6 +15,7 @@ const path = require('path');
 const ROOT_DIR = path.resolve(__dirname, '..', '..', '..');
 const CONFIG_FILE = path.join(__dirname, '..', 'data', 'telegram_config.json');
 const ROOT_CONFIG_FILE = path.join(ROOT_DIR, 'telegram_config.json');
+const SUBSCRIBERS_FILE = path.join(__dirname, '..', 'data', 'telegram_subscribers.json');
 
 let telegramConfig = {
   botToken: process.env.TELEGRAM_BOT_TOKEN || '',
@@ -22,6 +23,37 @@ let telegramConfig = {
   channelName: process.env.TELEGRAM_CHANNEL_NAME || 'The Market Sniper Shooters',
   enabled: process.env.TELEGRAM_ENABLED === 'true' || false
 };
+
+// Multi-Subscriber List: Anyone who talks to the bot or starts it gets added!
+let subscribers = new Set();
+
+function loadSubscribers() {
+  try {
+    if (fs.existsSync(SUBSCRIBERS_FILE)) {
+      const arr = JSON.parse(fs.readFileSync(SUBSCRIBERS_FILE, 'utf8'));
+      if (Array.isArray(arr)) arr.forEach(id => subscribers.add(id));
+    }
+  } catch (e) {}
+  if (telegramConfig.chatId) {
+    subscribers.add(telegramConfig.chatId);
+  }
+}
+
+function saveSubscribers() {
+  try {
+    fs.mkdirSync(path.dirname(SUBSCRIBERS_FILE), { recursive: true });
+    fs.writeFileSync(SUBSCRIBERS_FILE, JSON.stringify(Array.from(subscribers), null, 2), 'utf8');
+  } catch (e) {}
+}
+
+function addSubscriber(id) {
+  if (!id) return;
+  const strId = String(id);
+  if (!subscribers.has(strId)) {
+    subscribers.add(strId);
+    saveSubscribers();
+  }
+}
 
 function loadTelegramConfig() {
   try {
@@ -53,18 +85,19 @@ function saveTelegramConfig(newConfig) {
 }
 
 loadTelegramConfig();
+loadSubscribers();
 
 /**
- * Send message to Telegram chat/channel (with optional reply_to_message_id)
+ * Send message to a specific Telegram chat/channel (with optional reply_to_message_id)
  */
-function sendTelegramMessage(text, replyToMessageId = null) {
+function sendTelegramMessageToChat(chatId, text, replyToMessageId = null) {
   return new Promise((resolve) => {
-    if (!telegramConfig.botToken || !telegramConfig.chatId) {
+    if (!telegramConfig.botToken || !chatId) {
       return resolve({ success: false, error: 'Telegram Bot Token or Chat ID not configured.' });
     }
 
     const payloadObj = {
-      chat_id: telegramConfig.chatId,
+      chat_id: chatId,
       text: text,
       parse_mode: 'HTML'
     };
@@ -113,17 +146,75 @@ function sendTelegramMessage(text, replyToMessageId = null) {
   });
 }
 
-// Active Trades Registry
+/**
+ * Broadcast message to ALL registered subscribers / channels
+ */
+async function sendTelegramMessage(text) {
+  loadSubscribers();
+  const allTargets = Array.from(subscribers);
+  if (allTargets.length === 0 && telegramConfig.chatId) {
+    allTargets.push(telegramConfig.chatId);
+  }
+
+  let firstResult = { success: false };
+  for (const cid of allTargets) {
+    try {
+      const res = await sendTelegramMessageToChat(cid, text);
+      if (!firstResult.success && res.success) {
+        firstResult = res;
+      }
+    } catch (e) {}
+  }
+  return firstResult;
+}
+
+// Active Trades Registry: tradeKey -> { trackedTrade, perChatData: Map(chatId -> { messageId, highestAchieved, tp1Sent, tp2Sent, slSent }) }
 const activeTradesMap = new Map();
 let lastTradeBroadcastTime = 0;
 const TWO_MINUTES_MS = 2 * 60 * 1000;
 
+// Auto-Sync Polling to auto-register any user who types /start or opens the bot!
+let lastPolledUpdateId = 0;
+function pollTelegramUpdates() {
+  if (!telegramConfig.botToken) return;
+
+  const url = `https://api.telegram.org/bot${telegramConfig.botToken}/getUpdates?offset=${lastPolledUpdateId + 1}&limit=50`;
+  https.get(url, (res) => {
+    let d = '';
+    res.on('data', chunk => d += chunk);
+    res.on('end', () => {
+      try {
+        const j = JSON.parse(d);
+        if (j.ok && Array.isArray(j.result)) {
+          for (const u of j.result) {
+            lastPolledUpdateId = Math.max(lastPolledUpdateId, u.update_id);
+            const msg = u.message || u.channel_post || u.my_chat_member;
+            const cid = msg?.chat?.id;
+            if (cid) {
+              const strCid = String(cid);
+              if (!subscribers.has(strCid)) {
+                addSubscriber(strCid);
+                // Welcome newly connected subscriber
+                sendTelegramMessageToChat(strCid, `🎯 <b>The Market Sniper Shooters</b>\n\n✅ You are successfully subscribed! Live institutional trade signals and profit progression ticks will now stream directly to this chat.`).catch(() => {});
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    });
+  }).on('error', () => {});
+}
+
+// Poll for new subscribers every 10 seconds
+setInterval(pollTelegramUpdates, 10000);
+pollTelegramUpdates();
+
 /**
- * Broadcast initial trade call:
+ * Broadcast initial trade call to ALL subscribers:
  * Rate-limited to at least 2 minutes between new calls
  */
 async function broadcastTradeCall(trade) {
-  if (!telegramConfig.enabled || !telegramConfig.botToken || !telegramConfig.chatId) return;
+  if (!telegramConfig.enabled || !telegramConfig.botToken) return;
 
   const tradeKey = `${trade.index}_${trade.id}`;
   if (activeTradesMap.has(tradeKey)) return;
@@ -153,14 +244,35 @@ async function broadcastTradeCall(trade) {
     `<b>TARGET ${tp1Text}-${tp2Text}+++</b>\n\n` +
     `<b>SL ${slText}</b>`;
 
-  const resp = await sendTelegramMessage(message);
+  loadSubscribers();
+  const allTargets = Array.from(subscribers);
+  if (allTargets.length === 0 && telegramConfig.chatId) {
+    allTargets.push(telegramConfig.chatId);
+  }
 
-  if (resp.success && resp.result?.message_id) {
+  const perChatMap = new Map();
+  let anyDelivered = false;
+
+  for (const cid of allTargets) {
+    try {
+      const resp = await sendTelegramMessageToChat(cid, message);
+      if (resp.success && resp.result?.message_id) {
+        anyDelivered = true;
+        perChatMap.set(String(cid), {
+          messageId: resp.result.message_id,
+          highestAchieved: entryText,
+          tp1Sent: false,
+          tp2Sent: false,
+          slSent: false
+        });
+      }
+    } catch (e) {}
+  }
+
+  if (anyDelivered) {
     lastTradeBroadcastTime = now;
-
     activeTradesMap.set(tradeKey, {
       key: tradeKey,
-      messageId: resp.result.message_id,
       index: trade.index,
       id: trade.id,
       name: trade.name,
@@ -168,27 +280,24 @@ async function broadcastTradeCall(trade) {
       type: trade.type,
       entryPrice: entryText,
       isTriggered: false, // Trade must cross ABOVE entry price before it is considered active!
-      highestAchieved: entryText, // Strict watermark tracker: only alerts when price exceeds this!
       tp1: tp1Text,
       tp2: tp2Text,
       sl: slText,
       lotSize: trade.lotSize || 65,
-      tp1Sent: false,
-      tp2Sent: false,
-      slSent: false
+      perChatMap
     });
   }
 }
 
 /**
- * Broadcast price ticks strictly on verified NEW HIGHS (never on declines or retracements)
+ * Broadcast price ticks strictly on verified NEW HIGHS to all subscribers
  */
 async function broadcastPriceTick(trade, currentLtp) {
-  if (!telegramConfig.enabled || !telegramConfig.botToken || !telegramConfig.chatId) return;
+  if (!telegramConfig.enabled || !telegramConfig.botToken) return;
 
   const tradeKey = `${trade.index}_${trade.id}`;
   const tracked = activeTradesMap.get(tradeKey);
-  if (!tracked || !tracked.messageId) return;
+  if (!tracked || !tracked.perChatMap || tracked.perChatMap.size === 0) return;
 
   const roundedLtp = Math.floor(currentLtp);
   const entry = tracked.entryPrice;
@@ -196,13 +305,14 @@ async function broadcastPriceTick(trade, currentLtp) {
   const tp2 = tracked.tp2;
   const sl = tracked.sl;
   const channelTitle = telegramConfig.channelName || 'The Market Sniper Shooters';
-  const replyToId = tracked.messageId;
 
   // Activate trigger once market price reaches or crosses ABOVE entry price
   if (!tracked.isTriggered) {
     if (roundedLtp >= entry) {
       tracked.isTriggered = true;
-      tracked.highestAchieved = roundedLtp;
+      for (const [cid, chatData] of tracked.perChatMap.entries()) {
+        chatData.highestAchieved = roundedLtp;
+      }
     } else {
       // Trade has NOT triggered yet (price is still below entry price).
       // Do NOT check SL or send any alerts until the entry price has actually been crossed!
@@ -210,58 +320,70 @@ async function broadcastPriceTick(trade, currentLtp) {
     }
   }
 
-  // 1. Check Stop Loss Hit (only applies AFTER trade has been officially triggered)
-  if (roundedLtp <= sl && !tracked.slSent) {
-    tracked.slSent = true;
-    const lossPts = entry - roundedLtp;
-    await sendTelegramMessage(
-      `<b>${channelTitle}:</b>\n` +
-      `🛑 <b>STOP LOSS HIT @ ${roundedLtp}</b> (-${lossPts} pts)\n` +
-      `Exit position. Next setup scanning...`,
-      replyToId
-    );
+  // Iterate over each subscriber/chat so threaded replies match their message ID
+  for (const [cid, chatData] of tracked.perChatMap.entries()) {
+    const replyToId = chatData.messageId;
+
+    // 1. Check Stop Loss Hit
+    if (roundedLtp <= sl && !chatData.slSent) {
+      chatData.slSent = true;
+      const lossPts = entry - roundedLtp;
+      await sendTelegramMessageToChat(
+        cid,
+        `<b>${channelTitle}:</b>\n` +
+        `🛑 <b>STOP LOSS HIT @ ${roundedLtp}</b> (-${lossPts} pts)\n` +
+        `Exit position. Next setup scanning...`,
+        replyToId
+      );
+      continue;
+    }
+
+    // 2. Check Target 2 Runner Hit
+    if (roundedLtp >= tp2 && !chatData.tp2Sent) {
+      chatData.tp2Sent = true;
+      const profitPts = roundedLtp - entry;
+      const lotSize = tracked.lotSize || 65;
+      const totalProfit = profitPts * lotSize;
+
+      await sendTelegramMessageToChat(
+        cid,
+        `<b>${channelTitle}:</b>\n` +
+        `<b>${roundedLtp} 🚀🚀 TARGET 2 RUNNER HIT!</b>\n\n` +
+        `🏆 <b>PROFIT BOOKED: +${profitPts} PTS (+₹${totalProfit.toLocaleString('en-IN')}/lot)</b>\n` +
+        `✅ Trade successfully concluded with maximum target!`,
+        replyToId
+      );
+      continue;
+    }
+
+    // 3. Check Target 1 Milestone Hit
+    if (roundedLtp >= tp1 && !chatData.tp1Sent) {
+      chatData.tp1Sent = true;
+      const profitPts = tp1 - entry;
+      await sendTelegramMessageToChat(
+        cid,
+        `<b>${channelTitle}:</b>\n` +
+        `<b>${roundedLtp} 🎯🎯 TARGET 1 HIT! (+${profitPts} pts)</b>\n` +
+        `Book partial profit now & trail Stop Loss to cost!`,
+        replyToId
+      );
+    }
+
+    // 4. Strict watermark progression: Only send if price makes an actual NEW HIGH above entry!
+    if (roundedLtp > chatData.highestAchieved && roundedLtp <= tp2) {
+      chatData.highestAchieved = roundedLtp;
+
+      const msg = `<b>${channelTitle}:</b>\n` +
+        `<b>${roundedLtp} ✅✅</b>`;
+
+      await sendTelegramMessageToChat(cid, msg, replyToId);
+    }
+  }
+
+  // Cleanup if all chats reached SL or TP2
+  const allFinished = Array.from(tracked.perChatMap.values()).every(c => c.slSent || c.tp2Sent);
+  if (allFinished) {
     activeTradesMap.delete(tradeKey);
-    return;
-  }
-
-  // 2. Check Target 2 Runner Hit
-  if (roundedLtp >= tp2 && !tracked.tp2Sent) {
-    tracked.tp2Sent = true;
-    const profitPts = roundedLtp - entry;
-    const lotSize = tracked.lotSize || 65;
-    const totalProfit = profitPts * lotSize;
-
-    await sendTelegramMessage(
-      `<b>${channelTitle}:</b>\n` +
-      `<b>${roundedLtp} 🚀🚀 TARGET 2 RUNNER HIT!</b>\n\n` +
-      `🏆 <b>PROFIT BOOKED: +${profitPts} PTS (+₹${totalProfit.toLocaleString('en-IN')}/lot)</b>\n` +
-      `✅ Trade successfully concluded with maximum target!`,
-      replyToId
-    );
-    activeTradesMap.delete(tradeKey);
-    return;
-  }
-
-  // 3. Check Target 1 Milestone Hit
-  if (roundedLtp >= tp1 && !tracked.tp1Sent) {
-    tracked.tp1Sent = true;
-    const profitPts = tp1 - entry;
-    await sendTelegramMessage(
-      `<b>${channelTitle}:</b>\n` +
-      `<b>${roundedLtp} 🎯🎯 TARGET 1 HIT! (+${profitPts} pts)</b>\n` +
-      `Book partial profit now & trail Stop Loss to cost!`,
-      replyToId
-    );
-  }
-
-  // 4. Strict watermark progression: Only send if price makes an actual NEW HIGH above entry!
-  if (roundedLtp > tracked.highestAchieved && roundedLtp <= tp2) {
-    tracked.highestAchieved = roundedLtp;
-
-    const msg = `<b>${channelTitle}:</b>\n` +
-      `<b>${roundedLtp} ✅✅</b>`;
-
-    await sendTelegramMessage(msg, replyToId);
   }
 }
 
