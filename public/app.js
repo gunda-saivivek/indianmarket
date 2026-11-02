@@ -893,6 +893,7 @@ function switchTab(tab) {
     { id: 'sideTabBull', activeClass: 'bg-bullGreen/15 text-bullGreen border border-bullGreen/40 shadow-sm' },
     { id: 'sideTabBear', activeClass: 'bg-bearRed/15 text-bearRed border border-bearRed/40 shadow-sm' },
     { id: 'sideTabAcademy', activeClass: 'bg-accentGold/20 text-accentGold border-2 border-accentGold shadow-md' },
+    { id: 'sideTabInvestments', activeClass: 'bg-emerald-600/20 text-emerald-400 border-2 border-emerald-500 shadow-md' },
     { id: 'sideTabLedger', activeClass: 'bg-accentGold/20 text-accentGold border-2 border-accentGold shadow-md' },
     { id: 'sideTabEqual', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' },
     { id: 'sideTabHero', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' },
@@ -917,6 +918,7 @@ function switchTab(tab) {
     bull: document.getElementById('viewBullDesk'),
     bear: document.getElementById('viewBearDesk'),
     academy: document.getElementById('viewAcademy'),
+    investments: document.getElementById('viewInvestments'),
     ledger: document.getElementById('viewLedger'),
     equal: document.getElementById('viewEqual'),
     hero: document.getElementById('viewHero'),
@@ -929,7 +931,9 @@ function switchTab(tab) {
     if (el) el.classList.toggle('hidden', tab !== vKey);
   });
 
-  if (tab === 'ledger') {
+  if (tab === 'investments') {
+    loadInvestments();
+  } else if (tab === 'ledger') {
     loadLedgerData();
   } else if (tab === 'news') {
     loadLiveNews(true);
@@ -2890,4 +2894,237 @@ function renderLedgerUI(data) {
       </tr>
     `;
   }).join('');
+}
+
+// ==========================================
+// LONG-TERM WEALTH & EQUITY INVESTMENT HUB
+// ==========================================
+
+let investmentState = {
+  activeBucket: 'ALL',
+  activeSector: 'ALL',
+  searchQuery: '',
+  data: null,
+  isLoading: false,
+  searchDebounceTimer: null
+};
+
+async function loadInvestments(forceRefresh = false) {
+  const container = document.getElementById('investmentsContainer');
+  if (!container) return;
+
+  if (investmentState.isLoading) return;
+  investmentState.isLoading = true;
+
+  const btn = document.getElementById('btnRefreshInvestments');
+  if (btn) {
+    btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Updating...</span>`;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+  }
+
+  try {
+    const url = `/api/investments?sector=${encodeURIComponent(investmentState.activeSector)}&bucket=${encodeURIComponent(investmentState.activeBucket)}&q=${encodeURIComponent(investmentState.searchQuery)}`;
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'bypass-tunnel-reminder': 'true'
+      }
+    });
+
+    const data = await parseJsonResponse(res);
+    if (!res.ok) throw new Error(data.error || 'Failed to load investments');
+
+    investmentState.data = data;
+    renderInvestmentsUI(data);
+
+  } catch (err) {
+    console.error('Investments error:', err);
+    if (container) {
+      container.innerHTML = `
+        <div class="col-span-full p-8 text-center bg-bearRed/10 border border-bearRed/30 rounded-2xl text-bearRed">
+          <p class="font-bold">Failed to load long-term equity workstation</p>
+          <p class="text-xs text-gray-400 mt-1">${err.message}</p>
+          <button onclick="loadInvestments(true)" class="mt-4 px-4 py-1.5 bg-tradeDark border border-tradeBorder text-white text-xs rounded-lg hover:bg-gray-700">Try Again</button>
+        </div>
+      `;
+    }
+  } finally {
+    investmentState.isLoading = false;
+    if (btn) {
+      btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>Refresh Quotes</span>`;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+    }
+  }
+}
+
+function setInvestmentBucket(bucket) {
+  investmentState.activeBucket = bucket;
+
+  document.querySelectorAll('.invest-bucket-btn').forEach(btn => {
+    if (btn.getAttribute('data-bucket') === bucket) {
+      btn.className = 'invest-bucket-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-emerald-600 text-white shadow-md';
+    } else {
+      btn.className = 'invest-bucket-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-tradeDark bg-tradeCard border border-tradeBorder';
+    }
+  });
+
+  loadInvestments();
+}
+
+function filterInvestments() {
+  const select = document.getElementById('investSectorSelect');
+  if (select) {
+    investmentState.activeSector = select.value;
+  }
+  loadInvestments();
+}
+
+function debounceInvestmentSearch() {
+  clearTimeout(investmentState.searchDebounceTimer);
+  investmentState.searchDebounceTimer = setTimeout(() => {
+    const input = document.getElementById('investSearchInput');
+    if (input) {
+      investmentState.searchQuery = input.value.trim();
+    }
+    loadInvestments();
+  }, 300);
+}
+
+function renderInvestmentsUI(data) {
+  const container = document.getElementById('investmentsContainer');
+  if (!container) return;
+
+  const trackedEl = document.getElementById('investTrackedCount');
+  if (trackedEl) trackedEl.textContent = data.totalTracked || 0;
+
+  const strongBuyEl = document.getElementById('investStrongBuyCount');
+  if (strongBuyEl) strongBuyEl.textContent = data.strongBuys || 0;
+
+  const avgSafetyEl = document.getElementById('investAvgSafety');
+  if (avgSafetyEl) avgSafetyEl.textContent = `${data.avgMarginOfSafety || 0}%`;
+
+  const companies = data.companies || [];
+
+  if (companies.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-16 text-center text-gray-500 font-mono text-sm bg-tradeDark/40 rounded-2xl border border-tradeBorder">
+        No companies found matching current filters.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = companies.map(c => {
+    const isUndervalued = c.marginOfSafetyPct > 0;
+    const safetyBadge = isUndervalued
+      ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-bullGreen/20 text-bullGreen border border-bullGreen/40 font-mono">+${c.marginOfSafetyPct}% Margin of Safety</span>`
+      : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-bearRed/20 text-bearRed border border-bearRed/40 font-mono">${c.marginOfSafetyPct}% Premium</span>`;
+
+    const changeClass = (c.changePct || 0) >= 0 ? 'text-bullGreen' : 'text-bearRed';
+    const changeSign = (c.changePct || 0) >= 0 ? '+' : '';
+
+    return `
+      <div class="bg-tradeCard border border-tradeBorder rounded-2xl p-5 hover:border-emerald-500/50 transition-all shadow-lg flex flex-col justify-between group">
+        <div>
+          <!-- Header: Ticker & Cap & Verdict -->
+          <div class="flex items-start justify-between gap-2 pb-3 border-b border-tradeBorder/60">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base font-extrabold text-white font-mono group-hover:text-emerald-400 transition">${c.ticker}</h3>
+                <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-tradeDark text-gray-400 border border-tradeBorder font-mono">${c.cap}</span>
+              </div>
+              <p class="text-xs text-gray-300 font-medium truncate max-w-[210px]">${c.name}</p>
+              <div class="flex items-center gap-1.5 mt-1">
+                <span class="text-[10px] text-gray-400 font-mono">${c.sector}</span>
+                <span class="text-gray-600">&bull;</span>
+                <span class="text-[10px] text-accentGold font-mono">${c.bucket}</span>
+              </div>
+            </div>
+
+            <div class="text-right flex flex-col items-end gap-1">
+              <span class="px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase ${c.verdictBadge}">
+                ${c.verdict}
+              </span>
+              <span class="text-[9px] text-gray-400 font-mono">MOAT: <strong class="text-white">${c.moat}</strong></span>
+            </div>
+          </div>
+
+          <!-- Price & Valuation Strip -->
+          <div class="grid grid-cols-3 gap-2 py-3 border-b border-tradeBorder/60 text-center font-mono">
+            <div class="bg-tradeDark/60 p-2 rounded-lg border border-tradeBorder/40">
+              <span class="text-[9px] text-gray-500 uppercase block">Market Price</span>
+              <span class="text-sm font-bold text-white">₹${c.currentPrice.toLocaleString('en-IN')}</span>
+              <span class="text-[9px] ${changeClass} block">${changeSign}${c.changePct}%</span>
+            </div>
+
+            <div class="bg-tradeDark/60 p-2 rounded-lg border border-tradeBorder/40">
+              <span class="text-[9px] text-gray-500 uppercase block">Fair Value</span>
+              <span class="text-sm font-bold text-accentGold">₹${c.fairValue.toLocaleString('en-IN')}</span>
+              <span class="text-[9px] text-gray-400 block">Intrinsic DCF</span>
+            </div>
+
+            <div class="bg-tradeDark/60 p-2 rounded-lg border border-tradeBorder/40">
+              <span class="text-[9px] text-gray-500 uppercase block">3-Yr Target</span>
+              <span class="text-sm font-bold text-cyan-400">₹${c.target3Yr.toLocaleString('en-IN')}</span>
+              <span class="text-[9px] text-cyan-400/80 block">+${c.potentialUpside3Yr}%</span>
+            </div>
+          </div>
+
+          <!-- Margin of Safety Bar -->
+          <div class="py-2.5 flex items-center justify-between">
+            <span class="text-xs text-gray-400">Valuation Buffer:</span>
+            ${safetyBadge}
+          </div>
+
+          <!-- Fundamental Quality Ratios Grid -->
+          <div class="grid grid-cols-4 gap-1.5 py-2.5 border-t border-b border-tradeBorder/60 text-center font-mono text-[11px]">
+            <div class="bg-tradeDark/40 p-1.5 rounded">
+              <span class="text-[9px] text-gray-500 block">P/E vs Med</span>
+              <span class="font-bold ${c.pe <= c.medianPe5Yr ? 'text-bullGreen' : 'text-gray-300'}">${c.pe}</span>
+              <span class="text-[8px] text-gray-500 block">${c.medianPe5Yr}x</span>
+            </div>
+
+            <div class="bg-tradeDark/40 p-1.5 rounded">
+              <span class="text-[9px] text-gray-500 block">ROE</span>
+              <span class="font-bold text-bullGreen">${c.roe}%</span>
+              <span class="text-[8px] text-gray-500 block">High RoE</span>
+            </div>
+
+            <div class="bg-tradeDark/40 p-1.5 rounded">
+              <span class="text-[9px] text-gray-500 block">ROCE</span>
+              <span class="font-bold text-bullGreen">${c.roce}%</span>
+              <span class="text-[8px] text-gray-500 block">Capital Eff.</span>
+            </div>
+
+            <div class="bg-tradeDark/40 p-1.5 rounded">
+              <span class="text-[9px] text-gray-500 block">Debt/Eq</span>
+              <span class="font-bold ${c.debtEquity <= 0.5 ? 'text-bullGreen' : 'text-accentGold'}">${c.debtEquity}</span>
+              <span class="text-[8px] text-gray-500 block">Div: ${c.divYield}%</span>
+            </div>
+          </div>
+
+          <!-- Institutional Thesis & Catalyst -->
+          <div class="pt-3 space-y-1.5 text-xs">
+            <div class="text-gray-300 leading-snug">
+              <strong class="text-white text-[11px]">Investment Thesis:</strong> ${c.thesis}
+            </div>
+            <div class="p-2 rounded-lg bg-emerald-950/20 border border-emerald-500/20 text-emerald-300 text-[11px]">
+              <strong>Growth Catalyst:</strong> ${c.catalyst}
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Action -->
+        <div class="pt-4 mt-3 border-t border-tradeBorder/40 flex items-center justify-between text-xs">
+          <span class="text-gray-500 text-[10px] font-mono">NSE: ${c.ticker}</span>
+          <a href="https://in.tradingview.com/chart/?symbol=NSE%3A${c.ticker}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-tradeDark hover:bg-emerald-600 hover:text-white text-gray-300 font-bold rounded-lg border border-tradeBorder transition flex items-center gap-1.5 text-[11px]">
+            <span>TradingView</span>
+            <i data-lucide="external-link" class="w-3 h-3"></i>
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
 }

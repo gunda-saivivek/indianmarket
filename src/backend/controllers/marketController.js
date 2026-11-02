@@ -1,6 +1,7 @@
 const { getAuthUser, findUserByEmail } = require('../services/authService');
 const { logFootprint } = require('../services/auditService');
 const { getLedgerData } = require('../services/tradeLedgerService');
+const { getInvestmentCompanies } = require('../services/investmentService');
 
 // Throttle access logs per user so we don't spam on 5-second polling (log once every 5 minutes per user)
 const lastAccessLog = new Map();
@@ -116,8 +117,35 @@ async function handleTradeLedger(req, res, parsedUrl) {
   }
 }
 
+async function handleGetInvestments(req, res, parsedUrl) {
+  const user = getAuthUser(req, parsedUrl);
+  if (!user) {
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Unauthorized: Please log in to view long-term investment research.' }));
+    return;
+  }
+
+  try {
+    const sector = parsedUrl.query?.sector || 'ALL';
+    const bucket = parsedUrl.query?.bucket || 'ALL';
+    const search = parsedUrl.query?.q || '';
+
+    const data = await getInvestmentCompanies(sector, bucket, search);
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=60'
+    });
+    res.end(JSON.stringify(data));
+  } catch (err) {
+    console.error('Investments API error:', err);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Failed to fetch investment catalog: ' + err.message }));
+  }
+}
+
 module.exports = {
   handleLiveData,
   handleLiveNews,
-  handleTradeLedger
+  handleTradeLedger,
+  handleGetInvestments
 };

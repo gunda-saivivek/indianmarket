@@ -28,7 +28,8 @@ const {
 const {
   handleLiveData,
   handleLiveNews,
-  handleTradeLedger
+  handleTradeLedger,
+  handleGetInvestments
 } = require('./controllers/marketController');
 const { processAndStabilizeTrades } = require('./services/tradeLedgerService');
 
@@ -1050,6 +1051,10 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname === '/api/trade-ledger') {
     return handleTradeLedger(req, res, parsedUrl);
+  }
+
+  if (pathname === '/api/investments') {
+    return handleGetInvestments(req, res, parsedUrl);
   }
 
   // API endpoint: /api/settings
