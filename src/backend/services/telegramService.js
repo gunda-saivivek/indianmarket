@@ -232,17 +232,27 @@ async function broadcastTradeCall(trade) {
     : 'NIFTY 50';
 
   const strikeText = `${trade.strike} ${trade.type}`;
-  const entryText = Math.round(trade.fixedEntryPrice || trade.entryPrice);
+  const entryBase = Math.round(trade.fixedEntryPrice || trade.entryPrice);
+  
+  // Calculate Realistic Entry Buffer:
+  // e.g., for premium 75 -> buffer is 4 pts (Entry Range: 75 - 79 | Max Cap: 81)
+  // for premium 25 -> buffer is 2 pts (Entry Range: 25 - 27 | Max Cap: 28)
+  const bufferPts = Math.max(2, Math.min(6, Math.round(entryBase * 0.05)));
+  const entryMax = entryBase + bufferPts;
+  const maxBuyCap = entryMax + Math.max(1, Math.round(bufferPts * 0.5));
+  
   const tp1Text = Math.round(trade.tp1);
   const tp2Text = Math.round(trade.tp2);
   const slText = Math.round(trade.sl);
 
   const message = `<b>${channelTitle}</b>\n\n` +
     `<b>BUY ${indexTitle}</b>\n\n` +
-    `<b>${strikeText}</b>\n\n` +
-    `<b>ABOVE ${entryText}</b>\n\n` +
-    `<b>TARGET ${tp1Text}-${tp2Text}+++</b>\n\n` +
-    `<b>SL ${slText}</b>`;
+    `🎯 <b>${strikeText}</b>\n\n` +
+    `📍 <b>ENTRY ZONE: ${entryBase} - ${entryMax}</b>\n` +
+    `⛔ <i>Max Cap: ${maxBuyCap} (Do NOT chase above this)</i>\n\n` +
+    `🎯 <b>TARGET 1: ${tp1Text}</b>\n` +
+    `🚀 <b>TARGET 2: ${tp2Text}+++</b>\n\n` +
+    `🛑 <b>STRICT SL: ${slText}</b>`;
 
   loadSubscribers();
   const allTargets = Array.from(subscribers);
@@ -260,7 +270,9 @@ async function broadcastTradeCall(trade) {
         anyDelivered = true;
         perChatMap.set(String(cid), {
           messageId: resp.result.message_id,
-          highestAchieved: entryText,
+          highestAchieved: entryBase,
+          entryFiredSent: false,
+          capExceededSent: false,
           tp1Sent: false,
           tp2Sent: false,
           slSent: false
@@ -278,8 +290,10 @@ async function broadcastTradeCall(trade) {
       name: trade.name,
       strike: trade.strike,
       type: trade.type,
-      entryPrice: entryText,
-      isTriggered: false, // Trade must cross ABOVE entry price before it is considered active!
+      entryPrice: entryBase,
+      entryMax: entryMax,
+      maxBuyCap: maxBuyCap,
+      isTriggered: false, // Trade must cross into entry zone before it is considered active!
       tp1: tp1Text,
       tp2: tp2Text,
       sl: slText,
@@ -306,16 +320,27 @@ async function broadcastPriceTick(trade, currentLtp) {
   const sl = tracked.sl;
   const channelTitle = telegramConfig.channelName || 'The Market Sniper Shooters';
 
-  // Activate trigger once market price reaches or crosses ABOVE entry price
+  // Activate trigger once market price reaches or enters entry zone
   if (!tracked.isTriggered) {
     if (roundedLtp >= entry) {
       tracked.isTriggered = true;
       for (const [cid, chatData] of tracked.perChatMap.entries()) {
         chatData.highestAchieved = roundedLtp;
+        if (!chatData.entryFiredSent) {
+          chatData.entryFiredSent = true;
+          // Send instant "TRIGGER ACTIVE - ENTER IN ZONE" alert
+          sendTelegramMessageToChat(
+            cid,
+            `<b>${channelTitle}:</b>\n` +
+            `⚡ <b>TRIGGER ACTIVATED @ ${roundedLtp}</b>\n` +
+            `Enter position inside <b>${tracked.entryPrice} - ${tracked.entryMax}</b> zone!`,
+            chatData.messageId
+          ).catch(() => {});
+        }
       }
     } else {
-      // Trade has NOT triggered yet (price is still below entry price).
-      // Do NOT check SL or send any alerts until the entry price has actually been crossed!
+      // Trade has NOT triggered yet (price is still below entry zone).
+      // Do NOT check SL or send any alerts until the entry zone has actually been breached!
       return;
     }
   }
@@ -323,6 +348,18 @@ async function broadcastPriceTick(trade, currentLtp) {
   // Iterate over each subscriber/chat so threaded replies match their message ID
   for (const [cid, chatData] of tracked.perChatMap.entries()) {
     const replyToId = chatData.messageId;
+
+    // Check if price blew past Max Buy Cap (warn users not to chase)
+    if (roundedLtp > tracked.maxBuyCap && !chatData.capExceededSent && !chatData.tp1Sent) {
+      chatData.capExceededSent = true;
+      sendTelegramMessageToChat(
+        cid,
+        `<b>${channelTitle}:</b>\n` +
+        `⚠️ <b>PRICE SPIKED TO ${roundedLtp} (ABOVE CAP ${tracked.maxBuyCap})</b>\n` +
+        `<i>DO NOT FOMO BUY! Only enter if price pulls back to ${tracked.entryPrice}-${tracked.entryMax}.</i>`,
+        replyToId
+      ).catch(() => {});
+    }
 
     // 1. Check Stop Loss Hit
     if (roundedLtp <= sl && !chatData.slSent) {
