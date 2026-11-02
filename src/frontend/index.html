@@ -158,6 +158,12 @@
           DESK INTELLIGENCE TOOLS
         </div>
 
+        <button id="sideTabLedger" onclick="switchTab('ledger')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-accentGold hover:text-white hover:bg-tradeDark">
+          <i data-lucide="book-open-check" class="w-4 h-4 text-accentGold"></i>
+          <span class="flex-1 font-bold">Trade Ledger & Win Rate</span>
+          <span class="text-[9px] bg-bullGreen/20 text-bullGreen border border-bullGreen/40 px-1.5 py-0.2 rounded-full font-mono font-bold" id="sideLedgerWinRate">WIN RATE</span>
+        </button>
+
         <button id="sideTabEqual" onclick="switchTab('equal')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2.5 text-gray-400 hover:text-white hover:bg-tradeDark">
           <i data-lucide="scale" class="w-4 h-4 text-accentGold"></i>
           <span class="flex-1">Equal CE & PE Pairs</span>
@@ -834,6 +840,221 @@
         <!-- Rendered dynamically -->
         <div class="col-span-full py-12 text-center text-gray-500">Loading live market headlines...</div>
       </div>
+    </section>
+
+    <!-- VIEW: TRADE LEDGER & WIN RATE WORKSTATION -->
+    <section id="viewLedger" class="space-y-6 hidden">
+      
+      <!-- Top Ledger Header Banner -->
+      <div class="bg-gradient-to-r from-tradeCard via-tradeDark to-tradeCard border-2 border-accentGold/50 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-60 h-60 bg-accentGold/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-accentGold to-bullGreen flex items-center justify-center font-bold text-2xl text-black shadow-lg shadow-accentGold/20">
+              📊
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-extrabold text-white tracking-tight">INSTITUTIONAL TRADE LEDGER & WIN RATE</h2>
+                <span class="text-xs bg-bullGreen/20 text-bullGreen font-mono px-2 py-0.5 rounded border border-bullGreen/30 font-bold uppercase">EXECUTION RECORD</span>
+              </div>
+              <p class="text-xs text-gray-300 mt-1 max-w-2xl leading-relaxed">
+                Full chronological ledger tracking fixed Entry Prices, Stop Losses (SL), Target 1 (TP1), and Target 2 (TP2). Review separate win-rate metrics across NIFTY 50, BANK NIFTY, and SENSEX.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button onclick="loadLedgerData()" class="px-4 py-2 rounded-xl bg-tradeDark border border-accentGold/50 hover:border-accentGold text-accentGold text-xs font-bold transition flex items-center gap-1.5 shadow">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Refresh Ledger</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Index Filter Buttons (All, Nifty, Bank Nifty, Sensex) -->
+        <div class="mt-6 pt-4 border-t border-tradeBorder/70 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap gap-2 text-xs font-mono" id="ledgerIndexTabs">
+            <button onclick="filterLedgerIndex('ALL')" id="ledgerTabALL" class="px-3.5 py-1.5 rounded-lg font-bold bg-accentGold text-black transition shadow">
+              🌐 Combined Portfolio
+            </button>
+            <button onclick="filterLedgerIndex('NIFTY')" id="ledgerTabNIFTY" class="px-3.5 py-1.5 rounded-lg font-bold bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-gray-300 transition">
+              🟢 NIFTY 50
+            </button>
+            <button onclick="filterLedgerIndex('BANKNIFTY')" id="ledgerTabBANKNIFTY" class="px-3.5 py-1.5 rounded-lg font-bold bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-gray-300 transition">
+              🔵 BANK NIFTY
+            </button>
+            <button onclick="filterLedgerIndex('SENSEX')" id="ledgerTabSENSEX" class="px-3.5 py-1.5 rounded-lg font-bold bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-gray-300 transition">
+              🟡 SENSEX
+            </button>
+          </div>
+
+          <div class="text-xs text-gray-400 font-mono flex items-center gap-2">
+            <span>Filter Mode:</span>
+            <span id="ledgerCurrentFilterLabel" class="text-accentGold font-bold px-2 py-0.5 rounded bg-accentGold/10 border border-accentGold/30">ALL INDICES</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Performance Metrics Strip -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <!-- Win Rate -->
+        <div class="bg-tradeCard border border-bullGreen/40 rounded-xl p-4 shadow">
+          <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Overall Win Rate</span>
+          <div class="text-2xl font-extrabold text-bullGreen font-mono mt-1" id="ledgerMetricWinRate">--</div>
+          <span class="text-[10px] text-gray-500 font-mono block mt-0.5" id="ledgerMetricWinCount">-- wins / -- trades</span>
+        </div>
+
+        <!-- Total Trades -->
+        <div class="bg-tradeCard border border-tradeBorder rounded-xl p-4 shadow">
+          <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Total Completed</span>
+          <div class="text-2xl font-extrabold text-white font-mono mt-1" id="ledgerMetricTotalTrades">--</div>
+          <span class="text-[10px] text-gray-500 font-mono block mt-0.5">Recorded setups</span>
+        </div>
+
+        <!-- Target 2 Hits -->
+        <div class="bg-tradeCard border border-cyan-400/40 rounded-xl p-4 shadow">
+          <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Target 2 (Runner) Hits</span>
+          <div class="text-2xl font-extrabold text-cyan-400 font-mono mt-1" id="ledgerMetricTP2">--</div>
+          <span class="text-[10px] text-cyan-400/70 font-mono block mt-0.5">🚀 Multi-bagger</span>
+        </div>
+
+        <!-- Target 1 Hits -->
+        <div class="bg-tradeCard border border-bullGreen/30 rounded-xl p-4 shadow">
+          <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Target 1 Hits</span>
+          <div class="text-2xl font-extrabold text-bullGreen font-mono mt-1" id="ledgerMetricTP1">--</div>
+          <span class="text-[10px] text-bullGreen/70 font-mono block mt-0.5">🎯 Conservative</span>
+        </div>
+
+        <!-- Stop Loss Hits -->
+        <div class="bg-tradeCard border border-bearRed/40 rounded-xl p-4 shadow">
+          <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Stop Loss Hits</span>
+          <div class="text-2xl font-extrabold text-bearRed font-mono mt-1" id="ledgerMetricSL">--</div>
+          <span class="text-[10px] text-bearRed/70 font-mono block mt-0.5">🛑 Protected loss</span>
+        </div>
+
+        <!-- Profit Factor -->
+        <div class="bg-tradeCard border border-accentGold/40 rounded-xl p-4 shadow">
+          <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Profit Factor</span>
+          <div class="text-2xl font-extrabold text-accentGold font-mono mt-1" id="ledgerMetricProfitFactor">--</div>
+          <span class="text-[10px] text-accentGold/70 font-mono block mt-0.5">Gross Win / Loss</span>
+        </div>
+      </div>
+
+      <!-- Separate Index Win Rate Breakdown Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- NIFTY CARD -->
+        <div class="bg-tradeCard border border-tradeBorder hover:border-bullGreen/50 rounded-2xl p-5 space-y-3 shadow-lg transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-lg bg-bullGreen/20 text-bullGreen flex items-center justify-center font-bold text-xs">N</span>
+              <strong class="text-sm font-bold text-white">NIFTY 50 Scorecard</strong>
+            </div>
+            <span class="text-xs font-mono font-extrabold text-bullGreen px-2 py-0.5 rounded bg-bullGreen/15 border border-bullGreen/30" id="cardNiftyWinRate">--%</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center font-mono text-xs pt-1 border-t border-tradeBorder/60">
+            <div>
+              <span class="text-[10px] text-gray-400 block">Trades</span>
+              <strong class="text-white" id="cardNiftyTotal">--</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-bullGreen block">Wins (TP1/2)</span>
+              <strong class="text-bullGreen" id="cardNiftyWins">--</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-bearRed block">Losses (SL)</span>
+              <strong class="text-bearRed" id="cardNiftyLosses">--</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- BANK NIFTY CARD -->
+        <div class="bg-tradeCard border border-tradeBorder hover:border-indigo-400/50 rounded-2xl p-5 space-y-3 shadow-lg transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">B</span>
+              <strong class="text-sm font-bold text-white">BANK NIFTY Scorecard</strong>
+            </div>
+            <span class="text-xs font-mono font-extrabold text-indigo-400 px-2 py-0.5 rounded bg-indigo-500/15 border border-indigo-400/30" id="cardBankNiftyWinRate">--%</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center font-mono text-xs pt-1 border-t border-tradeBorder/60">
+            <div>
+              <span class="text-[10px] text-gray-400 block">Trades</span>
+              <strong class="text-white" id="cardBankNiftyTotal">--</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-indigo-400 block">Wins (TP1/2)</span>
+              <strong class="text-indigo-400" id="cardBankNiftyWins">--</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-bearRed block">Losses (SL)</span>
+              <strong class="text-bearRed" id="cardBankNiftyLosses">--</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- SENSEX CARD -->
+        <div class="bg-tradeCard border border-tradeBorder hover:border-accentGold/50 rounded-2xl p-5 space-y-3 shadow-lg transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-lg bg-accentGold/20 text-accentGold flex items-center justify-center font-bold text-xs">S</span>
+              <strong class="text-sm font-bold text-white">SENSEX Scorecard</strong>
+            </div>
+            <span class="text-xs font-mono font-extrabold text-accentGold px-2 py-0.5 rounded bg-accentGold/15 border border-accentGold/30" id="cardSensexWinRate">--%</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center font-mono text-xs pt-1 border-t border-tradeBorder/60">
+            <div>
+              <span class="text-[10px] text-gray-400 block">Trades</span>
+              <strong class="text-white" id="cardSensexTotal">--</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-accentGold block">Wins (TP1/2)</span>
+              <strong class="text-accentGold" id="cardSensexWins">--</strong>
+            </div>
+            <div>
+              <span class="text-[10px] text-bearRed block">Losses (SL)</span>
+              <strong class="text-bearRed" id="cardSensexLosses">--</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN LEDGER TABLE: Entries, SL, TP1, TP2, Outcome -->
+      <div class="bg-tradeCard border border-tradeBorder rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-4 bg-tradeDark border-b border-tradeBorder flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="table" class="w-4 h-4 text-accentGold"></i>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono">Execution Log: Fixed Entry, SL, TP1 &amp; TP2</h3>
+          </div>
+          <span class="text-xs text-gray-400 font-mono">Showing verified institutional trade signals</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse font-mono">
+            <thead>
+              <tr class="bg-tradeDark/90 border-b border-tradeBorder text-gray-400 uppercase text-[10px] tracking-wider">
+                <th class="py-3 px-4">Index</th>
+                <th class="py-3 px-4">Option Strike</th>
+                <th class="py-3 px-4">Setup Name</th>
+                <th class="py-3 px-4 text-center">Entry Price (Fixed)</th>
+                <th class="py-3 px-4 text-center text-bearRed">Stop Loss (SL)</th>
+                <th class="py-3 px-4 text-center text-bullGreen">Target 1 (TP1)</th>
+                <th class="py-3 px-4 text-center text-cyan-400">Target 2 (TP2)</th>
+                <th class="py-3 px-4 text-center">Exit Price</th>
+                <th class="py-3 px-4 text-center">Outcome</th>
+                <th class="py-3 px-4 text-right">Points / PnL</th>
+                <th class="py-3 px-4 text-right">Time</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerTableBody" class="divide-y divide-tradeBorder/60">
+              <tr>
+                <td colspan="11" class="py-8 text-center text-gray-500">Loading trade ledger...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </section>
 
     <!-- VIEW 5: MASTER TRADING ACADEMY (LEARNING OBJECTS) -->

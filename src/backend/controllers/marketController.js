@@ -1,5 +1,6 @@
 const { getAuthUser, findUserByEmail } = require('../services/authService');
 const { logFootprint } = require('../services/auditService');
+const { getLedgerData } = require('../services/tradeLedgerService');
 
 // Throttle access logs per user so we don't spam on 5-second polling (log once every 5 minutes per user)
 const lastAccessLog = new Map();
@@ -92,7 +93,31 @@ async function handleLiveNews(req, res, parsedUrl, fetchLiveNews) {
   }
 }
 
+async function handleTradeLedger(req, res, parsedUrl) {
+  const user = getAuthUser(req, parsedUrl);
+  if (!user) {
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Unauthorized: Please log in to view the trade ledger.' }));
+    return;
+  }
+
+  try {
+    const filter = (parsedUrl.query && parsedUrl.query.index) ? parsedUrl.query.index : 'ALL';
+    const data = getLedgerData(filter);
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store'
+    });
+    res.end(JSON.stringify(data));
+  } catch (err) {
+    console.error('Ledger error:', err.message);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Failed to retrieve trade ledger' }));
+  }
+}
+
 module.exports = {
   handleLiveData,
-  handleLiveNews
+  handleLiveNews,
+  handleTradeLedger
 };

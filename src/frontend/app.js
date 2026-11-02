@@ -893,6 +893,7 @@ function switchTab(tab) {
     { id: 'sideTabBull', activeClass: 'bg-bullGreen/15 text-bullGreen border border-bullGreen/40 shadow-sm' },
     { id: 'sideTabBear', activeClass: 'bg-bearRed/15 text-bearRed border border-bearRed/40 shadow-sm' },
     { id: 'sideTabAcademy', activeClass: 'bg-accentGold/20 text-accentGold border-2 border-accentGold shadow-md' },
+    { id: 'sideTabLedger', activeClass: 'bg-accentGold/20 text-accentGold border-2 border-accentGold shadow-md' },
     { id: 'sideTabEqual', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' },
     { id: 'sideTabHero', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' },
     { id: 'sideTabNews', activeClass: 'bg-tradeDark text-white border border-tradeBorder shadow-sm' },
@@ -916,6 +917,7 @@ function switchTab(tab) {
     bull: document.getElementById('viewBullDesk'),
     bear: document.getElementById('viewBearDesk'),
     academy: document.getElementById('viewAcademy'),
+    ledger: document.getElementById('viewLedger'),
     equal: document.getElementById('viewEqual'),
     hero: document.getElementById('viewHero'),
     news: document.getElementById('viewNews'),
@@ -927,7 +929,9 @@ function switchTab(tab) {
     if (el) el.classList.toggle('hidden', tab !== vKey);
   });
 
-  if (tab === 'news') {
+  if (tab === 'ledger') {
+    loadLedgerData();
+  } else if (tab === 'news') {
     loadLiveNews(true);
   } else if (tab === 'academy') {
     initAcademy();
@@ -1103,16 +1107,18 @@ function renderMillionaireTradeCard(trade) {
           <strong class="text-base font-bold text-white">${trade.name}</strong>
         </div>
         <div>
-          <span class="text-[10px] text-gray-500 uppercase block">Current Premium (LTP)</span>
+          <span class="text-[10px] text-gray-500 uppercase block">Current Premium (Live LTP)</span>
           <strong class="text-xl font-bold ${ltpColor}">₹${trade.ltp.toFixed(1)}</strong>
         </div>
         <div>
-          <span class="text-[10px] text-gray-500 uppercase block">Recommended Entry Range</span>
-          <strong class="text-sm font-bold text-white">₹${trade.entryMin} - ₹${trade.entryMax}</strong>
+          <span class="text-[10px] text-accentGold uppercase block font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-accentGold"></span> Fixed Entry Price
+          </span>
+          <strong class="text-base font-bold text-accentGold">₹${trade.entryPrice || trade.entryMin}</strong>
           <span class="text-[10px] text-gray-400 block">Trigger: Spot ${isCE ? '>' : '<'} ${trade.triggerSpot}</span>
         </div>
         <div>
-          <span class="text-[10px] text-gray-500 uppercase block">Stop Loss (SL)</span>
+          <span class="text-[10px] text-gray-500 uppercase block font-bold text-bearRed">Stop Loss (Fixed SL)</span>
           <strong class="text-sm font-bold text-bearRed">₹${trade.sl} (-₹${trade.slPts} pts)</strong>
         </div>
       </div>
@@ -2513,4 +2519,173 @@ function updateAcademyProgress() {
     const offset = circumference - (percent / 100) * circumference;
     circle.style.strokeDashoffset = offset;
   }
+}
+
+// ==========================================
+// TRADE LEDGER & WIN RATE ENGINE
+// ==========================================
+let currentLedgerFilter = 'ALL';
+
+async function loadLedgerData(filter = currentLedgerFilter) {
+  currentLedgerFilter = filter;
+  if (!state.token) return;
+
+  const tbody = document.getElementById('ledgerTableBody');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="py-8 text-center text-gray-500 font-mono">Syncing institutional trade ledger & win-rates...</td></tr>`;
+
+  try {
+    const res = await fetch(`/api/trade-ledger?index=${filter}&_t=${Date.now()}`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'bypass-tunnel-reminder': 'true'
+      }
+    });
+
+    if (!res.ok) throw new Error('Failed to load ledger data');
+    const data = await res.json();
+    renderLedgerUI(data);
+  } catch (err) {
+    console.error('Ledger load error:', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="py-6 text-center text-bearRed font-mono">${err.message}</td></tr>`;
+  }
+}
+
+function filterLedgerIndex(indexName) {
+  currentLedgerFilter = indexName;
+  
+  // Highlight active filter button
+  ['ALL', 'NIFTY', 'BANKNIFTY', 'SENSEX'].forEach(name => {
+    const btn = document.getElementById(`ledgerTab${name}`);
+    if (btn) {
+      if (name === indexName) {
+        btn.className = 'px-3.5 py-1.5 rounded-lg font-bold bg-accentGold text-black transition shadow';
+      } else {
+        btn.className = 'px-3.5 py-1.5 rounded-lg font-bold bg-tradeDark hover:bg-tradeBorder border border-tradeBorder text-gray-300 transition';
+      }
+    }
+  });
+
+  const filterLabel = document.getElementById('ledgerCurrentFilterLabel');
+  if (filterLabel) {
+    filterLabel.textContent = indexName === 'ALL' ? 'COMBINED PORTFOLIO' : `${indexName} EXCLUSIVE`;
+  }
+
+  loadLedgerData(indexName);
+}
+
+function renderLedgerUI(data) {
+  if (!data) return;
+  const metrics = data.metrics || {};
+  const summary = data.summary || {};
+  const ledger = data.ledger || [];
+
+  // 1. Sidebar badge update
+  const sideWinRate = document.getElementById('sideLedgerWinRate');
+  if (sideWinRate && summary.all) {
+    sideWinRate.textContent = `${summary.all.winRate} WIN`;
+  }
+
+  // 2. Top Metrics Strip
+  const elWinRate = document.getElementById('ledgerMetricWinRate');
+  const elWinCount = document.getElementById('ledgerMetricWinCount');
+  const elTotal = document.getElementById('ledgerMetricTotalTrades');
+  const elTP2 = document.getElementById('ledgerMetricTP2');
+  const elTP1 = document.getElementById('ledgerMetricTP1');
+  const elSL = document.getElementById('ledgerMetricSL');
+  const elProfitFactor = document.getElementById('ledgerMetricProfitFactor');
+
+  if (elWinRate) elWinRate.textContent = metrics.winRate || '0%';
+  if (elWinCount) elWinCount.textContent = `${(metrics.tp2Wins || 0) + (metrics.tp1Wins || 0)} wins / ${metrics.totalTrades || 0} trades`;
+  if (elTotal) elTotal.textContent = metrics.totalTrades || 0;
+  if (elTP2) elTP2.textContent = metrics.tp2Wins || 0;
+  if (elTP1) elTP1.textContent = metrics.tp1Wins || 0;
+  if (elSL) elSL.textContent = metrics.slLosses || 0;
+  if (elProfitFactor) elProfitFactor.textContent = metrics.profitFactor || '0.0';
+
+  // 3. Separate Index Scorecards
+  if (summary.nifty) {
+    const el = document.getElementById('cardNiftyWinRate');
+    if (el) el.textContent = summary.nifty.winRate;
+    const t = document.getElementById('cardNiftyTotal');
+    if (t) t.textContent = summary.nifty.totalTrades;
+    const w = document.getElementById('cardNiftyWins');
+    if (w) w.textContent = (summary.nifty.tp2Wins || 0) + (summary.nifty.tp1Wins || 0);
+    const l = document.getElementById('cardNiftyLosses');
+    if (l) l.textContent = summary.nifty.slLosses || 0;
+  }
+
+  if (summary.banknifty) {
+    const el = document.getElementById('cardBankNiftyWinRate');
+    if (el) el.textContent = summary.banknifty.winRate;
+    const t = document.getElementById('cardBankNiftyTotal');
+    if (t) t.textContent = summary.banknifty.totalTrades;
+    const w = document.getElementById('cardBankNiftyWins');
+    if (w) w.textContent = (summary.banknifty.tp2Wins || 0) + (summary.banknifty.tp1Wins || 0);
+    const l = document.getElementById('cardBankNiftyLosses');
+    if (l) l.textContent = summary.banknifty.slLosses || 0;
+  }
+
+  if (summary.sensex) {
+    const el = document.getElementById('cardSensexWinRate');
+    if (el) el.textContent = summary.sensex.winRate;
+    const t = document.getElementById('cardSensexTotal');
+    if (t) t.textContent = summary.sensex.totalTrades;
+    const w = document.getElementById('cardSensexWins');
+    if (w) w.textContent = (summary.sensex.tp2Wins || 0) + (summary.sensex.tp1Wins || 0);
+    const l = document.getElementById('cardSensexLosses');
+    if (l) l.textContent = summary.sensex.slLosses || 0;
+  }
+
+  // 4. Main Ledger Table Rows
+  const tbody = document.getElementById('ledgerTableBody');
+  if (!tbody) return;
+
+  if (ledger.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="11" class="py-10 text-center text-gray-500 font-mono">No trades logged yet for this filter.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = ledger.map(entry => {
+    const isWin = entry.status.includes('TARGET');
+    const isTP2 = entry.status === 'TARGET2_HIT';
+    const isSL = entry.status === 'SL_HIT';
+
+    let statusBadge = '';
+    if (isTP2) {
+      statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-400/20 text-cyan-400 border border-cyan-400/40">🎯 TP2 RUNNER HIT</span>';
+    } else if (isWin) {
+      statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-bullGreen/20 text-bullGreen border border-bullGreen/40">✅ TP1 HIT</span>';
+    } else {
+      statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-bearRed/20 text-bearRed border border-bearRed/40">🛑 SL TRIGGERED</span>';
+    }
+
+    const indexBadge = entry.index === 'NIFTY' 
+      ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-bullGreen/15 text-bullGreen border border-bullGreen/30">NIFTY</span>'
+      : entry.index === 'BANKNIFTY'
+      ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-400/30">BANKNIFTY</span>'
+      : '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-accentGold/15 text-accentGold border border-accentGold/30">SENSEX</span>';
+
+    const pnlColor = (entry.pnlPts || 0) >= 0 ? 'text-bullGreen' : 'text-bearRed';
+    const sign = (entry.pnlPts || 0) >= 0 ? '+' : '';
+    const dateFormatted = new Date(entry.closedAt || entry.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+    return `
+      <tr class="hover:bg-tradeDark/50 transition">
+        <td class="py-3 px-4">${indexBadge}</td>
+        <td class="py-3 px-4 font-bold text-white">${entry.name}</td>
+        <td class="py-3 px-4 text-gray-300">${entry.setupName}</td>
+        <td class="py-3 px-4 text-center font-bold text-accentGold bg-accentGold/5">₹${entry.entryPrice}</td>
+        <td class="py-3 px-4 text-center text-bearRed font-bold">₹${entry.sl}</td>
+        <td class="py-3 px-4 text-center text-bullGreen font-bold">₹${entry.tp1}</td>
+        <td class="py-3 px-4 text-center text-cyan-400 font-bold">₹${entry.tp2}</td>
+        <td class="py-3 px-4 text-center font-bold text-white">₹${entry.exitPrice || entry.entryPrice}</td>
+        <td class="py-3 px-4 text-center">${statusBadge}</td>
+        <td class="py-3 px-4 text-right font-bold ${pnlColor}">
+          ${sign}₹${entry.pnlPts} pts
+          <div class="text-[10px] opacity-80">${sign}₹${entry.pnlInr ? entry.pnlInr.toLocaleString('en-IN') : '--'}</div>
+        </td>
+        <td class="py-3 px-4 text-right text-gray-400 text-[10px]">${dateFormatted}</td>
+      </tr>
+    `;
+  }).join('');
 }

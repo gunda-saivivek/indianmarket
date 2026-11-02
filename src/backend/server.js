@@ -27,8 +27,10 @@ const {
 
 const {
   handleLiveData,
-  handleLiveNews
+  handleLiveNews,
+  handleTradeLedger
 } = require('./controllers/marketController');
+const { processAndStabilizeTrades } = require('./services/tradeLedgerService');
 
 const PORT = process.env.PORT || 7171;
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
@@ -537,7 +539,11 @@ async function handleNseData(symbol, expiryType) {
   };
 
   // Generate Institutional Millionaire Multi-Trade Recommendation Suites
-  const { bullTrades, bearTrades } = generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, formattedExpiry);
+  const { bullTrades: rawBullTrades, bearTrades: rawBearTrades } = generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, formattedExpiry);
+
+  // Freeze & stabilize Entry Price, SL, TP1, and TP2 so they don't fluctuate with live ticks
+  const bullTrades = processAndStabilizeTrades(symbol, spot, rawBullTrades, 'CE', chains);
+  const bearTrades = processAndStabilizeTrades(symbol, spot, rawBearTrades, 'PE', chains);
 
   return {
     symbol: symbol.toUpperCase(),
@@ -831,7 +837,9 @@ async function handleSensexData(expiryType) {
     }
   };
 
-  const { bullTrades, bearTrades } = generateMillionaireTrades('SENSEX', spot, chains, atmStrike, lotSize, expiryFormatted);
+  const { bullTrades: rawBullTrades, bearTrades: rawBearTrades } = generateMillionaireTrades('SENSEX', spot, chains, atmStrike, lotSize, expiryFormatted);
+  const bullTrades = processAndStabilizeTrades('SENSEX', spot, rawBullTrades, 'CE', chains);
+  const bearTrades = processAndStabilizeTrades('SENSEX', spot, rawBearTrades, 'PE', chains);
 
   return {
     symbol: 'SENSEX',
@@ -1038,6 +1046,10 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname === '/api/live-news') {
     return handleLiveNews(req, res, parsedUrl, fetchLiveNews);
+  }
+
+  if (pathname === '/api/trade-ledger') {
+    return handleTradeLedger(req, res, parsedUrl);
   }
 
   // API endpoint: /api/settings

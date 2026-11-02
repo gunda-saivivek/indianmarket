@@ -1,5 +1,41 @@
 [
   {
+    "id": "log-1793593153249-tyui2",
+    "action": "DATA_ACCESS",
+    "email": "gsv.200000@gmail.com",
+    "name": "Sai Vivek (Admin)",
+    "role": "admin",
+    "ip": "::1",
+    "userAgent": "Unknown Client",
+    "details": "Streaming live option chain & signals for NIFTY (current expiry)",
+    "status": "SUCCESS",
+    "timestamp": "2026-11-02T04:19:13.249Z"
+  },
+  {
+    "id": "log-1793593153217-737q6",
+    "action": "LOGIN",
+    "email": "gsv.200000@gmail.com",
+    "name": "Sai Vivek (Admin)",
+    "role": "admin",
+    "ip": "::1",
+    "userAgent": "Unknown Client",
+    "details": "User successfully signed in",
+    "status": "SUCCESS",
+    "timestamp": "2026-11-02T04:19:13.201Z"
+  },
+  {
+    "id": "log-1793462790043-tb06s",
+    "action": "LOGIN",
+    "email": "gsv.200000@gmail.com",
+    "name": "Sai Vivek (Admin)",
+    "role": "admin",
+    "ip": "::1",
+    "userAgent": "Unknown Client",
+    "details": "User successfully signed in",
+    "status": "SUCCESS",
+    "timestamp": "2026-10-31T16:06:30.006Z"
+  },
+  {
     "id": "log-1793462740201-toudi",
     "action": "LOGIN",
     "email": "gsv.200000@gmail.com",
