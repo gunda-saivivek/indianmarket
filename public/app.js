@@ -2565,7 +2565,6 @@ function downloadLedgerCSV() {
   const headers = [
     "Index",
     "Option Strike",
-    "Setup Name",
     "Type",
     "Entry Price",
     "Stop Loss (SL)",
@@ -2584,7 +2583,6 @@ function downloadLedgerCSV() {
   const rows = items.map(t => [
     `"${t.index || ''}"`,
     `"${t.name || ''}"`,
-    `"${t.setupName || ''}"`,
     `"${t.type || ''}"`,
     t.entryPrice || 0,
     t.sl || 0,
@@ -2653,7 +2651,6 @@ function downloadLedgerPDF() {
       <tr style="border-bottom: 1px solid #233148; font-size: 11px;">
         <td style="padding: 8px 6px;"><strong>${t.index}</strong></td>
         <td style="padding: 8px 6px;">${t.name}</td>
-        <td style="padding: 8px 6px;">${t.setupName}</td>
         <td style="padding: 8px 6px; text-align: center; color: #f7a600; font-weight: bold;">₹${t.entryPrice}</td>
         <td style="padding: 8px 6px; text-align: center; color: #f23645;">₹${t.sl}</td>
         <td style="padding: 8px 6px; text-align: center; color: #089981;">₹${t.tp1}</td>
@@ -2729,7 +2726,6 @@ function downloadLedgerPDF() {
           <tr>
             <th>Index</th>
             <th>Option Strike</th>
-            <th>Setup</th>
             <th style="text-align: center;">Entry</th>
             <th style="text-align: center;">SL</th>
             <th style="text-align: center;">TP1</th>
