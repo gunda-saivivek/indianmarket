@@ -170,6 +170,8 @@ async function sendTelegramMessage(text) {
 
 // Active Trades Registry
 const activeTradesMap = new Map();
+// Set of contract keys already broadcast today to prevent ever repeating the same strike (e.g. NIFTY_23650_CE)
+const broadcastedContractsHistory = new Set();
 // Strict Single-Trade Mode: Only 1 trade call is active at any time!
 let currentActiveTradeKey = null;
 let isBroadcastingTrade = false;
@@ -259,6 +261,12 @@ async function broadcastTradeCall(trade) {
   const tradeKey = `${trade.index}_${trade.id}`;
   if (activeTradesMap.has(tradeKey)) return;
 
+  // Strict Contract Deduplication: Never repeat the same contract (e.g. NIFTY_23650_CE)
+  const contractKey = `${(trade.index || 'NIFTY').toUpperCase()}_${trade.strike}_${trade.type}`;
+  if (broadcastedContractsHistory.has(contractKey)) {
+    return;
+  }
+
   isBroadcastingTrade = true;
   try {
 
@@ -322,6 +330,7 @@ async function broadcastTradeCall(trade) {
   if (anyDelivered) {
     lastTradeBroadcastTime = now;
     currentActiveTradeKey = tradeKey;
+    broadcastedContractsHistory.add(contractKey);
     activeTradesMap.set(tradeKey, {
       key: tradeKey,
       index: trade.index,

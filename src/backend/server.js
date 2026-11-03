@@ -576,23 +576,28 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
   const sym = symbol.toUpperCase();
   const step = sym === 'BANKNIFTY' ? 100 : sym === 'SENSEX' ? 100 : 50;
 
-  // Find CE options near ATM and OTM
-  const ceAtm = chains.find(c => c.strikePrice / 100 === atmStrike)?.callOption || chains.find(c => c.callOption && c.callOption.ltp >= 80)?.callOption || { ltp: 135 };
-  const ceOtm = chains.find(c => c.strikePrice / 100 === atmStrike + step)?.callOption || chains.find(c => c.callOption && c.callOption.ltp >= 45 && c.callOption.ltp < 85)?.callOption || { ltp: 65 };
-  const ceHero = chains.find(c => c.callOption && c.callOption.ltp >= 15 && c.callOption.ltp <= 35)?.callOption || { ltp: 22 };
+  // Strict: ONLY select live options that exist in the exchange option chain!
+  // Never inject artificial fallback numbers like 135 or 65.
+  const ceAtm = chains.find(c => c.strikePrice / 100 === atmStrike)?.callOption || chains.find(c => c.callOption && c.callOption.ltp > 0)?.callOption;
+  const ceOtm = chains.find(c => c.strikePrice / 100 === atmStrike + step)?.callOption || chains.find(c => c.callOption && c.callOption.ltp >= 20 && c.callOption.ltp < (ceAtm?.ltp || 100))?.callOption;
+  const ceHero = chains.find(c => c.callOption && c.callOption.ltp >= 10 && c.callOption.ltp <= 35)?.callOption;
 
-  // Find PE options near ATM and OTM
-  const peAtm = chains.find(c => c.strikePrice / 100 === atmStrike)?.putOption || chains.find(c => c.putOption && c.putOption.ltp >= 80)?.putOption || { ltp: 130 };
-  const peOtm = chains.find(c => c.strikePrice / 100 === atmStrike - step)?.putOption || chains.find(c => c.putOption && c.putOption.ltp >= 45 && c.putOption.ltp < 85)?.putOption || { ltp: 60 };
-  const peHero = chains.find(c => c.putOption && c.putOption.ltp >= 15 && c.putOption.ltp <= 35)?.putOption || { ltp: 21 };
+  // Find PE options near ATM and OTM strictly from real chain
+  const peAtm = chains.find(c => c.strikePrice / 100 === atmStrike)?.putOption || chains.find(c => c.putOption && c.putOption.ltp > 0)?.putOption;
+  const peOtm = chains.find(c => c.strikePrice / 100 === atmStrike - step)?.putOption || chains.find(c => c.putOption && c.putOption.ltp >= 20 && c.putOption.ltp < (peAtm?.ltp || 100))?.putOption;
+  const peHero = chains.find(c => c.putOption && c.putOption.ltp >= 10 && c.putOption.ltp <= 35)?.putOption;
 
-  const ceAtmPrice = Math.max(10, ceAtm.ltp || 135);
-  const ceOtmPrice = Math.max(8, ceOtm.ltp || 65);
-  const ceHeroPrice = Math.max(5, ceHero.ltp || 22);
+  if (!ceAtm?.ltp || !peAtm?.ltp) {
+    return { bullTrades: [], bearTrades: [] };
+  }
 
-  const peAtmPrice = Math.max(10, peAtm.ltp || 130);
-  const peOtmPrice = Math.max(8, peOtm.ltp || 60);
-  const peHeroPrice = Math.max(5, peHero.ltp || 21);
+  const ceAtmPrice = ceAtm.ltp;
+  const ceOtmPrice = ceOtm?.ltp || parseFloat((ceAtmPrice * 0.6).toFixed(1));
+  const ceHeroPrice = ceHero?.ltp || parseFloat((ceAtmPrice * 0.25).toFixed(1));
+
+  const peAtmPrice = peAtm.ltp;
+  const peOtmPrice = peOtm?.ltp || parseFloat((peAtmPrice * 0.6).toFixed(1));
+  const peHeroPrice = peHero?.ltp || parseFloat((peAtmPrice * 0.25).toFixed(1));
 
   const bullTrades = [
     {
