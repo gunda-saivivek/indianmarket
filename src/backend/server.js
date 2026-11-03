@@ -1167,4 +1167,35 @@ server.listen(PORT, () => {
   console.log(`📡 Local URL:   http://localhost:${PORT}`);
   console.log(`⚡ Live Feed:  Nifty 50, Sensex, and Bank Nifty active`);
   console.log(`=============================================================\n`);
+
+  // Start Autonomous Background Market Watcher & Trade Evaluator
+  startAutonomousMarketScanner();
 });
+
+// ==========================================
+// AUTONOMOUS BACKGROUND ENGINE
+// Keeps scanning Nifty, Bank Nifty & Sensex during market hours even when NO ONE is logged into the UI!
+// Evaluates triggers, logs wins/losses to the ledger, and broadcasts to Telegram.
+// ==========================================
+function startAutonomousMarketScanner() {
+  console.log('⚡ Autonomous Market Scanner started (Runs continuously during market hours)');
+
+  async function runScannerTick() {
+    try {
+      // 1. Scan Nifty 50
+      await handleNseData('nifty', 'current');
+      // 2. Scan Bank Nifty
+      await handleNseData('banknifty', 'current');
+      // 3. Scan Sensex
+      await handleSensexData('current');
+    } catch (err) {
+      // Ignore background transient network hiccups
+    }
+  }
+
+  // Initial immediate run on boot
+  runScannerTick();
+
+  // Run automatically every 3 seconds
+  setInterval(runScannerTick, 3000);
+}
