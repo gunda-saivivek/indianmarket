@@ -438,20 +438,33 @@ async function broadcastPriceTick(trade, currentLtp) {
       continue;
     }
 
-    // 3. Check Target 1 Milestone Hit
+    // 3. Check Target 1 Milestone Hit (Safe Scalp Lock: 10+ points or TP1)
     if (roundedLtp >= tp1 && !chatData.tp1Sent) {
       chatData.tp1Sent = true;
-      const profitPts = tp1 - entry;
+      const profitPts = roundedLtp - entry;
       await sendTelegramMessageToChat(
         cid,
         `<b>${channelTitle}:</b>\n` +
         `<b>${roundedLtp} 🎯🎯 TARGET 1 HIT! (+${profitPts} pts)</b>\n` +
-        `Book partial profit now & trail Stop Loss to cost!`,
+        `Book safe profits now & trail SL to cost! Next trade scanner freed.`,
         replyToId
       );
+
+      // Free the scanner immediately so next trade can be dispatched after 2 minutes!
+      // The background engine continues tracking this trade in its thread for Target 2 runner / SL.
+      if (currentActiveTradeKey === tradeKey) {
+        currentActiveTradeKey = null;
+        lastTradeBroadcastTime = Date.now();
+      }
     }
 
-    // 4. Strict watermark progression: Only send if price makes an actual NEW HIGH above entry!
+    // 4. Quick Scalper Release: If trade gave +10 points profit, unlock the queue for the next trade!
+    if (roundedLtp - entry >= 10 && currentActiveTradeKey === tradeKey) {
+      currentActiveTradeKey = null;
+      lastTradeBroadcastTime = Date.now();
+    }
+
+    // 5. Strict watermark progression: Only send if price makes an actual NEW HIGH above entry!
     if (roundedLtp > chatData.highestAchieved && roundedLtp <= tp2) {
       chatData.highestAchieved = roundedLtp;
 
