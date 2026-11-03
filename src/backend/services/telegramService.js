@@ -168,8 +168,11 @@ async function sendTelegramMessage(text) {
   return firstResult;
 }
 
-// Active Trades Registry: tradeKey -> { trackedTrade, perChatData: Map(chatId -> { messageId, highestAchieved, tp1Sent, tp2Sent, slSent }) }
+// Active Trades Registry
 const activeTradesMap = new Map();
+// Strict Single-Trade Mode: Only 1 trade call is active at any time!
+let currentActiveTradeKey = null;
+let isBroadcastingTrade = false;
 let lastTradeBroadcastTime = 0;
 const TWO_MINUTES_MS = 2 * 60 * 1000;
 
@@ -232,18 +235,32 @@ function isIndianMarketOpen() {
 async function broadcastTradeCall(trade) {
   if (!telegramConfig.enabled || !telegramConfig.botToken) return;
 
-  // Strict check: DO NOT broadcast trade calls once NSE market closes (after 3:30 PM IST or weekends)
+  // Strict check 1: DO NOT broadcast trade calls once NSE market closes (after 3:30 PM IST or weekends)
   if (!isIndianMarketOpen()) {
+    return;
+  }
+
+  // Strict check 2: Single-trade mode: Only send 1 trade at a time!
+  // If there is already an active trade running in Telegram, wait until it reaches its target/SL
+  if (currentActiveTradeKey) {
+    return;
+  }
+
+  // Strict check 3: Mutex lock to prevent simultaneous calls during concurrent scans
+  if (isBroadcastingTrade) {
+    return;
+  }
+
+  const now = Date.now();
+  if (now - lastTradeBroadcastTime < TWO_MINUTES_MS) {
     return;
   }
 
   const tradeKey = `${trade.index}_${trade.id}`;
   if (activeTradesMap.has(tradeKey)) return;
 
-  const now = Date.now();
-  if (now - lastTradeBroadcastTime < TWO_MINUTES_MS) {
-    return;
-  }
+  isBroadcastingTrade = true;
+  try {
 
   const channelTitle = telegramConfig.channelName || 'The Market Sniper Shooters';
   const indexTitle = (trade.index || 'NIFTY').toUpperCase().includes('BANK') 
@@ -304,6 +321,7 @@ async function broadcastTradeCall(trade) {
 
   if (anyDelivered) {
     lastTradeBroadcastTime = now;
+    currentActiveTradeKey = tradeKey;
     activeTradesMap.set(tradeKey, {
       key: tradeKey,
       index: trade.index,
@@ -321,6 +339,9 @@ async function broadcastTradeCall(trade) {
       lotSize: trade.lotSize || 65,
       perChatMap
     });
+  }
+  } finally {
+    isBroadcastingTrade = false;
   }
 }
 
@@ -445,6 +466,10 @@ async function broadcastPriceTick(trade, currentLtp) {
   const allFinished = Array.from(tracked.perChatMap.values()).every(c => c.slSent || c.tp2Sent);
   if (allFinished) {
     activeTradesMap.delete(tradeKey);
+    if (currentActiveTradeKey === tradeKey) {
+      currentActiveTradeKey = null;
+      lastTradeBroadcastTime = Date.now(); // 2 minute countdown starts AFTER trade completes!
+    }
   }
 }
 
