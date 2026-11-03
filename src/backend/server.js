@@ -542,9 +542,19 @@ async function handleNseData(symbol, expiryType) {
   // Generate Institutional Millionaire Multi-Trade Recommendation Suites
   const { bullTrades: rawBullTrades, bearTrades: rawBearTrades } = generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, formattedExpiry);
 
+  // High-Conviction Trend Direction Filter:
+  // Do not track counter-trend trades when market has strong directional momentum!
+  // If market is strongly bullish (pcr > 1.05 and spot > midpoint), suppress Put trades to prevent false SL hits.
+  // If market is strongly bearish (pcr < 0.90 and spot < midpoint), suppress Call trades.
+  const isStrongBull = pcr > 1.08 && spot >= midPoint;
+  const isStrongBear = pcr < 0.92 && spot < midPoint;
+
+  const filteredBull = isStrongBear ? [] : rawBullTrades;
+  const filteredBear = isStrongBull ? [] : rawBearTrades;
+
   // Freeze & stabilize Entry Price, SL, TP1, and TP2 so they don't fluctuate with live ticks
-  const bullTrades = processAndStabilizeTrades(symbol, spot, rawBullTrades, 'CE', chains);
-  const bearTrades = processAndStabilizeTrades(symbol, spot, rawBearTrades, 'PE', chains);
+  const bullTrades = processAndStabilizeTrades(symbol, spot, filteredBull, 'CE', chains);
+  const bearTrades = processAndStabilizeTrades(symbol, spot, filteredBear, 'PE', chains);
 
   return {
     symbol: symbol.toUpperCase(),
@@ -611,13 +621,13 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       entryMin: parseFloat((ceAtmPrice * 0.98).toFixed(1)),
       entryMax: parseFloat((ceAtmPrice * 1.02).toFixed(1)),
       triggerSpot: Math.round(spot + 15),
-      sl: parseFloat((ceAtmPrice * 0.78).toFixed(1)),
-      slPts: parseFloat((ceAtmPrice * 0.22).toFixed(1)),
-      tp1: parseFloat((ceAtmPrice * 1.35).toFixed(1)),
-      tp1Pts: parseFloat((ceAtmPrice * 0.35).toFixed(1)),
-      tp2: parseFloat((ceAtmPrice * 1.75).toFixed(1)),
-      tp2Pts: parseFloat((ceAtmPrice * 0.75).toFixed(1)),
-      riskReward: "1:3.4",
+      sl: parseFloat((ceAtmPrice * 0.88).toFixed(1)),
+      slPts: parseFloat((ceAtmPrice * 0.12).toFixed(1)),
+      tp1: parseFloat((ceAtmPrice * 1.30).toFixed(1)),
+      tp1Pts: parseFloat((ceAtmPrice * 0.30).toFixed(1)),
+      tp2: parseFloat((ceAtmPrice * 1.70).toFixed(1)),
+      tp2Pts: parseFloat((ceAtmPrice * 0.70).toFixed(1)),
+      riskReward: "1:2.5 to 1:5.8",
       lotSize,
       reason: `DodgysDD 5m Bullish iFVG inversion confirmed above ${Math.round(spot + 15)} with Umar 40% lower rejection tail at pVAL demand sweep. Heavy put writing (+42L contracts) establishing an iron floor.`,
       newsEffect: `RBI MPC minutes maintain accommodative liquidity stance; FII net index future long exposure jumped to 68.4%. Heavy buying in HDFC Bank & Reliance driving index breakout.`
@@ -633,13 +643,13 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       entryMin: parseFloat((ceOtmPrice * 0.97).toFixed(1)),
       entryMax: parseFloat((ceOtmPrice * 1.03).toFixed(1)),
       triggerSpot: Math.round(spot + 35),
-      sl: parseFloat((ceOtmPrice * 0.72).toFixed(1)),
-      slPts: parseFloat((ceOtmPrice * 0.28).toFixed(1)),
-      tp1: parseFloat((ceOtmPrice * 1.50).toFixed(1)),
-      tp1Pts: parseFloat((ceOtmPrice * 0.50).toFixed(1)),
-      tp2: parseFloat((ceOtmPrice * 2.10).toFixed(1)),
-      tp2Pts: parseFloat((ceOtmPrice * 1.10).toFixed(1)),
-      riskReward: "1:3.9",
+      sl: parseFloat((ceOtmPrice * 0.85).toFixed(1)),
+      slPts: parseFloat((ceOtmPrice * 0.15).toFixed(1)),
+      tp1: parseFloat((ceOtmPrice * 1.45).toFixed(1)),
+      tp1Pts: parseFloat((ceOtmPrice * 0.45).toFixed(1)),
+      tp2: parseFloat((ceOtmPrice * 2.05).toFixed(1)),
+      tp2Pts: parseFloat((ceOtmPrice * 1.05).toFixed(1)),
+      riskReward: "1:3.0 to 1:7.0",
       lotSize,
       reason: `50% Consequent Encroachment (C.E.) mitigation of the 15-min Fair Value Gap. Retail call sellers trapped; algorithmic short covering expected to displace price into Previous Day High.`,
       newsEffect: `Global cues positive with US Nasdaq futures +0.85%; domestic mutual funds and DIIs net buyers of +₹2,480 Cr in morning session, absorbing overhead supply.`
@@ -655,13 +665,13 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       entryMin: parseFloat((ceHeroPrice * 0.95).toFixed(1)),
       entryMax: parseFloat((ceHeroPrice * 1.05).toFixed(1)),
       triggerSpot: Math.round(spot + 45),
-      sl: parseFloat((ceHeroPrice * 0.50).toFixed(1)),
-      slPts: parseFloat((ceHeroPrice * 0.50).toFixed(1)),
+      sl: parseFloat((ceHeroPrice * 0.60).toFixed(1)),
+      slPts: parseFloat((ceHeroPrice * 0.40).toFixed(1)),
       tp1: parseFloat((ceHeroPrice * 2.0).toFixed(1)),
       tp1Pts: parseFloat((ceHeroPrice * 1.0).toFixed(1)),
       tp2: parseFloat((ceHeroPrice * 3.5).toFixed(1)),
       tp2Pts: parseFloat((ceHeroPrice * 2.5).toFixed(1)),
-      riskReward: "1:5.0",
+      riskReward: "1:2.5 to 1:6.25",
       lotSize,
       reason: `Expiry Gamma Blast: Zero-extrinsic decay phase. Call option delta accelerates violently from 0.15 to 0.45 upon spot moving 40 points, creating a 2x-3.5x explosion on minimal capital.`,
       newsEffect: `Weekly option expiry short straddle unwinding; institutional call sellers forced to cover positions before 3:00 PM, generating a classic Dalal Street short squeeze.`
@@ -680,13 +690,13 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       entryMin: parseFloat((peAtmPrice * 0.98).toFixed(1)),
       entryMax: parseFloat((peAtmPrice * 1.02).toFixed(1)),
       triggerSpot: Math.round(spot - 15),
-      sl: parseFloat((peAtmPrice * 0.78).toFixed(1)),
-      slPts: parseFloat((peAtmPrice * 0.22).toFixed(1)),
-      tp1: parseFloat((peAtmPrice * 1.35).toFixed(1)),
-      tp1Pts: parseFloat((peAtmPrice * 0.35).toFixed(1)),
-      tp2: parseFloat((peAtmPrice * 1.75).toFixed(1)),
-      tp2Pts: parseFloat((peAtmPrice * 0.75).toFixed(1)),
-      riskReward: "1:3.4",
+      sl: parseFloat((peAtmPrice * 0.88).toFixed(1)),
+      slPts: parseFloat((peAtmPrice * 0.12).toFixed(1)),
+      tp1: parseFloat((peAtmPrice * 1.30).toFixed(1)),
+      tp1Pts: parseFloat((peAtmPrice * 0.30).toFixed(1)),
+      tp2: parseFloat((peAtmPrice * 1.70).toFixed(1)),
+      tp2Pts: parseFloat((peAtmPrice * 0.70).toFixed(1)),
+      riskReward: "1:2.5 to 1:5.8",
       lotSize,
       reason: `Atlas AMT 70% Value Area rejection: Price failed to accept above Prior Day Value Area High (pVAH). Heavy call writing (+38L contracts) confirms institutional ceiling.`,
       newsEffect: `Brent Crude spikes +2.1% to $82.40/bbl stirring domestic inflation worries; US 10-Year Treasury Yield rises to 4.28%, prompting foreign institutional fund exits.`
@@ -702,13 +712,13 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       entryMin: parseFloat((peOtmPrice * 0.97).toFixed(1)),
       entryMax: parseFloat((peOtmPrice * 1.03).toFixed(1)),
       triggerSpot: Math.round(spot - 30),
-      sl: parseFloat((peOtmPrice * 0.72).toFixed(1)),
-      slPts: parseFloat((peOtmPrice * 0.28).toFixed(1)),
-      tp1: parseFloat((peOtmPrice * 1.50).toFixed(1)),
-      tp1Pts: parseFloat((peOtmPrice * 0.50).toFixed(1)),
-      tp2: parseFloat((peOtmPrice * 2.10).toFixed(1)),
-      tp2Pts: parseFloat((peOtmPrice * 1.10).toFixed(1)),
-      riskReward: "1:3.9",
+      sl: parseFloat((peOtmPrice * 0.85).toFixed(1)),
+      slPts: parseFloat((peOtmPrice * 0.15).toFixed(1)),
+      tp1: parseFloat((peOtmPrice * 1.45).toFixed(1)),
+      tp1Pts: parseFloat((peOtmPrice * 0.45).toFixed(1)),
+      tp2: parseFloat((peOtmPrice * 2.05).toFixed(1)),
+      tp2Pts: parseFloat((peOtmPrice * 1.05).toFixed(1)),
+      riskReward: "1:3.0 to 1:7.0",
       lotSize,
       reason: `Malaysian Quasimodo Reversal (QMR) verified: Left shoulder retested, Higher High printed Umar 40% upper rejection wick, and subsequent displacement broke the lower support structure.`,
       newsEffect: `Banking & IT index heavyweights face sharp profit booking; FII net index options open interest shows aggressive Put addition (+₹1,840 Cr).`
@@ -724,13 +734,13 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       entryMin: parseFloat((peHeroPrice * 0.95).toFixed(1)),
       entryMax: parseFloat((peHeroPrice * 1.05).toFixed(1)),
       triggerSpot: Math.round(spot - 45),
-      sl: parseFloat((peHeroPrice * 0.50).toFixed(1)),
-      slPts: parseFloat((peHeroPrice * 0.50).toFixed(1)),
+      sl: parseFloat((peHeroPrice * 0.60).toFixed(1)),
+      slPts: parseFloat((peHeroPrice * 0.40).toFixed(1)),
       tp1: parseFloat((peHeroPrice * 2.0).toFixed(1)),
       tp1Pts: parseFloat((peHeroPrice * 1.0).toFixed(1)),
       tp2: parseFloat((peHeroPrice * 3.5).toFixed(1)),
       tp2Pts: parseFloat((peHeroPrice * 2.5).toFixed(1)),
-      riskReward: "1:5.0",
+      riskReward: "1:2.5 to 1:6.25",
       lotSize,
       reason: `Expiry Gamma Blast (PE Side): Put writing unwinding trigger. Once key support cracks, put delta explodes, multiplying option premium by 2x to 3.5x within 20 minutes.`,
       newsEffect: `F&O expiry rollover pressure: Put writers in banking heavyweights cutting losses before market close, triggering cascade selling.`
@@ -844,8 +854,15 @@ async function handleSensexData(expiryType) {
   };
 
   const { bullTrades: rawBullTrades, bearTrades: rawBearTrades } = generateMillionaireTrades('SENSEX', spot, chains, atmStrike, lotSize, expiryFormatted);
-  const bullTrades = processAndStabilizeTrades('SENSEX', spot, rawBullTrades, 'CE', chains);
-  const bearTrades = processAndStabilizeTrades('SENSEX', spot, rawBearTrades, 'PE', chains);
+  
+  // Sensex Trend Filter based on spot position
+  const isSensexBull = meta.change >= 100;
+  const isSensexBear = meta.change <= -100;
+  const filteredSensexBull = isSensexBear ? [] : rawBullTrades;
+  const filteredSensexBear = isSensexBull ? [] : rawBearTrades;
+
+  const bullTrades = processAndStabilizeTrades('SENSEX', spot, filteredSensexBull, 'CE', chains);
+  const bearTrades = processAndStabilizeTrades('SENSEX', spot, filteredSensexBear, 'PE', chains);
 
   return {
     symbol: 'SENSEX',
