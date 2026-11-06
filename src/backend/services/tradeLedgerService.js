@@ -152,23 +152,26 @@ function processAndStabilizeTrades(index, spot, trades, optionType, chains) {
       // Activate trigger once market price reaches or crosses entry price
       if (!tracked.isTriggered && currentLtp >= tracked.fixedEntryPrice) {
         tracked.isTriggered = true;
-        if (!tracked.triggeredAt) {
-          tracked.triggeredAt = new Date().toISOString();
-        }
+        tracked.triggeredAt = new Date().toISOString();
       }
 
+      // Minimum Duration Guard: A trade cannot realistically hit target or stop-loss within 30 seconds of triggering!
+      // This prevents any data glitch or stale strike overlap from logging an instant 2-second target.
+      const timeSinceTriggerMs = tracked.triggeredAt ? (Date.now() - new Date(tracked.triggeredAt).getTime()) : 0;
+      const canEvaluateExit = tracked.isTriggered && timeSinceTriggerMs >= 30000;
+
       // Check Target 2
-      if (tracked.isTriggered && currentLtp >= tracked.tp2 && tracked.status !== 'TARGET2_HIT') {
+      if (canEvaluateExit && currentLtp >= tracked.tp2 && tracked.status !== 'TARGET2_HIT') {
         tracked.status = 'TARGET2_HIT';
         recordLedgerOutcome(tracked, tracked.tp2, 'TARGET2_HIT');
       }
       // Check Target 1
-      else if (tracked.isTriggered && currentLtp >= tracked.tp1 && tracked.status === 'ACTIVE') {
+      else if (canEvaluateExit && currentLtp >= tracked.tp1 && tracked.status === 'ACTIVE') {
         tracked.status = 'TARGET1_HIT';
         recordLedgerOutcome(tracked, tracked.tp1, 'TARGET1_HIT');
       }
       // Check Stop Loss (only if trade was officially triggered)
-      else if (tracked.isTriggered && currentLtp <= tracked.sl && tracked.status === 'ACTIVE') {
+      else if (canEvaluateExit && currentLtp <= tracked.sl && tracked.status === 'ACTIVE') {
         tracked.status = 'SL_HIT';
         recordLedgerOutcome(tracked, tracked.sl, 'SL_HIT');
       }
