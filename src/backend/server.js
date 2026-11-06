@@ -587,35 +587,58 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
   const step = sym === 'BANKNIFTY' ? 100 : sym === 'SENSEX' ? 100 : 50;
 
   // Strict: ONLY select live options that exist in the exchange option chain!
-  // Never inject artificial fallback numbers like 135 or 65.
-  const ceAtm = chains.find(c => c.strikePrice / 100 === atmStrike)?.callOption || chains.find(c => c.callOption && c.callOption.ltp > 0)?.callOption;
-  const ceOtm = chains.find(c => c.strikePrice / 100 === atmStrike + step)?.callOption || chains.find(c => c.callOption && c.callOption.ltp >= 20 && c.callOption.ltp < (ceAtm?.ltp || 100))?.callOption;
-  const ceHero = chains.find(c => c.callOption && c.callOption.ltp >= 10 && c.callOption.ltp <= 35)?.callOption;
+  // 1. ATM contract: Match strike exactly equal to atmStrike
+  const ceAtmItem = chains.find(c => c.strikePrice / 100 === atmStrike && c.callOption?.ltp > 0) || chains.find(c => c.callOption && c.callOption.ltp > 0);
+  const peAtmItem = chains.find(c => c.strikePrice / 100 === atmStrike && c.putOption?.ltp > 0) || chains.find(c => c.putOption && c.putOption.ltp > 0);
 
-  // Find PE options near ATM and OTM strictly from real chain
-  const peAtm = chains.find(c => c.strikePrice / 100 === atmStrike)?.putOption || chains.find(c => c.putOption && c.putOption.ltp > 0)?.putOption;
-  const peOtm = chains.find(c => c.strikePrice / 100 === atmStrike - step)?.putOption || chains.find(c => c.putOption && c.putOption.ltp >= 20 && c.putOption.ltp < (peAtm?.ltp || 100))?.putOption;
-  const peHero = chains.find(c => c.putOption && c.putOption.ltp >= 10 && c.putOption.ltp <= 35)?.putOption;
+  // 2. OTM contract: Match strike exactly equal to atmStrike + step (for CE) or atmStrike - step (for PE)
+  const ceOtmItem = chains.find(c => c.strikePrice / 100 === (atmStrike + step) && c.callOption?.ltp > 0) || ceAtmItem;
+  const peOtmItem = chains.find(c => c.strikePrice / 100 === (atmStrike - step) && c.putOption?.ltp > 0) || peAtmItem;
 
-  if (!ceAtm?.ltp || !peAtm?.ltp) {
+  // 3. Hero-Zero contract: Find contract with ACTUAL exchange LTP in the sweet spot (₹15 - ₹35)
+  const ceHeroItem = chains.find(c => c.callOption && c.callOption.ltp >= 15 && c.callOption.ltp <= 38) ||
+                     chains.find(c => c.callOption && c.callOption.ltp >= 10 && c.callOption.ltp <= 50) ||
+                     chains.find(c => c.strikePrice / 100 === (atmStrike + step * 3) && c.callOption?.ltp > 0);
+
+  const peHeroItem = chains.find(c => c.putOption && c.putOption.ltp >= 15 && c.putOption.ltp <= 38) ||
+                     chains.find(c => c.putOption && c.putOption.ltp >= 10 && c.putOption.ltp <= 50) ||
+                     chains.find(c => c.strikePrice / 100 === (atmStrike - step * 3) && c.putOption?.ltp > 0);
+
+  const ceAtm = ceAtmItem?.callOption;
+  const peAtm = peAtmItem?.putOption;
+  const ceOtm = ceOtmItem?.callOption;
+  const peOtm = peOtmItem?.putOption;
+  const ceHero = ceHeroItem?.callOption;
+  const peHero = peHeroItem?.putOption;
+
+  if (!ceAtm?.ltp || !peAtm?.ltp || !ceHero?.ltp || !peHero?.ltp) {
     return { bullTrades: [], bearTrades: [] };
   }
 
+  // Exact real exchange strikes
+  const ceAtmStrike = ceAtmItem.strikePrice / 100;
+  const peAtmStrike = peAtmItem.strikePrice / 100;
+  const ceOtmStrike = ceOtmItem.strikePrice / 100;
+  const peOtmStrike = peOtmItem.strikePrice / 100;
+  const ceHeroStrike = ceHeroItem.strikePrice / 100;
+  const peHeroStrike = peHeroItem.strikePrice / 100;
+
+  // Exact real exchange LTPs
   const ceAtmPrice = ceAtm.ltp;
-  const ceOtmPrice = ceOtm?.ltp || parseFloat((ceAtmPrice * 0.6).toFixed(1));
-  const ceHeroPrice = ceHero?.ltp || parseFloat((ceAtmPrice * 0.25).toFixed(1));
+  const ceOtmPrice = ceOtm.ltp;
+  const ceHeroPrice = ceHero.ltp;
 
   const peAtmPrice = peAtm.ltp;
-  const peOtmPrice = peOtm?.ltp || parseFloat((peAtmPrice * 0.6).toFixed(1));
-  const peHeroPrice = peHero?.ltp || parseFloat((peAtmPrice * 0.25).toFixed(1));
+  const peOtmPrice = peOtm.ltp;
+  const peHeroPrice = peHero.ltp;
 
   const bullTrades = [
     {
       id: "bull-1",
       setupName: "ATM Institutional Momentum Sniper",
       badge: "HIGH CONVICTION • INTRADAY",
-      strike: atmStrike,
-      name: `${sym} ${formattedExpiry} ${atmStrike} CE`,
+      strike: ceAtmStrike,
+      name: ceAtm.longDisplayName || `${sym} ${formattedExpiry} ${ceAtmStrike} CE`,
       type: "CE",
       ltp: ceAtmPrice,
       entryMin: parseFloat((ceAtmPrice * 0.98).toFixed(1)),
@@ -636,8 +659,8 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       id: "bull-2",
       setupName: "DodgysDD iFVG Retest Reversal Breakout",
       badge: "SWING MOMENTUM • OTM",
-      strike: atmStrike + step,
-      name: `${sym} ${formattedExpiry} ${atmStrike + step} CE`,
+      strike: ceOtmStrike,
+      name: ceOtm.longDisplayName || `${sym} ${formattedExpiry} ${ceOtmStrike} CE`,
       type: "CE",
       ltp: ceOtmPrice,
       entryMin: parseFloat((ceOtmPrice * 0.97).toFixed(1)),
@@ -658,8 +681,8 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       id: "bull-3",
       setupName: "1:15 PM Gamma Explosion Hero-Zero",
       badge: "HERO-ZERO • GAMMA BLAST",
-      strike: atmStrike + step * 3,
-      name: `${sym} ${formattedExpiry} ${atmStrike + step * 3} CE`,
+      strike: ceHeroStrike,
+      name: ceHero.longDisplayName || `${sym} ${formattedExpiry} ${ceHeroStrike} CE`,
       type: "CE",
       ltp: ceHeroPrice,
       entryMin: parseFloat((ceHeroPrice * 0.95).toFixed(1)),
@@ -683,8 +706,8 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       id: "bear-1",
       setupName: "ATM Institutional Breakdown Sniper",
       badge: "HIGH CONVICTION • INTRADAY",
-      strike: atmStrike,
-      name: `${sym} ${formattedExpiry} ${atmStrike} PE`,
+      strike: peAtmStrike,
+      name: peAtm.longDisplayName || `${sym} ${formattedExpiry} ${peAtmStrike} PE`,
       type: "PE",
       ltp: peAtmPrice,
       entryMin: parseFloat((peAtmPrice * 0.98).toFixed(1)),
@@ -705,8 +728,8 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       id: "bear-2",
       setupName: "Malaysian QMR Resistance Rejection",
       badge: "SWING BREAKDOWN • OTM",
-      strike: atmStrike - step,
-      name: `${sym} ${formattedExpiry} ${atmStrike - step} PE`,
+      strike: peOtmStrike,
+      name: peOtm.longDisplayName || `${sym} ${formattedExpiry} ${peOtmStrike} PE`,
       type: "PE",
       ltp: peOtmPrice,
       entryMin: parseFloat((peOtmPrice * 0.97).toFixed(1)),
@@ -727,8 +750,8 @@ function generateMillionaireTrades(symbol, spot, chains, atmStrike, lotSize, for
       id: "bear-3",
       setupName: "1:15 PM Gamma Explosion Hero-Zero",
       badge: "HERO-ZERO • GAMMA BLAST",
-      strike: atmStrike - step * 3,
-      name: `${sym} ${formattedExpiry} ${atmStrike - step * 3} PE`,
+      strike: peHeroStrike,
+      name: peHero.longDisplayName || `${sym} ${formattedExpiry} ${peHeroStrike} PE`,
       type: "PE",
       ltp: peHeroPrice,
       entryMin: parseFloat((peHeroPrice * 0.95).toFixed(1)),
