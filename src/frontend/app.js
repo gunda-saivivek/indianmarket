@@ -2972,7 +2972,11 @@ function renderLedgerUI(data) {
 
     const pnlColor = (entry.pnlPts || 0) >= 0 ? 'text-bullGreen' : 'text-bearRed';
     const sign = (entry.pnlPts || 0) >= 0 ? '+' : '';
-    const dateFormatted = new Date(entry.closedAt || entry.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const entryTimeFormatted = new Date(entry.triggeredAt || entry.createdAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    const exitTimeFormatted = entry.closedAt 
+      ? new Date(entry.closedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+      : '--';
+    const dateFormatted = new Date(entry.closedAt || entry.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 
     return `
       <tr class="hover:bg-tradeDark/50 transition">
@@ -2989,7 +2993,14 @@ function renderLedgerUI(data) {
           ${sign}₹${entry.pnlPts} pts
           <div class="text-[10px] opacity-80">${sign}₹${entry.pnlInr ? entry.pnlInr.toLocaleString('en-IN') : '--'}</div>
         </td>
-        <td class="py-3 px-4 text-right text-gray-400 text-[10px]">${dateFormatted}</td>
+        <td class="py-3 px-4 text-center text-emerald-400 text-xs font-bold font-mono">
+          ${entryTimeFormatted}
+          <div class="text-[9px] text-gray-500 font-normal">${dateFormatted}</div>
+        </td>
+        <td class="py-3 px-4 text-right text-gray-400 text-xs font-mono">
+          ${exitTimeFormatted}
+          <div class="text-[9px] text-gray-500 font-normal">IST</div>
+        </td>
       </tr>
     `;
   }).join('');

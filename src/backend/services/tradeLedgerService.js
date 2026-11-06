@@ -133,6 +133,7 @@ function processAndStabilizeTrades(index, spot, trades, optionType, chains) {
         highLtp: currentLtp,
         lowLtp: currentLtp,
         isTriggered: currentLtp >= fixedEntry,
+        triggeredAt: currentLtp >= fixedEntry ? new Date().toISOString() : null,
         status: 'ACTIVE', // ACTIVE, TARGET1_HIT, TARGET2_HIT, SL_HIT
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -151,6 +152,9 @@ function processAndStabilizeTrades(index, spot, trades, optionType, chains) {
       // Activate trigger once market price reaches or crosses entry price
       if (!tracked.isTriggered && currentLtp >= tracked.fixedEntryPrice) {
         tracked.isTriggered = true;
+        if (!tracked.triggeredAt) {
+          tracked.triggeredAt = new Date().toISOString();
+        }
       }
 
       // Check Target 2
@@ -223,6 +227,7 @@ function recordLedgerOutcome(signal, exitPrice, outcome) {
     lotSize,
     pnlInr,
     createdAt: signal.createdAt,
+    triggeredAt: signal.triggeredAt || signal.createdAt,
     closedAt: new Date().toISOString()
   };
 

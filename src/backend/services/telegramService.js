@@ -214,6 +214,28 @@ function pollTelegramUpdates() {
 setInterval(pollTelegramUpdates, 10000);
 pollTelegramUpdates();
 
+function getIstTimeString(date = new Date()) {
+  return date.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
+
+function getIstDateTimeString(date = new Date()) {
+  return date.toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
+
 function isIndianMarketOpen() {
   const now = new Date();
   // Get time in IST (UTC+5:30)
@@ -290,6 +312,7 @@ async function broadcastTradeCall(trade) {
   const tp1Text = Math.round(trade.tp1);
   const tp2Text = Math.round(trade.tp2);
   const slText = Math.round(trade.sl);
+  const callTimeIst = getIstTimeString(trade.createdAt ? new Date(trade.createdAt) : new Date());
 
   const message = `<b>${channelTitle}</b>\n\n` +
     `<b>BUY ${indexTitle}</b>\n\n` +
@@ -298,7 +321,8 @@ async function broadcastTradeCall(trade) {
     `⛔ <i>Max Cap: ${maxBuyCap} (Do NOT chase above this)</i>\n\n` +
     `🎯 <b>TARGET 1: ${tp1Text}</b>\n` +
     `🚀 <b>TARGET 2: ${tp2Text}+++</b>\n\n` +
-    `🛑 <b>STRICT SL: ${slText}</b>`;
+    `🛑 <b>STRICT SL: ${slText}</b>\n\n` +
+    `⏰ <b>SETUP TIME: ${callTimeIst} IST</b>`;
 
   loadSubscribers();
   const allTargets = Array.from(subscribers);
@@ -378,16 +402,18 @@ async function broadcastPriceTick(trade, currentLtp) {
   if (!tracked.isTriggered) {
     if (roundedLtp >= entry) {
       tracked.isTriggered = true;
+      const triggerTimeIst = getIstTimeString();
       for (const [cid, chatData] of tracked.perChatMap.entries()) {
         chatData.highestAchieved = roundedLtp;
         if (!chatData.entryFiredSent) {
           chatData.entryFiredSent = true;
-          // Send instant "TRIGGER ACTIVE - ENTER IN ZONE" alert
+          // Send instant "TRIGGER ACTIVE - ENTER IN ZONE" alert with exact Entry Time
           sendTelegramMessageToChat(
             cid,
             `<b>${channelTitle}:</b>\n` +
             `⚡ <b>TRIGGER ACTIVATED @ ${roundedLtp}</b>\n` +
-            `Enter position inside <b>${tracked.entryPrice} - ${tracked.entryMax}</b> zone!`,
+            `Enter position inside <b>${tracked.entryPrice} - ${tracked.entryMax}</b> zone!\n` +
+            `⏱️ <b>Triggered Time: ${triggerTimeIst} IST</b>`,
             chatData.messageId
           ).catch(() => {});
         }
@@ -419,10 +445,12 @@ async function broadcastPriceTick(trade, currentLtp) {
     if (roundedLtp <= sl && !chatData.slSent) {
       chatData.slSent = true;
       const lossPts = entry - roundedLtp;
+      const exitTimeIst = getIstTimeString();
       await sendTelegramMessageToChat(
         cid,
         `<b>${channelTitle}:</b>\n` +
         `🛑 <b>STOP LOSS HIT @ ${roundedLtp}</b> (-${lossPts} pts)\n` +
+        `⏱️ <b>Exit Time: ${exitTimeIst} IST</b>\n` +
         `Exit position. Next setup scanning...`,
         replyToId
       );
@@ -435,12 +463,14 @@ async function broadcastPriceTick(trade, currentLtp) {
       const profitPts = roundedLtp - entry;
       const lotSize = tracked.lotSize || 65;
       const totalProfit = profitPts * lotSize;
+      const exitTimeIst = getIstTimeString();
 
       await sendTelegramMessageToChat(
         cid,
         `<b>${channelTitle}:</b>\n` +
         `<b>${roundedLtp} 🚀🚀 TARGET 2 RUNNER HIT!</b>\n\n` +
         `🏆 <b>PROFIT BOOKED: +${profitPts} PTS (+₹${totalProfit.toLocaleString('en-IN')}/lot)</b>\n` +
+        `⏱️ <b>Exit Time: ${exitTimeIst} IST</b>\n` +
         `✅ Trade successfully concluded with maximum target!`,
         replyToId
       );
@@ -451,10 +481,12 @@ async function broadcastPriceTick(trade, currentLtp) {
     if (roundedLtp >= tp1 && !chatData.tp1Sent) {
       chatData.tp1Sent = true;
       const profitPts = roundedLtp - entry;
+      const hitTimeIst = getIstTimeString();
       await sendTelegramMessageToChat(
         cid,
         `<b>${channelTitle}:</b>\n` +
         `<b>${roundedLtp} 🎯🎯 TARGET 1 HIT! (+${profitPts} pts)</b>\n` +
+        `⏱️ <b>Hit Time: ${hitTimeIst} IST</b>\n` +
         `Book safe profits now & trail SL to cost! Next trade scanner freed.`,
         replyToId
       );
