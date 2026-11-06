@@ -2984,6 +2984,12 @@ function renderLedgerUI(data) {
         <td class="py-3 px-4 font-bold text-white">${entry.name}</td>
         <td class="py-3 px-4 text-gray-300">${entry.setupName}</td>
         <td class="py-3 px-4 text-center font-bold text-accentGold bg-accentGold/5">₹${entry.entryPrice}</td>
+        <td class="py-3 px-4 text-center font-bold text-cyan-300 bg-cyan-950/20">
+          <span class="inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+            ₹${(entry.liveLtp || entry.exitPrice || entry.entryPrice).toFixed ? (entry.liveLtp || entry.exitPrice || entry.entryPrice).toFixed(1) : (entry.liveLtp || entry.exitPrice || entry.entryPrice)}
+          </span>
+        </td>
         <td class="py-3 px-4 text-center text-bearRed font-bold">₹${entry.sl}</td>
         <td class="py-3 px-4 text-center text-bullGreen font-bold">₹${entry.tp1}</td>
         <td class="py-3 px-4 text-center text-cyan-400 font-bold">₹${entry.tp2}</td>

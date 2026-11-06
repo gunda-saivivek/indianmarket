@@ -268,6 +268,16 @@ function getLedgerData(filterIndex = 'ALL') {
     ? ledgerHistory 
     : ledgerHistory.filter(l => l.index === norm);
 
+  // Attach live current LTP to ledger entries from active signals if available
+  const enrichedItems = items.map(entry => {
+    const key = `${entry.index}_${entry.type}_${entry.tradeId}_${entry.strike}`;
+    const liveSig = activeSignals.get(key);
+    return {
+      ...entry,
+      liveLtp: liveSig ? liveSig.currentLtp : (entry.exitPrice || entry.entryPrice)
+    };
+  });
+
   // Compute metrics separately per index
   const metrics = computeMetrics(items);
 
@@ -288,7 +298,7 @@ function getLedgerData(filterIndex = 'ALL') {
     },
     metrics,
     activeSignals: Array.from(activeSignals.values()).filter(s => norm === 'ALL' || s.index === norm),
-    ledger: items
+    ledger: enrichedItems
   };
 }
 
